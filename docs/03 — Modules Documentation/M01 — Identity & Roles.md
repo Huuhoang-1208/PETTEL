@@ -12,8 +12,12 @@ Breeze API scaffold cho auth; Vue SPA dùng Sanctum stateful session cookie an t
 
 # Dữ liệu và phụ thuộc
 
-Bảng users, role assignments hoặc role enum đơn giản, email\_verified\_at, audit auth. Cấp user ID cho Pet, Caregiver và Booking. Dữ liệu mật khẩu chỉ dạng hash của framework; không log mật khẩu, token hoặc session ID.
+Bảng users và user_roles (một user có thể có cả OWNER/CAREGIVER), email\_verified\_at, audit auth. Cấp user ID cho Pet, Caregiver và Booking. Dữ liệu mật khẩu chỉ dạng hash của framework; không log mật khẩu, token hoặc session ID.
 
 # Tiêu chí chấp nhận
 
 Người chưa đăng nhập chỉ xem listing ACTIVE. Owner không sửa pet khác. Caregiver không sửa listing khác. Admin không đăng nhập bằng role tự khai. Thao tác bị từ chối trả 403; API chưa đăng nhập trả 401 để Vue chuyển về login, CSRF hết hạn trả 419.
+
+# Quyết định P0
+
+User đăng ký thường được OWNER, tự bật thêm CAREGIVER để tạo profile/listing nháp; chỉ listing cần admin duyệt trước ACTIVE. ADMIN cấp ngoài form đăng ký, có audit. Role CAREGIVER không phải badge xác minh. Xem [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>).

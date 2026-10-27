@@ -10,6 +10,8 @@ Chủ nuôi tạo nhiều hồ sơ thú cưng: tên, loài, tuổi/ngày sinh ư
 
 Chỉ owner sửa/xóa mềm hồ sơ. Không xóa cứng nếu đã có booking; booking giữ snapshot tại thời điểm đặt. Trường tiêm phòng là thông tin tự khai, không là chứng nhận y tế. Giới hạn độ dài ghi chú và không bắt buộc cung cấp dữ liệu không cần thiết.
 
+Pet có status `ACTIVE` hoặc `ARCHIVED`; chỉ pet ACTIVE dùng cho booking mới. `deleted_at` phục vụ xóa mềm/privacy và không làm mất snapshot/lịch sử.
+
 # Dữ liệu và quyền
 
 pets.user\_id, species, birth\_date\_or\_age, sex, diet\_notes, vaccination\_note, temperament, special\_needs, status. Chỉ chủ nuôi xem toàn bộ. Người chăm của booking được xem dữ liệu cần thiết cho booking đó; pet không xuất hiện công khai trong search.

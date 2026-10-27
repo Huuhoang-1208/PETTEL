@@ -6,6 +6,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -13,8 +14,23 @@ use Illuminate\Notifications\Notifiable;
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
+    protected $attributes = [
+        'status' => 'ACTIVE',
+    ];
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    /** @return HasMany<UserRole, $this> */
+    public function roles(): HasMany
+    {
+        return $this->hasMany(UserRole::class);
+    }
+
+    public function hasRole(string $role): bool
+    {
+        return $this->roles()->where('role', $role)->exists();
+    }
 
     protected function casts(): array
     {

@@ -13,14 +13,18 @@ Trong đề bài của thầy, “product/sản phẩm” được quy đổi th
 02 — Domain Documentation (4 Docs): [02 — Domain Documentation](<02%20%E2%80%94%20Domain%20Documentation/>)  
 03 — Modules Documentation (10 Docs): [03 — Modules Documentation](<03%20%E2%80%94%20Modules%20Documentation/>)  
 04 — Workflows (4 Docs): [04 — Workflows](<04%20%E2%80%94%20Workflows/>)  
-05 — Implementation Plan (1 Doc): [05 — Implementation Plan](<05%20%E2%80%94%20Implementation%20Plan/>)  
+05 — Implementation Plan (2 Docs): [05 — Implementation Plan](<05%20%E2%80%94%20Implementation%20Plan/>), [BE-T01 — Lộ trình schema, trạng thái và hợp đồng nghiệp vụ](<05%20%E2%80%94%20Implementation%20Plan/BE-T01%20%E2%80%94%20L%E1%BB%99%20tr%C3%ACnh%20schema,%20tr%E1%BA%A1ng%20th%C3%A1i%20v%C3%A0%20h%E1%BB%A3p%20%C4%91%E1%BB%93ng%20nghi%E1%BB%87p%20v%E1%BB%A5.md>)
 06 — Non-functional Requirements (6 Docs): [06 — Non-functional Requirements](<06%20%E2%80%94%20Non-functional%20Requirements/>)  
 08 — Architecture & Technical Design (10 Docs): [08 — Architecture & Technical Design](<08%20%E2%80%94%20Architecture%20%26%20Technical%20Design/>)
 
 # Quyết định nền tảng
 
-Thí điểm Đà Nẵng; VND dạng số nguyên; lưu UTC, hiển thị Asia/Ho\_Chi\_Minh. P0 một thú cưng/booking và một booking đồng thời/listing. Listing ACTIVE mới công khai; người chăm duyệt yêu cầu; sau accept giữ lịch 15 phút đề xuất. MySQL là nguồn chuẩn; Redis chỉ cache/queue. Video, camera, xác minh thật và thanh toán thật ở ngoài P0.
+Thí điểm Đà Nẵng; VND dạng số nguyên; lưu UTC, hiển thị Asia/Ho\_Chi\_Minh. P0 một thú cưng/booking và một booking đồng thời/listing. Listing ACTIVE mới công khai; người chăm duyệt yêu cầu; sau accept giữ lịch 15 phút, không gia hạn khi retry. MySQL là nguồn chuẩn; Redis chỉ cache/queue. Video, camera, xác minh thật và thanh toán thật ở ngoài P0.
 
-# Cần chốt trước khi code cuối
+# Còn cần kiểm tra khi triển khai
 
-Kiểm tra tương thích Laravel 13/Breeze/Vue/Sanctum và các package đã chọn; chính sách hủy/hoàn tiền; thời hạn owner xác nhận hoàn thành; quy trình cấp badge xác minh; khả năng cơ sở nhận nhiều thú cưng cùng lúc; thời hạn lưu ảnh/tin nhắn và hosting demo. Stack đã chốt ở Technology & Tools: Breeze API + Vue 3 SPA + Sanctum; Filament, Scramble và Pulse được sử dụng trong phạm vi nêu tại đó.
+Kiểm tra tương thích Laravel 13/Breeze/Vue/Sanctum và các package đã chọn, cùng hosting/storage/email demo. Chính sách giá, hủy sandbox, hoàn tất, badge, công suất và retention đã chốt cho P0 ở tài liệu dưới. Tiền thật, xác minh thật và pháp lý thuộc phạm vi sau P0.
+
+## Quyết định P0 đã chốt
+
+[P0 Decision Contract](<02 — Domain Documentation/05 — P0 Decision Contract.md>) là nguồn chuẩn cho giá, hủy sandbox, hoàn tất, chat, role caregiver, retention và danh mục mã. [Database Design](<08 — Architecture & Technical Design/database design.md>) cụ thể hóa schema và transaction. Khi thay đổi một quy tắc P0, cập nhật đồng bộ Domain Docs, module, workflow, API Contract và Database Design.

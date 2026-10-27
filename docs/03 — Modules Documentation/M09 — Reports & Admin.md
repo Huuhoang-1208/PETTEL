@@ -8,7 +8,7 @@ Người dùng gửi report từ Vue SPA về listing, review, message hoặc bo
 
 # Quy tắc
 
-Report có target type/id, reason, mô tả và trạng thái OPEN, IN\_REVIEW, RESOLVED, DISMISSED. Không cho người báo cáo xem dữ liệu riêng của bên kia. Filament action phải gọi cùng service/Policy, ghi actor, thời điểm, lý do cho hành động; can thiệp booking phải đi qua service kiểm tra state, không sửa DB thủ công.
+Report có đúng một target FK trong listing, review, message hoặc booking; gồm reason, mô tả và trạng thái OPEN, IN\_REVIEW, RESOLVED, DISMISSED. Không lưu target bằng cặp polymorphic type/id thiếu FK. Không cho người báo cáo xem dữ liệu riêng của bên kia. Filament action phải gọi cùng service/Policy, ghi actor, thời điểm, lý do cho hành động; can thiệp booking phải đi qua service kiểm tra state, không sửa DB thủ công.
 
 # Dữ liệu và phụ thuộc
 
@@ -20,4 +20,8 @@ Người không phải admin không mở panel quản trị. Một report đư�
 
 # Ngoài P0
 
-Quy trình tranh chấp/đền bù tài chính, tự động nhận diện nội dung bằng AI, công cụ xác minh lý lịch thực.  
+Phân xử/đền bù tài chính thật, tự động nhận diện nội dung bằng AI, công cụ xác minh lý lịch thực.
+
+# Xử lý booking P0
+
+Sau 72 giờ owner không xác nhận, booking vào hàng admin. Report IN_REVIEW giữ booking ở AWAITING_CONFIRMATION; admin có lý do/audit quyết định release+COMPLETED hoặc refund+CANCELLED ngoại lệ. Release lỗi sau ba retry cũng vào hàng này. Xem [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>).

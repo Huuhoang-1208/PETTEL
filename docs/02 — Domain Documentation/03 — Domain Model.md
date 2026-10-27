@@ -18,6 +18,6 @@ Report gồm reporter, target, reason, status, resolution; chỉ admin kết lu�
 
 Pet profile chứa chế độ ăn, tính cách, tiêm phòng và lưu ý chăm sóc: chỉ chủ nuôi và người chăm của booking liên quan xem được phần cần thiết. File ảnh lưu trong storage; DB chỉ lưu object key, MIME, kích thước và owner. Không lưu URL public vĩnh viễn.
 
-# Giả định P0
+# Quyết định P0
 
 Mỗi listing chỉ phục vụ một booking tại cùng thời điểm. Nếu cơ sở có nhiều nhân viên/chuồng hoặc công suất \>1, cần thêm Resource/Capacity và thay quy tắc chống trùng; không dùng một cờ available đơn giản.  

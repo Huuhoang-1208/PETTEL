@@ -12,8 +12,12 @@ Giới hạn JPEG/PNG/WebP và 10 MB/ảnh đề xuất; kiểm tra MIME thực,
 
 # Truy cập và xóa
 
-Ảnh riêng cấp URL ký ngắn hạn hoặc stream qua controller sau policy; chỉ owner/caregiver booking và admin có lý do xem. Không để bucket/disk private ở chế độ public. Xóa mềm entity không xóa tệp lập tức nếu còn booking/audit; thời hạn lưu và xóa vĩnh viễn cần chốt với nhóm. Seed/demo dùng ảnh có quyền sử dụng.
+Ảnh riêng cấp URL ký ngắn hạn hoặc stream qua controller sau policy; chỉ owner/caregiver booking và admin có lý do xem. Không để bucket/disk private ở chế độ public. Xóa mềm entity không xóa tệp lập tức nếu còn booking/audit; thời hạn lưu và purge theo P0 Decision Contract: nội dung booking riêng 90 ngày, media mồ côi dọn trong 30 ngày, backup 30 ngày; report mở tạm giữ đến 90 ngày sau khi đóng. Seed/demo dùng ảnh có quyền sử dụng.
 
 # Môi trường
 
-Local/dev có thể dùng Laravel private local disk với volume; demo/staging có thể dùng S3-compatible storage nếu sẵn có. Cùng API Storage để đổi backend. Backup media tách khỏi DB và thử restore. Laravel hỗ trợ temporary URL cho local/S3: https\://laravel.com/docs/13.x/filesystem .  
+Local/dev có thể dùng Laravel private local disk với volume; demo/staging có thể dùng S3-compatible storage nếu sẵn có. Cùng API Storage để đổi backend. Backup media tách khỏi DB và thử restore. Laravel hỗ trợ temporary URL cho local/S3: https\://laravel.com/docs/13.x/filesystem .
+
+# Xóa dữ liệu P0
+
+Job chỉ xóa object khi không còn tham chiếu hợp lệ và không có report đang giữ. Restore backup phải áp dụng lại danh sách yêu cầu xóa. Xem [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>).

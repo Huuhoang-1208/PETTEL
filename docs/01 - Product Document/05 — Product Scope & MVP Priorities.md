@@ -18,6 +18,6 @@ Xác minh lý lịch thật, PETTEL Pro thật, thanh toán/giữ tiền/giải 
 
 M1: đăng nhập, pet profile, listing từ seed, tìm/lọc. M2: listing do người chăm tạo, admin duyệt, lịch và booking chống trùng. M3: payment sandbox, chat/cập nhật, hoàn tất và đánh giá. M4: báo cáo/quản trị, đo lường, kiểm thử phi chức năng, demo.
 
-# Quyết định cần chốt
+# Quyết định P0
 
-P0 đề xuất một thú cưng trên một booking; người chăm duyệt yêu cầu; sau khi chấp nhận giữ chỗ 15 phút để thanh toán sandbox. Cần xác nhận với nhóm/giảng viên trước khi biến các giả định thành quy tắc cuối.  
+Một pet/booking; caregiver chấp nhận yêu cầu; giữ chỗ 15 phút từ accept, không gia hạn. Giá, hủy, hoàn tất, quyền và thời hạn dữ liệu theo [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>). Những quy tắc này dành cho demo sandbox; vận hành với tiền thật phải được duyệt riêng.

@@ -8,11 +8,13 @@ Người chăm/cơ sở quản lý hồ sơ giới thiệu, loại hình chăm s
 
 # Quy tắc
 
-Chỉ ACTIVE hiện công khai. Sửa trường trọng yếu của ACTIVE cần duyệt lại. Giá không âm, thời lượng hợp lệ, ảnh đúng loại/kích thước. Một listing P0 có công suất 1 tại một thời điểm. Badge xác minh chỉ hiện nếu có trạng thái và bằng chứng được admin duyệt; dữ liệu seed phải ghi demo.
+Chỉ ACTIVE hiện công khai. Sửa trường trọng yếu của ACTIVE tạo change request; bản đã duyệt tiếp tục công khai cho tới khi admin duyệt. Nếu không còn đáp ứng bản cũ, caregiver phải tạm ngưng listing. Giá lớn hơn 0, thời lượng hợp lệ, ảnh đúng loại/kích thước. Một listing P0 có công suất 1 tại một thời điểm. P0 không hiển thị badge Verified/Pro thật; dữ liệu seed phải ghi demo.
+
+Caregiver profile không có status riêng; account status/role quyết định caregiver đủ điều kiện thao tác, listing status quyết định khả năng công khai. Listing change request có status `PENDING_REVIEW`, `APPROVED`, `REJECTED`, `WITHDRAWN`; mỗi listing tối đa một request chờ. Admin duyệt/từ chối, caregiver có thể rút khi còn chờ. Duyệt cập nhật payload và tăng version trong transaction khóa listing. Caregiver sở hữu được suspend/restore/archive listing; admin cũng có thể moderation với lý do/audit. ARCHIVED là trạng thái kết thúc.
 
 # Dữ liệu và phụ thuộc
 
-caregiver\_profiles, listings, availability\_slots, listing\_media, verification\_claims (nếu có). Identity cấp quyền; Search lập chỉ mục từ listing ACTIVE; Booking đọc lịch và snapshot giá. Không xóa listing có booking lịch sử.
+caregiver\_profiles, listings, availability\_slots, listing\_media, listing\_change\_requests. Không có verification_claims trong P0. Identity cấp quyền; Search lập chỉ mục từ listing ACTIVE; Booking đọc lịch và snapshot giá. Không xóa listing có booking lịch sử.
 
 # Tiêu chí chấp nhận
 
@@ -20,4 +22,8 @@ Caregiver tạo/sửa/gửi duyệt listing của mình. Admin duyệt hoặc t�
 
 # Ngoài P0
 
-Kiểm tra lý lịch, PETTEL Pro thật, mô hình nhiều nhân viên/chuồng và giá linh hoạt theo ngày.  
+Kiểm tra lý lịch, PETTEL Pro thật, mô hình nhiều nhân viên/chuồng và giá linh hoạt theo ngày.
+
+# Quyết định P0
+
+User tự bật role CAREGIVER nhưng listing phải qua admin duyệt. DAYCARE tính theo HOUR; BOARDING tính theo NIGHT; slot là khoảng mở và thiếu slot thì không nhận booking. Các mã/giới hạn ở [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>).

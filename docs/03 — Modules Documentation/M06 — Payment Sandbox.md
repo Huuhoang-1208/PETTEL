@@ -18,6 +18,6 @@ payment\_attempts, payment\_events, booking\_id, amount\_vnd, provider\_ref, sta
 
 Demo được success, failure, duplicate callback, timeout và cancel. UI luôn ghi “Thanh toán mô phỏng — không trừ tiền thật”. Không yêu cầu số thẻ, CVV, OTP hay tài khoản ngân hàng thật.
 
-# Cần chốt
+# Quyết định P0
 
-Chính sách phí hủy và quy trình xử lý nếu mô phỏng release lỗi; P0 không đưa ra cam kết giữ tiền hoặc hoàn tiền thật.  
+[P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>) quy định không phí hủy sandbox: PENDING → VOIDED khi hủy; AUTHORIZED → REFUNDED khi hủy CONFIRMED trước start_at; release lỗi retry cùng key sau 1/5/15 phút, rồi admin xử lý. Chỉ chuyển booking sang trạng thái cuối sau khi thao tác sandbox tương ứng thành công. P0 không cam kết giữ tiền hoặc hoàn tiền thật.

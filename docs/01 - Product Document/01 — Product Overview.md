@@ -23,4 +23,4 @@ PETTEL chứng minh luồng trải nghiệm và quy tắc nghiệp vụ trong m�
 # Nguồn và trạng thái
 
 Nguồn: Project Overview PETTEL — [Bản sao của Tổng quan dự án PETTEL](<B%E1%BA%A3n%20sao%20c%E1%BB%A7a%20T%E1%BB%95ng%20quan%20d%E1%BB%B1%20%C3%A1n%20PETTEL.md>)  
-Các chi tiết triển khai bổ sung trong bộ tài liệu này là đề xuất và cần được chốt trước khi xây dựng.  
+Các quyết định thiết kế P0 cho bản mẫu đã được ghi trong [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>). Chính sách tiền thật, xác minh thật và tuân thủ pháp lý cần duyệt riêng trước khi vận hành ngoài sandbox.
