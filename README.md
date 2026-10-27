@@ -13,7 +13,7 @@ Yêu cầu Docker Engine và Docker Compose v2. Cấu hình `APP_KEY` trong `.en
 ```sh
 test -f .env || cp backend/.env.example .env
 docker compose up --build -d
-docker compose exec app php artisan migrate
+docker compose exec backend php artisan migrate
 ```
 
 API shell hiện trả trạng thái tại <http://localhost:8080/>. Vue SPA chưa được scaffold nên các trang người dùng chưa khả dụng.
@@ -22,8 +22,8 @@ API shell hiện trả trạng thái tại <http://localhost:8080/>. Vue SPA ch�
 
 | Service | Vai trò |
 | --- | --- |
-| `web` | Nginx, cổng HTTP duy nhất mở ra host |
-| `app` | Laravel PHP-FPM |
+| `frontend` | Nginx, cổng HTTP duy nhất mở ra host |
+| `backend` | Laravel PHP-FPM |
 | `worker` | Redis queue |
 | `scheduler` | Laravel scheduler |
 | `db` | MySQL 8.4, named volume |

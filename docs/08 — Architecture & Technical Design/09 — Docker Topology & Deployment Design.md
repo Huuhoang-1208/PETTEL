@@ -4,11 +4,11 @@ PETTEL — Architecture & Technical Design \| Bản thảo 26/10/2026
 
 # Dịch vụ Compose
 
-`web` (Nginx hoặc reverse proxy) phục vụ bản build Vue SPA và chuyển `/api`, `/sanctum`, auth route, `/admin` đến Laravel; là cổng duy nhất công khai; \`app\` chạy PHP-FPM/Laravel; \`worker\` chạy queue:work cùng image app; \`scheduler\` chạy lịch tác vụ; \`db\` MySQL; \`redis\` cache/queue. \`sandbox\` có thể là adapter nội bộ trong app, không cần container riêng. File media ở volume private hoặc object storage. Filament và Pulse dashboard nằm sau xác thực/phân quyền.
+`frontend` (Nginx hoặc reverse proxy) phục vụ bản build Vue SPA và chuyển `/api`, `/sanctum`, auth route, `/admin` đến Laravel; là cổng duy nhất công khai; `backend` chạy PHP-FPM/Laravel; `worker` chạy queue:work cùng image backend; `scheduler` chạy lịch tác vụ; `db` MySQL; `redis` cache/queue. `sandbox` có thể là adapter nội bộ trong backend, không cần container riêng. File media ở volume private hoặc object storage. Filament và Pulse dashboard nằm sau xác thực/phân quyền.
 
 # Mạng, volume và cấu hình
 
-App/worker/scheduler dùng cùng image nhưng command khác; kết nối db/redis qua network nội bộ. Volume bền vững cho MySQL và media local. Secret qua biến môi trường/secret manager, không viết trong Compose hoặc Git. Healthcheck db/redis/app; \`depends\_on\` giúp thứ tự khởi động nhưng app vẫn phải chịu được phụ thuộc đến muộn. \`APP\_DEBUG=false\` ở demo/staging; chỉ web mở port.
+Backend/worker/scheduler dùng cùng image nhưng command khác; kết nối db/redis qua network nội bộ. Volume bền vững cho MySQL và media local. Secret qua biến môi trường/secret manager, không viết trong Compose hoặc Git. Healthcheck db/redis/backend; `depends_on` giúp thứ tự khởi động nhưng backend vẫn phải chịu được phụ thuộc đến muộn. `APP_DEBUG=false` ở demo/staging; chỉ frontend mở port.
 
 # Triển khai
 

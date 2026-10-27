@@ -8,7 +8,7 @@ Tối thiểu local/dev và demo/staging tách DB, Redis, storage, secret và d�
 
 # Thành phần
 
-Docker Compose điều phối web server phục vụ Vue build, Laravel PHP app, queue worker, scheduler, MySQL và Redis; storage private dùng volume hoặc dịch vụ object storage do nhóm chọn. Chỉ web server mở cổng ra ngoài. Healthcheck DB/Redis/app, volume bền vững cho DB và media; migration chạy có kiểm soát một lần khi deploy.
+Docker Compose điều phối frontend (Nginx phục vụ Vue build), backend (Laravel PHP-FPM), queue worker, scheduler, MySQL và Redis; storage private dùng volume hoặc dịch vụ object storage do nhóm chọn. Chỉ frontend mở cổng ra ngoài. Healthcheck DB/Redis/backend, volume bền vững cho DB và media; migration chạy có kiểm soát một lần khi deploy.
 
 # Triển khai và quay lui
 
@@ -16,4 +16,4 @@ Build image cố định tag/commit, chạy test và migration trên staging, se
 
 # Tiêu chí bàn giao
 
-Người chấm có thể chạy lại bằng README, tài khoản demo không chứa dữ liệu thật và kịch bản sandbox thành công/thất bại. Sau khi \`compose up\`, app, DB và Redis đạt health; không cần chỉnh tay trạng thái booking/payment để demo.  
+Người chấm có thể chạy lại bằng README, tài khoản demo không chứa dữ liệu thật và kịch bản sandbox thành công/thất bại. Sau khi `compose up`, frontend, backend, DB và Redis đạt health; không cần chỉnh tay trạng thái booking/payment để demo.

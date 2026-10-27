@@ -1,4 +1,4 @@
-FROM php:8.3-fpm-bookworm AS app
+FROM php:8.3-fpm-bookworm AS backend
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends unzip \
@@ -17,6 +17,6 @@ RUN composer dump-autoload --optimize \
     && mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
-FROM nginx:1-alpine AS web
+FROM nginx:1-alpine AS frontend
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
-COPY --from=app /var/www/html/public /var/www/html/public
+COPY --from=backend /var/www/html/public /var/www/html/public

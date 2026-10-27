@@ -10,7 +10,7 @@ Laravel 13 + PHP 8.3 trở lên cho backend, Vue 3 cho frontend SPA, MySQL cho d
 
 - Redis: cache và queue; MySQL vẫn là nguồn chuẩn cho booking, payment và quyền — https://laravel.com/docs/13.x/redis .
 - Laravel Policy/Gate: kiểm tra quyền ở mọi endpoint, kể cả admin và file riêng tư — https://laravel.com/docs/13.x/authorization .
-- Docker Compose: chạy web/reverse proxy, Laravel app, worker, scheduler, MySQL, Redis; build Vue để web phục vụ cùng origin ở demo — https://docs.docker.com/compose/ .
+- Docker Compose: chạy frontend/reverse proxy, backend Laravel, worker, scheduler, MySQL, Redis; build Vue để frontend phục vụ cùng origin ở demo — https://docs.docker.com/compose/ .
 - Laravel Telescope: debug local/dev, không mở public và không ghi bí mật/PII vào log — https://laravel.com/docs/13.x/telescope .
 
 # Công cụ tùy điều kiện — quyết định sử dụng

@@ -700,7 +700,7 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Tasks to do:**
 
-☐ Triển khai Vue build + Laravel/Filament ở cùng origin demo; kiểm app, database, worker/scheduler, Pulse dashboard theo quyền và private storage.
+☐ Triển khai Vue build + Laravel/Filament ở cùng origin demo; kiểm frontend, backend, database, worker/scheduler, Pulse dashboard theo quyền và private storage.
 
 ☐ Thử backup/restore trên môi trường riêng; smoke test bốn workflow và sửa lỗi thuộc phần Hào.
 

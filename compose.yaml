@@ -4,7 +4,7 @@ x-laravel: &laravel
   build:
     context: .
     dockerfile: backend/Dockerfile
-    target: app
+    target: backend
   restart: unless-stopped
   environment:
     APP_NAME: ${APP_NAME:-PETTEL}
@@ -39,7 +39,7 @@ x-laravel: &laravel
     - app_storage:/var/www/html/storage
 
 services:
-  app:
+  backend:
     <<: *laravel
     command: ["php-fpm", "-F"]
 
@@ -51,16 +51,16 @@ services:
     <<: *laravel
     command: ["php", "artisan", "schedule:work"]
 
-  web:
+  frontend:
     build:
       context: .
       dockerfile: backend/Dockerfile
-      target: web
+      target: frontend
     restart: unless-stopped
     ports:
       - "${APP_PORT:-8080}:80"
     depends_on:
-      app:
+      backend:
         condition: service_started
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/up"]
