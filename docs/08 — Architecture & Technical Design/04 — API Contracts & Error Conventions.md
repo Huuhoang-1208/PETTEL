@@ -14,11 +14,11 @@ JSON UTF-8, timestamp ISO 8601 có offset/UTC; tiền số nguyên VND. ID dạn
 
 # Lỗi thống nhất
 
-Lỗi JSON: \`error: { code, message, details?, request\_id }\`. 400 request lỗi cấu trúc; 401 chưa đăng nhập; 403 không có quyền; 404 không tồn tại/không được lộ; 409 AVAILABILITY\_CONFLICT hoặc INVALID\_STATE/IDEMPOTENCY\_CONFLICT; 422 VALIDATION\_ERROR với lỗi theo field; 429 quá nhiều request; 500 lỗi server. Message dành cho người dùng không chứa stack trace hay dữ liệu riêng.
+Lỗi JSON: `error: { code, message, details?, request_id }`. 400 request lỗi cấu trúc; 401 chưa đăng nhập; 403 không có quyền; 404 không tồn tại/không được lộ; 409 `AVAILABILITY_CONFLICT`, `INVALID_STATE`, `IDEMPOTENCY_CONFLICT`, `REQUEST_EXPIRED` hoặc `PAYMENT_EXPIRED`; 422 `VALIDATION_ERROR` theo field; 429 quá nhiều request; 500 lỗi server. CSRF sai/hết hạn trả 419 theo auth contract. Message dành cho người dùng không chứa stack trace hay dữ liệu riêng.
 
 # Ví dụ hợp đồng booking
 
-POST body: \`{pet\_id, listing\_id, start\_at, end\_at, instructions}\`. Response: \`{id, status:"REQUESTED", pet\_id, listing\_id, start\_at, end\_at, price\_snapshot\_vnd, payment\_due\_at:null}\`. Server tự lấy owner từ session Sanctum stateful, giá từ listing; bỏ qua mọi owner\_id, status hoặc amount do client gửi.
+POST body: `{pet_id, listing_id, start_at, end_at, instructions}` + header `Idempotency-Key`. Response: `{id, status:"REQUESTED", pet_id, listing_id, start_at, end_at, price_snapshot_vnd, payment_due_at:null}`. Server tự lấy owner từ session Sanctum stateful, giá từ listing; bỏ qua mọi owner_id, status hoặc amount do client gửi. Key unique theo owner, hash payload chuẩn hóa; cùng key/payload trả kết quả cũ, khác payload trả 409 `IDEMPOTENCY_CONFLICT`.
 
 # Tài liệu API
 
@@ -26,4 +26,4 @@ Dùng Scramble sinh OpenAPI từ routes/FormRequest/Resource phục vụ Vue; re
 
 # Contract P0 bổ sung
 
-[P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>) định nghĩa enum và giá. `POST /api/bookings/quote` nhận pet_id, listing_id, start_at, end_at; trả price_total_vnd, price_unit, quantity, pricing_version và cancellation_policy_version, không tạo booking. POST booking tính lại cùng công thức trong transaction; không tin amount client. `POST /api/bookings/{id}/cancel` kiểm tra actor/state, chỉ trả CANCELLED sau void/refund sandbox tương ứng. `POST /api/bookings/{id}/messages` chỉ cho hai bên gửi khi booking từ REQUESTED đến AWAITING_CONFIRMATION. Care update chỉ caregiver trong IN_PROGRESS. Endpoint bật role CAREGIVER yêu cầu user đăng nhập, ghi audit; admin role không có route tự cấp. P0 có thể dùng mã lỗi `REQUEST_EXPIRED`, `PAYMENT_EXPIRED`, `INVALID_STATE`.
+[P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>) định nghĩa mã trạng thái và giá. `POST /api/bookings/quote` nhận pet_id, listing_id, start_at, end_at; trả price_total_vnd, price_unit, quantity, pricing_version và cancellation_policy_version, không tạo booking. POST booking tính lại cùng công thức trong transaction; không tin amount client. `POST /api/bookings/{id}/cancel` kiểm tra actor/state, chỉ trả CANCELLED sau void/refund sandbox tương ứng. `POST /api/bookings/{id}/messages` chỉ cho hai bên gửi khi booking từ REQUESTED đến AWAITING_CONFIRMATION. Care update chỉ caregiver trong IN_PROGRESS. Endpoint bật role CAREGIVER yêu cầu user đăng nhập, ghi audit; admin role không có route tự cấp. Các lỗi hết hạn dùng HTTP 409 với mã `REQUEST_EXPIRED` hoặc `PAYMENT_EXPIRED`; conflict, invalid state và idempotency conflict cũng trả 409.

@@ -8,7 +8,7 @@ Người dùng gửi report từ Vue SPA về listing, review, message hoặc bo
 
 # Quy tắc
 
-Report có target type/id, reason, mô tả và trạng thái OPEN, IN\_REVIEW, RESOLVED, DISMISSED. Không cho người báo cáo xem dữ liệu riêng của bên kia. Filament action phải gọi cùng service/Policy, ghi actor, thời điểm, lý do cho hành động; can thiệp booking phải đi qua service kiểm tra state, không sửa DB thủ công.
+Report có đúng một target FK trong listing, review, message hoặc booking; gồm reason, mô tả và trạng thái OPEN, IN\_REVIEW, RESOLVED, DISMISSED. Không lưu target bằng cặp polymorphic type/id thiếu FK. Không cho người báo cáo xem dữ liệu riêng của bên kia. Filament action phải gọi cùng service/Policy, ghi actor, thời điểm, lý do cho hành động; can thiệp booking phải đi qua service kiểm tra state, không sửa DB thủ công.
 
 # Dữ liệu và phụ thuộc
 

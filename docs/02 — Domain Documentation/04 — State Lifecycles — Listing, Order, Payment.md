@@ -6,6 +6,10 @@ PETTEL — Domain Documentation \| Bản thảo 26/10/2026
 
 DRAFT → PENDING\_REVIEW → ACTIVE → SUSPENDED → ACTIVE, hoặc ACTIVE/SUSPENDED → ARCHIVED. Tác giả gửi duyệt; admin kích hoạt, từ chối về DRAFT kèm lý do, tạm ẩn hoặc khôi phục. ARCHIVED là kết thúc và không nhận booking mới; booking cũ vẫn giữ snapshot. Sửa trường trọng yếu của ACTIVE tạo change request PENDING\_REVIEW; bản ACTIVE đã duyệt vẫn công khai cho tới khi admin chấp thuận.
 
+Change request là lifecycle riêng: `PENDING_REVIEW → APPROVED | REJECTED | WITHDRAWN`. Admin duyệt/từ chối; caregiver có thể rút khi còn chờ. Mỗi listing chỉ có tối đa một request chờ. Duyệt áp dụng payload và tăng listing version trong transaction. Caregiver sở hữu có thể suspend, restore hoặc archive listing; admin cũng có thể moderation suspend/restore/archive với lý do và audit. ARCHIVED là trạng thái kết thúc.
+
+Pet có status `ACTIVE` hoặc `ARCHIVED`; chỉ ACTIVE dùng cho booking mới. Archive và soft delete không xóa snapshot/lịch sử booking.
+
 # Order / Booking
 
 REQUESTED → AWAITING\_PAYMENT khi người chăm chấp nhận và giữ lịch → CONFIRMED khi sandbox AUTHORIZED → IN\_PROGRESS khi bắt đầu chăm → AWAITING\_CONFIRMATION khi người chăm đánh dấu xong → COMPLETED khi chủ nuôi xác nhận. REQUESTED có thể bị từ chối/hủy; AWAITING\_PAYMENT có thể hết hạn; CONFIRMED có thể hủy theo chính sách trước khi bắt đầu; các nhánh này tới CANCELLED.  

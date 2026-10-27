@@ -48,7 +48,7 @@ Trong phạm vi: tài khoản/quyền, pet, caregiver/listing, tìm kiếm/Smart
 
 Để sau: video/camera, AI matching, xác minh lý lịch thật, thanh toán thật và tính năng P1.
 
-Hiện trạng sau đợt khởi tạo lại ngày 27/10: `backend/` là Laravel 13 API shell, `frontend/` chỉ có `.gitkeep`; Breeze API, Sanctum, Vue SPA, Filament, Scramble và Pulse chưa được cài. Migration passkeys/2FA mồ côi đã được gỡ khỏi source; migration nền users/password reset/session của Laravel vẫn còn. Không có dữ liệu user từ repo cũ cần chuyển hoặc bảo toàn. BE-H01 cài Breeze API + Sanctum trên baseline mới; FE-H01 tạo Vue SPA. Các issue mô tả việc cần làm, không phải tiến độ đã hoàn thành. N1 xác nhận baseline Laravel, migration, Docker và CI để giao việc đúng; không chuyển thành công việc thay thế một auth scaffold cũ.
+Cập nhật 28/10/2026: `backend/` vẫn là Laravel 13 API shell; Identity/Breeze/Sanctum đã được triển khai. BE-T01 đã chốt contract và thêm schema P0 cho pet/listing, booking/payment, content và moderation; migration đã chạy trên MySQL 8.4 sạch. `frontend/` vẫn chỉ có `.gitkeep`; Vue SPA, Filament, Scramble và Pulse chưa được cài/scaffold. Không có dữ liệu user từ repo cũ cần chuyển hoặc bảo toàn. API/nghiệp vụ của các module vẫn là việc cần làm theo issue; migration không có nghĩa là workflow đã hoạt động. Ngày N1–N20 trong backlog là mốc ban đầu và cần dịch theo ngày bắt đầu thực tế.
 
 Mã issue dưới đây là mã kế hoạch. Khi đưa lên tracker, tìm issue tương đương để cập nhật hoặc liên kết, tránh tạo trùng.
 

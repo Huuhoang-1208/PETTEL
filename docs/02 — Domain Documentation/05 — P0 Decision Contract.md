@@ -69,6 +69,10 @@ Giới hạn Unicode theo số ký tự: tên user/pet/profile 100; title listin
 
 ## Decision log
 
+### Schema và lifecycle BE-T01 (28/10/2026)
+
+Mã trạng thái/danh mục lưu trong schema dùng `VARCHAR` và CHECK trên MySQL 8.4, kèm validation tại service. Migration mới chuyển `users.status` và `user_roles.role` khỏi ENUM hiện có, không sửa migration cũ. Pet có status `ACTIVE`/`ARCHIVED`; chỉ ACTIVE được dùng cho booking mới. `caregiver_profiles` không lưu status riêng: account status/role và listing status quyết định khả năng hoạt động/công khai. `listing_change_requests.status` là `PENDING_REVIEW`, `APPROVED`, `REJECTED`, `WITHDRAWN`; tối đa một request chờ/listing, duyệt payload và tăng version trong một transaction khóa listing. Report dùng bốn FK nullable thật (listing/review/message/booking), CHECK đúng một đích.
+
 | Quyết định | Phương án đã xét | Lý do chọn |
 | --- | --- | --- |
 | `DAYCARE` theo giờ, `BOARDING` theo block 24 giờ | Theo ngày lịch, theo giờ mở cửa | Một công thức có thể tính và giải thích bằng khoảng thời gian UTC; không cần lịch check-in riêng cho P0. |

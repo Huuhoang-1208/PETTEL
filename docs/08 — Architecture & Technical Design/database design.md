@@ -1,12 +1,12 @@
 # Database Design — PETTEL P0
 
-**Trạng thái:** thiết kế đích để nhóm review và triển khai, **chưa phải schema đã chạy**. Cập nhật 27/10/2026. Phạm vi: bản mẫu dịch vụ chăm sóc thú cưng tại Đà Nẵng, MySQL 8.4, Laravel 13, một pet và một listing cho mỗi booking, công suất mặc định một booking đồng thời trên một listing, payment **sandbox**.
+**Trạng thái:** schema P0 được triển khai qua migration Laravel ngày 28/10/2026; hành vi API/nghiệp vụ vẫn được triển khai theo các issue module. Phạm vi: bản mẫu dịch vụ chăm sóc thú cưng tại Đà Nẵng, MySQL 8.4, Laravel 13, một pet và một listing cho mỗi booking, công suất mặc định một booking đồng thời trên một listing, payment **sandbox**. Kết quả migration MySQL được ghi ở lộ trình BE-T01.
 
 ## 1. Cách đọc và nguồn quyết định
 
 Tài liệu này là bản thiết kế database tổng thể, chi tiết hóa [Data Model, Indexes & Data Integrity](<03 — Data Model, Indexes & Data Integrity.md>). Các quy tắc nghiệp vụ lấy từ [Domain Model](<../02 — Domain Documentation/03 — Domain Model.md>), [Business Rules](<../02 — Domain Documentation/02 — Business Rules.md>), [State Lifecycles](<../02 — Domain Documentation/04 — State Lifecycles — Listing, Order, Payment.md>) và [Module Map](<../03 — Modules Documentation/00 — Module Map & Dependencies.md>). Những quyết định về quyền, file và payment đối chiếu [Authentication Design](<05 — Authentication & Authorization Design.md>), [File Storage Design](<08 — File Storage Design.md>) và [Payment Sandbox Integration](<07 — Payment Sandbox Integration.md>). [Performance & Capacity](<../06 — Non-functional Requirements/02 — Performance & Capacity.md>) và [Reliability & Recovery](<../06 — Non-functional Requirements/03 — Reliability & Recovery.md>) là mục tiêu đề xuất, chưa được đo.
 
-**Hiện trạng repository:** chỉ có migration Laravel nền cho `users`, `password_reset_tokens`, `sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`; chưa có migration nghiệp vụ. `users` thực tế có `name`, `email`, `email_verified_at`, `password`, `remember_token`, timestamps. Không đổi `password` thành `password_hash`: tên trong Data Model cũ chỉ diễn đạt ý nghĩa. `sessions.user_id` hiện chỉ có index, chưa có FK. Redis là cache/queue theo kiến trúc đích; các bảng cache/job nền vẫn là phần hạ tầng Laravel và không phải nguồn dữ liệu nghiệp vụ. Migration hiện hành và code chưa chứng minh bất kỳ quy tắc nào dưới đây đã được triển khai.
+**Hiện trạng repository:** migration Laravel nền tạo `users`, `password_reset_tokens`, `sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`. BE-H01 đã thêm Identity; BE-T01 có migration forward chuẩn hóa status/role thành `VARCHAR + CHECK` trên MySQL 8.4 và tạo schema P0 cho pet, caregiver/listing, booking/payment, messaging, review và moderation. `users` giữ `name`, `email`, `email_verified_at`, `password`, `remember_token`; không đổi `password` thành `password_hash`. `sessions.user_id` chỉ có index, chưa có FK. Redis là cache/queue; bảng cache/job Laravel không phải nguồn dữ liệu nghiệp vụ. Có schema không đồng nghĩa các hành vi API/state transition đã triển khai.
 
 **Mức chắc chắn:** tài liệu nguồn trước đây có nhiều đề xuất và câu “cần chốt”; §12 và P0 Decision Contract ngày 27/10/2026 chốt các lựa chọn thiết kế cho bản mẫu. Đây là quyết định tài liệu, chưa phải schema/code đã chạy hoặc phê duyệt chính sách tiền thật/pháp lý.
 
@@ -61,7 +61,7 @@ Ký hiệu `!` = NOT NULL, `?` = nullable, `UQ` = unique. Ngoài các cột li�
 | Bảng | Cột cốt lõi | Khóa / quy tắc |
 | --- | --- | --- |
 | `users` (đã có, mở rộng) | `id`, `name!`, `email!`, `password!`, `email_verified_at?`, `remember_token?`, `status!` (`ACTIVE`, `SUSPENDED`, `DELETION_PENDING`, `DEACTIVATED`), `deletion_requested_at?`, timestamps | `UQ(email)` hiện có. `status` mới mặc định `ACTIVE`; `DELETION_PENDING` chỉ cho thao tác booking/report đang mở; sau khi đóng, ẩn danh và `DEACTIVATED` trong tối đa 30 ngày. Admin provisioning riêng. Không coi `email_verified_at` là email đã xác minh khi luồng verification chưa bật. |
-| `user_roles` | `user_id!`, `role!` (`OWNER`, `CAREGIVER`, `ADMIN`), `assigned_at!`, `assigned_by_user_id?` | PK `(user_id,role)`; FK user và assigner. Đăng ký thường gán OWNER phía server; user có thể đồng thời OWNER/CAREGIVER; ADMIN chỉ cấp ngoài luồng tự đăng ký. User tự bật CAREGIVER với audit; chỉ listing cần admin duyệt. |
+| `user_roles` | `user_id!`, `role!` (`OWNER`, `CAREGIVER`, `ADMIN`), `assigned_at!`, `assigned_by_user_id?` | PK `(user_id,role)`; FK user và assigner. Cột role/status là VARCHAR có CHECK trên MySQL 8.4, không dùng ENUM. Đăng ký thường gán OWNER phía server; user có thể đồng thời OWNER/CAREGIVER; ADMIN chỉ cấp ngoài luồng tự đăng ký. User tự bật CAREGIVER với audit; chỉ listing cần admin duyệt. |
 
 Giữ nguyên bảng Laravel `password_reset_tokens` và `sessions`; không tạo token SPA riêng. Nếu dùng Sanctum stateful cookie, `personal_access_tokens` chỉ xuất hiện nếu package/migration yêu cầu cho client bên ngoài, không dùng cho Vue P0.
 
@@ -69,7 +69,7 @@ Giữ nguyên bảng Laravel `password_reset_tokens` và `sessions`; không tạ
 
 | Bảng | Cột cốt lõi | Khóa / quy tắc |
 | --- | --- | --- |
-| `pets` | `id`, `user_id!`, `name!`, `species!`, `birth_date?`, `age_note?`, `sex?`, `size?`, `diet_notes?`, `vaccination_note?`, `temperament?`, `special_needs?`, `status!`, `photo_media_id?`, `deleted_at?` | FK user `RESTRICT`; FK photo `SET NULL` chỉ nếu file không thuộc lịch sử; kiểm tra `photo_media_id` thuộc user bằng service. `species/size` dùng danh mục P0 ở §12/P0 Decision Contract, thống nhất với điều kiện listing. `birth_date` hoặc `age_note` có thể thiếu, không suy ra độ tuổi chính xác từ ghi chú. |
+| `pets` | `id`, `user_id!`, `name!`, `species!`, `birth_date?`, `age_note?`, `sex?`, `size?`, `diet_notes?`, `vaccination_note?`, `temperament?`, `special_needs?`, `status!` (`ACTIVE`,`ARCHIVED`), `photo_media_id?`, `deleted_at?` | FK user `RESTRICT`; FK photo `SET NULL`; kiểm tra `photo_media_id` thuộc user bằng service. Chỉ ACTIVE dùng cho booking mới. `species/size` theo P0 Contract; `birth_date` hoặc `age_note` có thể thiếu. |
 
 `vaccination_note` là tự khai, không phải chứng nhận y tế. Pet không có trong search công khai. Booking dùng snapshot nên sửa/xóa mềm pet không đổi hướng dẫn đã gửi.
 
@@ -77,12 +77,14 @@ Giữ nguyên bảng Laravel `password_reset_tokens` và `sessions`; không tạ
 
 | Bảng | Cột cốt lõi | Khóa / quy tắc |
 | --- | --- | --- |
-| `caregiver_profiles` | `id`, `user_id!`, `type!` (`INDIVIDUAL`,`FACILITY`), `display_name!`, `bio?`, `area_code!`, `status!`, `deleted_at?` | `UQ(user_id)`. Một cơ sở P0 chỉ có một user quản lý. Không lưu địa chỉ chi tiết vào bản công khai nếu không cần. |
-| `listings` | `id`, `caregiver_profile_id!`, `title!`, `description!`, `service_type!`, `area_code!`, `price_vnd!`, `price_unit!`, `capacity!` mặc định 1, `acceptance_rules_json!`, `cancellation_policy_text?`, `status!`, `published_at?`, `version!`, `deleted_at?` | FK profile `RESTRICT`; `price_vnd > 0`, `capacity = 1` ở P0; P0 giới hạn một booking đang khóa lịch trên mỗi listing, chưa giới hạn tổng booking của cùng caregiver qua nhiều listing. Status `DRAFT`, `PENDING_REVIEW`, `ACTIVE`, `SUSPENDED`, `ARCHIVED`. `DAYCARE` dùng `HOUR`, `BOARDING` dùng `NIGHT`; công thức và giới hạn ở §12/P0 Decision Contract. Không dùng `availability` boolean. |
+| `caregiver_profiles` | `id`, `user_id!`, `type!` (`INDIVIDUAL`,`FACILITY`), `display_name!`, `bio?`, `area_code!`, `deleted_at?` | `UQ(user_id)`. Không có status riêng: account status/role quyết định caregiver còn đủ điều kiện, listing status quyết định nội dung nào công khai. Một cơ sở P0 chỉ có một user quản lý. |
+| `listings` | `id`, `caregiver_profile_id!`, `title!`, `description!`, `service_type!`, `area_code!`, `price_vnd!`, `price_unit!`, `capacity!` mặc định 1, `acceptance_rules_json!`, `status!`, `published_at?`, `version!`, `deleted_at?` | FK profile `RESTRICT`; `price_vnd > 0`, `capacity = 1`; một booking khóa lịch/listing. Status `DRAFT`, `PENDING_REVIEW`, `ACTIVE`, `SUSPENDED`, `ARCHIVED`. `DAYCARE/HOUR`, `BOARDING/NIGHT`; không có trường policy hủy tùy chỉnh vì P0 áp dụng một policy sandbox chung. Không dùng `availability` boolean. |
 | `availability_slots` | `id`, `listing_id!`, `start_at!`, `end_at!`, `created_by_user_id!`, `deleted_at?` | FK listing/creator; `start_at < end_at`; các slot khai báo phải được chuẩn hóa không chồng nhau trên cùng listing trong service, dưới lock listing. Theo quyết định P0, slot là khoảng mở và booking phải nằm trọn trong một slot liên tục; listing chưa có slot thì không nhận booking. |
 | `listing_media` | `listing_id!`, `media_object_id!`, `sort_order!` | PK `(listing_id,media_object_id)`, `UQ(listing_id,sort_order)`; ảnh chỉ công khai khi listing ACTIVE và được duyệt. |
 
 `acceptance_rules_json` chứa danh sách loài/kích cỡ/tuổi và hỗ trợ nhu cầu đặc biệt ở dạng có schema/version; chỉ lưu các điều kiện thực sự dùng trong Smart Match. Nếu lọc loài bằng SQL thường xuyên, tách `listing_accepted_species(listing_id,species_code)` với PK kép và index đảo `(species_code,listing_id)` trước khi thực hiện search; không dùng `LIKE` trên JSON. `area_code` dùng năm vùng nội bộ Đà Nẵng trong P0 Decision Contract; user chọn vùng, không suy ra địa giới hành chính từ mã.
+
+`listing_change_requests` lưu `proposed_data_json`, `base_listing_version`, người gửi/người duyệt, lý do và thời điểm. Status là `PENDING_REVIEW`, `APPROVED`, `REJECTED`, `WITHDRAWN`; một listing chỉ có tối đa một request chờ. Service khóa listing khi tạo/duyệt/rút để bảo vệ điều kiện này; duyệt cập nhật payload và tăng listing version trong cùng transaction.
 
 **Duyệt thay đổi listing — quyết định P0:** sửa giá, loại dịch vụ hoặc điều kiện nhận pet của listing `ACTIVE` tạo `listing_change_requests`; bản đã duyệt tiếp tục công khai và nhận booking trong lúc chờ. Chỉ áp dụng nội dung mới sau khi admin duyệt trong transaction khóa listing + request, rồi tăng `version`; booking cũ giữ snapshot. Tối đa một request `PENDING`/listing. Caregiver được rút request đang chờ; nếu không thể thực hiện theo bản cũ, phải tạm ngưng listing. Các trường cần duyệt lại được quản lý qua allowlist trong service; trường trình bày không trọng yếu có thể cập nhật trực tiếp theo contract.
 
@@ -153,7 +155,8 @@ Không lưu bản sao nội dung riêng tư trong report/audit nếu không cầ
 
 | Aggregate | Trạng thái / chuyển chính | Ghi chú DB |
 | --- | --- | --- |
-| Listing | `DRAFT → PENDING_REVIEW → ACTIVE ↔ SUSPENDED → ARCHIVED`; từ chối duyệt về `DRAFT` | Chỉ `ACTIVE` công khai. Hành vi sửa ACTIVE đang chờ duyệt xem §4/§12. ARCHIVED không xóa booking cũ. |
+| Listing | `DRAFT → PENDING_REVIEW → ACTIVE ↔ SUSPENDED → ARCHIVED`; từ chối duyệt về `DRAFT` | Chỉ `ACTIVE` công khai. Change request riêng có `PENDING_REVIEW`, `APPROVED`, `REJECTED`, `WITHDRAWN`. ARCHIVED không xóa booking cũ. |
+| Pet | `ACTIVE ↔ ARCHIVED` | Chỉ ACTIVE dùng cho booking mới; `deleted_at` là xóa mềm/privacy, không thay status lịch sử. |
 | Booking | `REQUESTED → AWAITING_PAYMENT → CONFIRMED → IN_PROGRESS → AWAITING_CONFIRMATION → COMPLETED`; các nhánh hủy hợp lệ tới `CANCELLED` | Chỉ 4 trạng thái giữa khóa lịch. REQUESTED hết hạn sau 24 giờ hoặc khi start. Không tự hoàn tất khi owner im lặng; sau 72 giờ vào hàng admin. Không hủy thường sau IN_PROGRESS; admin có nhánh ngoại lệ có audit. |
 | Payment attempt | `PENDING → FAILED/AUTHORIZED/VOIDED`; `AUTHORIZED → RELEASED/REFUNDED` | `NOT_STARTED` suy ra từ không có attempt. Mỗi retry là row mới. Không đảo `RELEASED` bằng thao tác thường. |
 | Report | `OPEN → IN_REVIEW → RESOLVED/DISMISSED` | Lưu action và audit khi admin quyết định, có lý do. |
@@ -167,7 +170,7 @@ Một số trạng thái là **dữ liệu lưu** (`bookings.status`, `payment_a
 | `users` | `UQ(email)` | Login/khôi phục mật khẩu. |
 | `user_roles` | PK `(user_id,role)`, `(role,user_id)` | Policy/admin list. |
 | `pets` | `(user_id,deleted_at,id)` | Danh sách pet của owner. |
-| `caregiver_profiles` | `UQ(user_id)`, `(area_code,status)` | Profile/search. |
+| `caregiver_profiles` | `UQ(user_id)`, `(area_code,id)` | Profile/search; account status/role governs eligibility, listing status governs visibility. |
 | `listings` | `(status,service_type,area_code,price_vnd,id)`, `(caregiver_profile_id,status,id)` | Search có phân trang, quản lý listing. Kiểm tra `EXPLAIN` với filter thực; không hứa một index đáp ứng mọi kiểu sort. |
 | `availability_slots` | `(listing_id,start_at,end_at)` | Lấy slot giao/bao khoảng. |
 | `bookings` | `(listing_id,status,start_at,end_at)`, `(owner_id,created_at,id)`, `(caregiver_user_id,status,start_at,id)`, `UQ(owner_id,request_idempotency_key)` | Conflict, lịch người chăm, lịch owner, retry create. |
@@ -191,11 +194,13 @@ Các FK của MySQL cần index bên con; tránh tạo index trùng với unique
 
 ## 9. Migration và thứ tự triển khai
 
-1. Giữ migration nền Laravel; migration mới mở rộng `users.status`, tạo `user_roles`, sau đó `pets`, `caregiver_profiles`, `listings`, `availability_slots`, `media_objects`, `listing_media` và ràng buộc ảnh pet. Với FK vòng `pets.photo_media_id`, thêm sau khi `media_objects` tồn tại.
-2. Tạo `bookings`, `booking_status_events`, `payment_attempts`, `payment_events`; thêm FK `bookings.current_payment_attempt_id` sau. Tạo messages, care_updates, reviews, reports, moderation_actions, audit_logs. Tạo `listing_change_requests` cùng schema listing theo quyết định P0.
-3. Viết check/FK/index ở migration, chạy trên MySQL 8.4 sạch, seed idempotent và rollback có chủ đích. SQLite test đơn thuần không chứng minh behavior lock/check/index của MySQL.
-4. Trước đổi schema đã có dữ liệu: backup, migration expand → deploy code tương thích → backfill/verify → constraint → cleanup. Với demo chưa có dữ liệu nghiệp vụ, có thể tạo schema mới trực tiếp; không giả định có dữ liệu legacy phải chuyển.
-5. Seed tách demo và test fixture; review/ảnh/badge minh họa có nhãn `is_demo` hoặc metadata tương đương. Không seed admin password cố định trong Git. Mọi migration sửa state/price cần reviewer của Booking, Listing và Payment.
+1. Giữ migration nền Laravel và Identity hiện có. Migration forward đổi cột `users.status`/`user_roles.role` từ ENUM sang VARCHAR + CHECK trên MySQL; không sửa migration đã chạy.
+2. Tạo `media_objects`, `pets`, `caregiver_profiles`, `listings`, `availability_slots`, `listing_change_requests`, `listing_media` theo thứ tự FK; `pets.photo_media_id` được thêm sau khi media tồn tại.
+3. Tạo `bookings`, `booking_status_events`, `payment_attempts`, `payment_events`; thêm FK `bookings.current_payment_attempt_id` sau khi payment attempts tồn tại.
+4. Tạo `messages`, `care_updates`, `reviews`, `reports`, `moderation_actions`; dùng lại `audit_logs` Identity, không tạo bảng audit thứ hai.
+5. DDL đã kiểm tra trên MySQL 8.4 trống theo kết quả ghi trong [lộ trình BE-T01](<../05 — Implementation Plan/BE-T01 — Lộ trình schema, trạng thái và hợp đồng nghiệp vụ.md>); SQLite được dùng cho feature tests nhưng không thay kiểm tra MySQL CHECK/FK/index.
+6. Trước đổi schema production đã có dữ liệu: backup, migration expand → deploy code tương thích → backfill/verify → constraint → cleanup. Các migration hiện tại tạo schema trên baseline mới, không đọc hay chuyển dữ liệu từ repo cũ.
+7. Seed tách demo và test fixture; review/ảnh/badge minh họa có nhãn `is_demo` hoặc metadata tương đương. Không seed admin password cố định trong Git.
 
 ## 10. Kiểm thử chấp nhận database
 
@@ -244,5 +249,8 @@ Chi tiết công thức, quyền theo trạng thái, thời hạn và ví dụ n
 | Snapshot JSON có version, cột tiền/thời gian riêng | Giá/chính sách lịch sử bất biến; PII hết hạn được redact có audit, vẫn query/index được trường cốt lõi | Đã chốt P0. |
 | Dùng listing row lock chống overlap | MySQL không có exclusion interval constraint; Redis lock không đủ | Đã nêu trong Data Model, cần test cạnh tranh. |
 | Không lưu trạng thái payment trùng ở booking | PaymentAttempt là nguồn chuẩn; tránh hai status lệch | Đã chốt P0. |
+| Dùng VARCHAR + CHECK cho status/code | Trạng thái mở rộng bằng migration rõ ràng; MySQL 8.4 thực thi CHECK | Đã triển khai migration forward BE-T01. |
+| Pet ACTIVE/ARCHIVED, caregiver profile không có status riêng | Tránh trùng trạng thái account/listing; archive ngăn chọn pet mới | Contract BE-T01. |
+| Listing change request có bốn status chuẩn | Tên tách lifecycle listing; một request chờ được bảo vệ bằng khóa listing | Contract BE-T01; schema đã migrate. |
 
 **Bàn giao:** các quyết định P0 trong §12 và P0 Decision Contract là đầu vào cho migration, API và acceptance criteria. BE-T01 cùng owner M01/M03/M05/M06 đồng bộ tài liệu khi thay đổi một quy tắc; chính sách tiền thật, xác minh thật và tuân thủ pháp lý nằm ngoài P0.
