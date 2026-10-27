@@ -19,4 +19,8 @@ Không có kết quả: giải thích bộ lọc nào quá hẹp và cho nới l
 
 # Điểm kiểm thử
 
-Không lộ DRAFT/SUSPENDED; không lộ ghi chú riêng tư của pet; lọc ngày không trả listing đã khóa lịch; thứ tự và lý do phù hợp ổn định với cùng dữ liệu.  
+Không lộ DRAFT/SUSPENDED; không lộ ghi chú riêng tư của pet; lọc ngày không trả listing đã khóa lịch; thứ tự và lý do phù hợp ổn định với cùng dữ liệu.
+
+# Danh mục và giá P0
+
+Chỉ có DAYCARE (giá theo giờ) và BOARDING (giá theo block 24 giờ lưu trú). Bộ lọc giá dùng tổng giá server tính cho khoảng đã chọn, không so đơn giá khác đơn vị. Vùng Đà Nẵng là mã nội bộ do caregiver chọn; địa chỉ chi tiết không công khai. Xem [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>).

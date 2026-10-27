@@ -66,18 +66,13 @@ Hoàng điều phối bố cục và thành phần frontend dùng chung sau Gate
 
 Không hai người sửa cùng file dùng chung đồng thời. N2 Thịnh công bố schema/state; N3 Hoàng và Hào công bố pet/listing contract và fixture ACTIVE để Thịnh làm booking; N6 Hào công bố availability/listing lifecycle contract; N11 Thịnh công bố payment callback contract; sáng N16 Hoàng bàn giao Vue shell/API client. Thay đổi input/output phải báo owner liên quan và cập nhật OpenAPI trước khi tích hợp.
 
-# 4\. Các quyết định cần chốt đầu tuần 1
+# 4\. Quyết định P0 và việc cần kiểm tra đầu tuần 1
 
-* Kiểm tra tương thích và chốt phiên bản Breeze API, Sanctum, Filament, Scramble, Pulse với Laravel 13/PHP 8.3; lưu dependency lockfile. Stack Laravel 13 + Breeze API + Vue SPA + Sanctum đã được chọn.
-* Một pet/booking, công suất listing và thời hạn giữ chỗ; tài liệu đang đề xuất công suất một và giữ chỗ 15 phút.  
-* Chính sách hủy, void/refund sandbox và xử lý callback đến sau khi hết hạn.  
-* Thời hạn owner xác nhận hoàn tất; cách xử lý release sandbox thất bại.  
-* Trạng thái booking được gửi tin nhắn hoặc ảnh cập nhật.  
-* Quyền admin đọc dữ liệu riêng tư, thời hạn lưu ảnh/tin nhắn và môi trường demo.
+Các quy tắc sản phẩm P0 đã chốt trong [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>): một pet/booking; capacity 1/listing; giữ chỗ 15 phút từ accept; giá DAYCARE/HOUR, BOARDING/NIGHT; không phí hủy sandbox; xử lý callback muộn, owner im lặng, chat, role caregiver, retention và mã dữ liệu. BE-T01 dùng contract này làm đầu vào schema/API; không đánh dấu các quy tắc trên là Blocked.
 
-Hoàng chuẩn bị quyền và dữ liệu pet; Thịnh chuẩn bị quyết định booking/payment; Hào chuẩn bị listing, storage và quản trị. Cả ba cùng chốt và ghi vào tài liệu hiện có.
+Đầu tuần 1 còn phải kiểm tra tương thích và chốt phiên bản Breeze API, Sanctum, Filament, Scramble, Pulse với Laravel 13/PHP 8.3; lưu dependency lockfile. Cần chốt môi trường demo, storage và kênh gửi email thực tế trước khi tích hợp. Chính sách tiền thật, xác minh thật và tuân thủ pháp lý nằm ngoài P0.
 
-Phần việc phụ thuộc quyết định chưa chốt giữ trạng thái Blocked; vẫn triển khai các phần độc lập.
+Hoàng chuẩn bị quyền và dữ liệu pet; Thịnh chuẩn bị booking/payment; Hào chuẩn bị listing, storage và quản trị. Khi đổi contract, cả ba cập nhật tài liệu liên quan trước khi code phụ thuộc.
 
 # 5\. Cổng kiểm tra
 
@@ -148,7 +143,7 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 ☐ Phân lịch migration; thống nhất validation, lỗi, idempotency và ghi lại quyết định nghiệp vụ.
 
-**Acceptance criteria:** Có sơ đồ dữ liệu và bảng trạng thái thống nhất; migration chạy được từ database trống và không phụ thuộc dữ liệu/schema của repo cũ; quyết định chưa chốt được ghi rõ cùng issue phụ thuộc.
+**Acceptance criteria:** Có sơ đồ dữ liệu và bảng trạng thái thống nhất; migration chạy được từ database trống và không phụ thuộc dữ liệu/schema của repo cũ; mọi thay đổi so với P0 Decision Contract được ghi rõ cùng owner và issue phụ thuộc.
 
 ### BE-HA01 — Môi trường chạy, CI và dữ liệu mẫu
 
@@ -334,7 +329,7 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Lịch:** N9–N10 \| **Timebox:** 6 giờ
 
-**Phụ thuộc:** BE-T03 công bố accept/expiry contract đầu N9 và tích hợp cuối N9; chốt thời hạn và chính sách hủy
+**Phụ thuộc:** BE-T03 công bố accept/expiry contract đầu N9 và tích hợp cuối N9; áp dụng thời hạn/chính sách hủy trong P0 Decision Contract
 
 **Phạm vi:** M05 — Expiry & cancellation
 

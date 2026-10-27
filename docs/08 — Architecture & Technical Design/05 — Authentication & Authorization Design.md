@@ -21,3 +21,11 @@ Người chăm chỉ đọc pet notes từ booking có liên quan, không từ p
 # Kiểm thử bắt buộc
 
 Matrix actor × resource × state cho tất cả write routes; thử cookie/CSRF, 401/419 và CORS; thử đổi ID trong URL/body, leo quyền admin, replay form, session hết hạn, callback giả. Không đưa token/secret/password vào log.
+
+# Quy trình cấp role P0
+
+User đăng ký nhận OWNER; user có thể tự bật CAREGIVER và tạo listing nháp. Chỉ admin duyệt listing mới cho ACTIVE; admin role được cấp ngoài đăng ký và mọi cấp/thu hồi có audit. Quyền chat/care update theo trạng thái booking và quyền xem dữ liệu sau yêu cầu xóa ở [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>).
+
+# Xóa tài khoản P0
+
+Yêu cầu xóa đặt `DELETION_PENDING`: dừng booking/listing mới, chỉ cho user hoàn tất booking/report còn mở; sau đó vô hiệu hóa và ẩn danh trong tối đa 30 ngày. Policy phải kiểm tra status trên mọi route ghi. Xem [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>).

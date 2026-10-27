@@ -8,7 +8,7 @@ Mọi request ghi phải xác thực và dùng policy theo role, owner ID, booki
 
 # Dữ liệu và quyền riêng tư
 
-Pet profile có chế độ ăn, tiêm phòng tự khai và lưu ý đặc biệt; chỉ chủ nuôi và người chăm của booking liên quan xem phần cần thiết. Địa chỉ liên hệ, tin nhắn và ảnh không công khai. Thu thập tối thiểu, có thông báo mục đích sử dụng, quy trình xóa/ẩn theo chính sách được chốt. Không đưa PII hoặc nội dung chat vào log/analytics.
+Pet profile có chế độ ăn, tiêm phòng tự khai và lưu ý đặc biệt; chỉ chủ nuôi và người chăm của booking liên quan xem phần cần thiết. Địa chỉ liên hệ, tin nhắn và ảnh không công khai. Thu thập tối thiểu, có thông báo mục đích sử dụng, quy trình khóa tài khoản, ẩn danh và purge theo mốc P0 Decision Contract. Không đưa PII hoặc nội dung chat vào log/analytics.
 
 # Tệp và payment
 
@@ -16,4 +16,8 @@ Upload giới hạn loại/kích thước, kiểm tra MIME thực, tên file an 
 
 # Xác minh
 
-Test 401/403 trên mọi actor và tài nguyên không thuộc quyền; thử IDOR, CSRF, XSS trong mô tả/review/chat, upload độc hại và callback giả/lặp. Rà theo OWASP ASVS 5.0 phù hợp phạm vi bài tập: https\://asvs.owasp.org/ . Không tuyên bố tuân thủ pháp lý khi chưa rà soát riêng.  
+Test 401/403 trên mọi actor và tài nguyên không thuộc quyền; thử IDOR, CSRF, XSS trong mô tả/review/chat, upload độc hại và callback giả/lặp. Rà theo OWASP ASVS 5.0 phù hợp phạm vi bài tập: https\://asvs.owasp.org/ . Không tuyên bố tuân thủ pháp lý khi chưa rà soát riêng.
+
+# Thời hạn P0
+
+[P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>) quy định chat/care update/pet notes riêng 90 ngày, booking/payment/audit cốt lõi 12 tháng, backup 30 ngày; report đang mở tạm giữ dữ liệu cần thiết đến 90 ngày sau khi đóng. Yêu cầu xóa đặt DELETION_PENDING, chỉ cho user xử lý booking/report còn mở; sau khi đóng thì vô hiệu hóa và ẩn danh trong tối đa 30 ngày, có audit. Không log nội dung riêng. Các mốc này áp dụng cho sandbox P0, chưa phải kết luận tuân thủ pháp lý.

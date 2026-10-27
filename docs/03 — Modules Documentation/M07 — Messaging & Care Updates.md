@@ -8,7 +8,7 @@ Cung cấp kênh trao đổi giữa chủ nuôi và người chăm gắn với b
 
 # Quy tắc
 
-Chỉ hai bên booking đọc/ghi; admin đọc khi xử lý report có lý do. Tin nhắn trước khi CONFIRMED có thể dùng để hỏi đáp theo chính sách P0; ảnh cập nhật chăm sóc chỉ sau IN\_PROGRESS. Tệp phải kiểm tra MIME, kích thước, quét hoặc chặn loại nguy hiểm; ảnh không có URL public vĩnh viễn. Giữ nguyên lịch sử sau hoàn tất trừ yêu cầu xóa theo chính sách được chốt.
+Chỉ hai bên booking đọc/ghi; admin đọc khi xử lý report có lý do. Hai bên được đọc/ghi chat từ REQUESTED đến AWAITING_CONFIRMATION; sau CANCELLED/COMPLETED chat chỉ đọc. Chỉ caregiver tạo care update trong IN_PROGRESS; từ AWAITING_CONFIRMATION không tạo mới. Tệp phải kiểm tra MIME, kích thước, quét hoặc chặn loại nguy hiểm; ảnh không có URL public vĩnh viễn. Nội dung riêng tư hết hạn theo mốc 90 ngày của P0 Decision Contract, trừ report đang mở.
 
 # Dữ liệu và phụ thuộc
 
@@ -20,4 +20,8 @@ Người ngoài booking nhận 403\. Ảnh sai định dạng/kích thước b�
 
 # Ngoài P0
 
-Video call, camera trực tiếp, streaming và cam kết phản hồi thời gian thực.  
+Video call, camera trực tiếp, streaming và cam kết phản hồi thời gian thực.
+
+# Quyết định P0
+
+[P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>) là nguồn chuẩn cho quyền theo trạng thái và thời hạn lưu. Admin chỉ đọc khi xử lý report/booking có lý do và audit.

@@ -4,7 +4,7 @@
 
 ## 1. Mục tiêu và giới hạn
 
-Bàn giao bản demo P0 khép kín bốn hành trình: khám phá dịch vụ; đăng listing và admin duyệt; đặt lịch/thanh toán sandbox; gửi report và admin xử lý. P0 còn có hồ sơ pet, Smart Match theo quy tắc, tin nhắn/cập nhật ảnh và review sau hoàn tất. Không làm tiền thật, xác minh lý lịch thật, video/camera, AI matching hoặc P1. Các giả định nghiệp vụ chưa chốt nằm trong Domain Docs; nhóm phải xác nhận trước khi code phụ thuộc vào chúng.
+Bàn giao bản demo P0 khép kín bốn hành trình: khám phá dịch vụ; đăng listing và admin duyệt; đặt lịch/thanh toán sandbox; gửi report và admin xử lý. P0 còn có hồ sơ pet, Smart Match theo quy tắc, tin nhắn/cập nhật ảnh và review sau hoàn tất. Không làm tiền thật, xác minh lý lịch thật, video/camera, AI matching hoặc P1. Các quy tắc nghiệp vụ P0 đã chốt trong [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>); chỉ chính sách ngoài sandbox và lựa chọn môi trường còn cần duyệt riêng.
 
 Stack đích: Laravel 13/PHP 8.3, Breeze API stack, Vue 3 SPA, Sanctum stateful cookie/CSRF, MySQL, Redis và Docker Compose. Filament dùng cho admin, Scramble cho OpenAPI, Pulse cho quan sát, Telescope chỉ ở local/dev. **Hiện trạng sau đợt khởi tạo lại ngày 27/10:** Laravel API shell; `frontend/` mới có `.gitkeep`; Breeze/Sanctum, Vue SPA, Filament, Scramble và Pulse chưa được cài/scaffold. Migration passkeys/2FA ngoài phạm vi đã được gỡ; baseline users/password reset/session của Laravel vẫn còn. Không có dữ liệu user từ repo cũ cần chuyển. Kế hoạch này mô tả việc cần làm trên baseline mới, không phải báo cáo đã hoàn tất. Ngày N1–N20 là mốc kế hoạch; nếu khởi động muộn, dịch toàn bộ mốc và cập nhật ngày nộp với nhóm.
 
@@ -75,4 +75,4 @@ Không tính cuối tuần là ngày phát triển. Nếu một mốc phụ thu�
 
 Đường găng: BE-T01 + BE-H01 + BE-HA02 fixture/contract → BE-T02 → BE-T03/BE-HA03 → BE-T04/BE-T05 → BE-T06 → BE-H05 → Gate BE → Vue/Filament → Gate FE → QA/deploy. Hoàng và Hào có thể phát triển search, messaging, report song song khi contract đã ổn định. Mọi thay đổi API/schema sau N15 cần có lý do lỗi chặn, reviewer của các owner liên quan và test hồi quy.
 
-Chốt ở N1–N2: công suất listing (giả định P0 là một booking đồng thời), thời hạn giữ chỗ (đề xuất 15 phút), chính sách hủy/void/refund sandbox, thời hạn owner xác nhận hoàn tất, quyền nhắn tin theo trạng thái và tiêu chí badge. Nếu chưa chốt, ghi quyết định tạm trong Domain Docs và đánh dấu issue phụ thuộc Blocked; không tự suy diễn thành quy tắc sản phẩm.
+Quy tắc P0 về công suất, giá, giữ chỗ, hủy/void/refund sandbox, owner xác nhận, chat, role caregiver và badge đã chốt trong [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>). N1–N2 kiểm tra package, hosting/storage và phân công triển khai theo contract; thay đổi quy tắc phải cập nhật Domain Docs, API và database design cùng lúc.

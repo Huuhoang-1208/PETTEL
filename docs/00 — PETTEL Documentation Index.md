@@ -19,8 +19,12 @@ Trong đề bài của thầy, “product/sản phẩm” được quy đổi th
 
 # Quyết định nền tảng
 
-Thí điểm Đà Nẵng; VND dạng số nguyên; lưu UTC, hiển thị Asia/Ho\_Chi\_Minh. P0 một thú cưng/booking và một booking đồng thời/listing. Listing ACTIVE mới công khai; người chăm duyệt yêu cầu; sau accept giữ lịch 15 phút đề xuất. MySQL là nguồn chuẩn; Redis chỉ cache/queue. Video, camera, xác minh thật và thanh toán thật ở ngoài P0.
+Thí điểm Đà Nẵng; VND dạng số nguyên; lưu UTC, hiển thị Asia/Ho\_Chi\_Minh. P0 một thú cưng/booking và một booking đồng thời/listing. Listing ACTIVE mới công khai; người chăm duyệt yêu cầu; sau accept giữ lịch 15 phút, không gia hạn khi retry. MySQL là nguồn chuẩn; Redis chỉ cache/queue. Video, camera, xác minh thật và thanh toán thật ở ngoài P0.
 
-# Cần chốt trước khi code cuối
+# Còn cần kiểm tra khi triển khai
 
-Kiểm tra tương thích Laravel 13/Breeze/Vue/Sanctum và các package đã chọn; chính sách hủy/hoàn tiền; thời hạn owner xác nhận hoàn thành; quy trình cấp badge xác minh; khả năng cơ sở nhận nhiều thú cưng cùng lúc; thời hạn lưu ảnh/tin nhắn và hosting demo. Stack đã chốt ở Technology & Tools: Breeze API + Vue 3 SPA + Sanctum; Filament, Scramble và Pulse được sử dụng trong phạm vi nêu tại đó.
+Kiểm tra tương thích Laravel 13/Breeze/Vue/Sanctum và các package đã chọn, cùng hosting/storage/email demo. Chính sách giá, hủy sandbox, hoàn tất, badge, công suất và retention đã chốt cho P0 ở tài liệu dưới. Tiền thật, xác minh thật và pháp lý thuộc phạm vi sau P0.
+
+## Quyết định P0 đã chốt
+
+[P0 Decision Contract](<02 — Domain Documentation/05 — P0 Decision Contract.md>) là nguồn chuẩn cho giá, hủy sandbox, hoàn tất, chat, role caregiver, retention và danh mục mã. [Database Design](<08 — Architecture & Technical Design/database design.md>) cụ thể hóa schema và transaction. Khi thay đổi một quy tắc P0, cập nhật đồng bộ Domain Docs, module, workflow, API Contract và Database Design.

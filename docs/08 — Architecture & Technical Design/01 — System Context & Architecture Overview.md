@@ -18,6 +18,6 @@ Tìm kiếm: Vue SPA → JSON API → cache/search query → MySQL listing ACTIV
 
 MySQL là nguồn chuẩn cho status, amount, availability và quyền sở hữu. Redis hỏng không được làm sai booking/payment; có thể chậm hoặc dừng tác vụ phụ. Mọi chuyển trạng thái có audit và idempotency key; lỗi ngoại vi không được âm thầm coi là thành công.
 
-# Quyết định cần chốt
+# Quyết định môi trường còn phụ thuộc triển khai
 
-Hosting demo, tương thích package với Laravel 13/PHP 8.3, loại storage, chính sách hủy/retention và quy trình xác minh thật. Phiên bản đề xuất ở tài liệu Technology & Tools.
+Hosting demo, tương thích package với Laravel 13/PHP 8.3 và loại storage còn phụ thuộc môi trường. Chính sách hủy/retention P0 đã chốt trong [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>); xác minh thật nằm ngoài P0. Phiên bản package ở tài liệu Technology & Tools.

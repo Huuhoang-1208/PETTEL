@@ -12,7 +12,7 @@ Booking AWAITING\_PAYMENT → tạo PaymentAttempt PENDING với amount từ pri
 
 # Release, hủy và retry
 
-Khi owner xác nhận sau AWAITING\_CONFIRMATION, release sandbox một lần; chỉ sau xác nhận thành công mới đánh dấu COMPLETED. Nếu release lỗi, giữ trạng thái chờ xử lý, log và retry idempotent. Hủy trước AUTHORIZED → VOIDED; sau AUTHORIZED trước RELEASED → REFUNDED mô phỏng theo chính sách; không hứa hoàn tiền thật. FAILED có thể thử attempt mới trong thời hạn giữ chỗ.
+Khi owner xác nhận sau AWAITING\_CONFIRMATION, release sandbox một lần; chỉ sau xác nhận thành công mới đánh dấu COMPLETED. Nếu release lỗi, giữ trạng thái chờ xử lý, log và retry idempotent. Hủy trước AUTHORIZED → VOIDED; sau AUTHORIZED trước RELEASED → REFUNDED mô phỏng trước khi booking CANCELLED; không hứa hoàn tiền thật. FAILED có thể thử attempt mới trong thời hạn giữ chỗ.
 
 # Test bắt buộc
 
@@ -20,4 +20,8 @@ Success, fail, hết hạn, duplicate/out-of-order callback, amount mismatch, ch
 
 # Hiển thị
 
-UI ghi rõ “Thanh toán mô phỏng — không trừ tiền thật”. Các từ “giữ tiền” và “giải ngân” trong proposal chỉ mô tả hành vi mong muốn ở tương lai.  
+UI ghi rõ “Thanh toán mô phỏng — không trừ tiền thật”. Các từ “giữ tiền” và “giải ngân” trong proposal chỉ mô tả hành vi mong muốn ở tương lai.
+
+# Chính sách sandbox P0
+
+[P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>) quy định hủy không phí, trạng thái được phép hủy và nhánh admin ngoại lệ. Retry release cùng idempotency key sau 1/5/15 phút; nếu tiếp tục lỗi, giữ AWAITING_CONFIRMATION và đưa hàng admin. Callback authorize sau payment_due_at không confirm, kể cả scheduler chưa chạy; nếu adapter báo đã authorize muộn, tạo tác vụ bù refund/void có audit.
