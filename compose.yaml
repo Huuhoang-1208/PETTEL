@@ -1,0 +1,104 @@
+name: pettel
+
+x-laravel: &laravel
+  build:
+    context: .
+    dockerfile: backend/Dockerfile
+    target: app
+  restart: unless-stopped
+  environment:
+    APP_NAME: ${APP_NAME:-PETTEL}
+    APP_ENV: ${APP_ENV:-local}
+    APP_KEY: ${APP_KEY:-}
+    APP_DEBUG: ${APP_DEBUG:-true}
+    APP_URL: ${APP_URL:-http://localhost:8080}
+    APP_LOCALE: ${APP_LOCALE:-vi}
+    LOG_CHANNEL: ${LOG_CHANNEL:-stack}
+    LOG_LEVEL: ${LOG_LEVEL:-debug}
+    DB_CONNECTION: mysql
+    DB_HOST: db
+    DB_PORT: 3306
+    DB_DATABASE: ${DB_DATABASE:-pettel}
+    DB_USERNAME: ${DB_USERNAME:-pettel}
+    DB_PASSWORD: ${DB_PASSWORD:-pettel-local}
+    SESSION_DRIVER: redis
+    CACHE_STORE: redis
+    QUEUE_CONNECTION: redis
+    FILESYSTEM_DISK: local
+    REDIS_CLIENT: phpredis
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+    REDIS_PASSWORD: ${REDIS_PASSWORD:-null}
+    MAIL_MAILER: log
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  volumes:
+    - app_storage:/var/www/html/storage
+
+services:
+  app:
+    <<: *laravel
+    command: ["php-fpm", "-F"]
+
+  worker:
+    <<: *laravel
+    command: ["php", "artisan", "queue:work", "redis", "--sleep=3", "--tries=3", "--timeout=90"]
+
+  scheduler:
+    <<: *laravel
+    command: ["php", "artisan", "schedule:work"]
+
+  web:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: web
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:80"
+    depends_on:
+      app:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/up"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-pettel}
+      MYSQL_USER: ${DB_USERNAME:-pettel}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-pettel-local}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-pettel-root-local}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  app_storage:
+  mysql_data:
+  redis_data:
