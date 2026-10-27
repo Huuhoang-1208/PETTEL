@@ -6,7 +6,7 @@
 
 Bàn giao bản demo P0 khép kín bốn hành trình: khám phá dịch vụ; đăng listing và admin duyệt; đặt lịch/thanh toán sandbox; gửi report và admin xử lý. P0 còn có hồ sơ pet, Smart Match theo quy tắc, tin nhắn/cập nhật ảnh và review sau hoàn tất. Không làm tiền thật, xác minh lý lịch thật, video/camera, AI matching hoặc P1. Các giả định nghiệp vụ chưa chốt nằm trong Domain Docs; nhóm phải xác nhận trước khi code phụ thuộc vào chúng.
 
-Stack đích: Laravel 13/PHP 8.3, Breeze API stack, Vue 3 SPA, Sanctum stateful cookie/CSRF, MySQL, Redis và Docker Compose. Filament dùng cho admin, Scramble cho OpenAPI, Pulse cho quan sát, Telescope chỉ ở local/dev. **Hiện trạng sau đợt dọn nền ngày 27/10:** Laravel API shell; Livewire/Fortify đã gỡ; `frontend/` mới có `.gitkeep`. Breeze/Sanctum, Vue SPA, Filament, Scramble và Pulse chưa được cài/scaffold. Kế hoạch này là việc cần làm, không phải báo cáo đã hoàn tất. Ngày N1–N20 là mốc kế hoạch; nếu khởi động muộn, dịch toàn bộ mốc và cập nhật ngày nộp với nhóm.
+Stack đích: Laravel 13/PHP 8.3, Breeze API stack, Vue 3 SPA, Sanctum stateful cookie/CSRF, MySQL, Redis và Docker Compose. Filament dùng cho admin, Scramble cho OpenAPI, Pulse cho quan sát, Telescope chỉ ở local/dev. **Hiện trạng sau đợt khởi tạo lại ngày 27/10:** Laravel API shell; `frontend/` mới có `.gitkeep`; Breeze/Sanctum, Vue SPA, Filament, Scramble và Pulse chưa được cài/scaffold. Migration passkeys/2FA ngoài phạm vi đã được gỡ; baseline users/password reset/session của Laravel vẫn còn. Không có dữ liệu user từ repo cũ cần chuyển. Kế hoạch này mô tả việc cần làm trên baseline mới, không phải báo cáo đã hoàn tất. Ngày N1–N20 là mốc kế hoạch; nếu khởi động muộn, dịch toàn bộ mốc và cập nhật ngày nộp với nhóm.
 
 ## 2. Năng lực và cách chia việc
 
@@ -14,7 +14,7 @@ Mỗi người dành 20 giờ/tuần, tổng 80 giờ/người hoặc 240 giờ 
 
 | Người | Backend tuần 1–3 | Frontend tuần 4 | QA/bàn giao tuần 4 | Reviewer chính |
 | --- | --- | --- | --- | --- |
-| Hoàng | Breeze/Sanctum, role/pet, search/Smart Match, review, Scramble và API contract | Vue nền, auth/pet, khám phá/review | Hành trình owner, truy cập và mobile | Hào |
+| Hoàng | Khởi tạo Breeze/Sanctum, role/pet, search/Smart Match, review, Scramble và API contract | Vue nền, auth/pet, khám phá/review | Hành trình owner, truy cập và mobile | Hào |
 | Thịnh | Schema/state, booking/availability, payment sandbox, idempotency | Vue booking, checkout và hoàn tất | Race/retry, payment và dữ liệu | Hoàng |
 | Hào | Docker/CI, listing, messaging/storage, report/audit, Pulse | Vue caregiver/messaging; Filament admin | Deploy, restore, README và demo | Thịnh |
 
@@ -24,22 +24,22 @@ Mỗi issue có một owner và một reviewer. Owner chịu trách nhiệm code
 
 | Mốc | Ngày | Việc phải sẵn sàng |
 | --- | --- | --- |
-| N1–N5, tuần 1 | 26–30/10 | N1 rà source và chốt stack/contract. N2 có schema/state và auth contract. N3 có pet/listing contract và fixture ACTIVE cho booking. N5 chạy được Breeze/Sanctum auth, pet, listing DRAFT và booking REQUESTED qua API. |
+| N1–N5, tuần 1 | 26–30/10 | N1 xác nhận Laravel/Docker/CI baseline và chốt contract. N2 có schema/state và auth contract. N3 có pet/listing contract và fixture ACTIVE cho booking. N5 chạy được Breeze/Sanctum auth, pet, listing DRAFT và booking REQUESTED qua API trên database mới. |
 | N6–N10, tuần 2 | 02–06/11 | N6 có listing lifecycle/availability contract để booking/search tích hợp; N9 test accept cạnh tranh. N10 demo listing được admin duyệt → search → booking → accept/expire/cancel qua API. |
 | N11–N15, tuần 3 | 09–13/11 | N11 chốt callback/payment contract; N13 có sandbox và care update; N14 tích hợp contract review/report; N15 nghiệm thu trên code hoàn chỉnh và chạy bốn workflow qua API, OpenAPI được review, CI xanh và đạt Gate BE. |
 | N16–N20, tuần 4 | 16–20/11 | Sáng N16 chốt Vue shell/API client/auth flow; N17–N18 tích hợp Vue và Filament, Gate FE cuối N18; N19–N20 kiểm thử, sửa lỗi, deploy và bàn giao. |
 
 Không tính cuối tuần là ngày phát triển. Nếu một mốc phụ thuộc trượt, issue downstream chỉ làm phần độc lập hoặc dùng fixture/contract đã chốt; không đánh dấu tích hợp hoàn tất bằng mock. Các issue và timebox chi tiết ở [Chia task](<../PETTEL%20%E2%80%94%20Task%204%20tu%E1%BA%A7n%20(A%2C%20B%2C%20C)/Chia%20task.md>).
 
-## 4. Tuần 1 — Chuyển nền backend và thiết lập dữ liệu
+## 4. Tuần 1 — Khởi tạo backend từ Laravel API shell
 
-**Hoàng:** kiểm tra auth/route hiện có, thay scaffold Livewire/Fortify bằng Breeze API theo kế hoạch chuyển đổi, cài Sanctum stateful, tạo role/Policy và pet API. Giữ migration an toàn và kiểm thử 401/403/419, CSRF, owner ID. Không xây Vue UI ở tuần này.
+**Hoàng:** khởi tạo Breeze API + Sanctum stateful trên Laravel API shell; rà User/auth config/routes/migrations để xác nhận baseline sạch và phù hợp M01. Xác định role contract, admin provisioning, session/CSRF/throttle, đăng ký/đăng nhập/đăng xuất/reset password; kiểm thử 401/403/419. Không chuyển user từ repo cũ và không xây Vue UI ở tuần này. Policy truy cập pet/listing cụ thể thuộc các issue module tương ứng.
 
-**Thịnh:** đối chiếu schema, chốt trạng thái Listing/Booking/Payment, đơn vị VND nguyên, UTC, khoảng `[start,end)`, lỗi API và idempotency. Sau khi pet/listing contract và fixture sẵn sàng, tạo booking REQUESTED và snapshot giá/chính sách/hướng dẫn.
+**Thịnh:** thiết kế schema mới, chốt trạng thái Listing/Booking/Payment, đơn vị VND nguyên, UTC, khoảng `[start,end)`, lỗi API và idempotency. Sau khi pet/listing contract và fixture sẵn sàng, tạo booking REQUESTED và snapshot giá/chính sách/hướng dẫn.
 
 **Hào:** hoàn thiện Compose/CI/test DB/seed; tạo caregiver profile và listing DRAFT API, fixture listing ACTIVE riêng cho test. Công bố listing/availability contract cho Hoàng và Thịnh. Kiểm tra `composer` tương thích với Breeze, Sanctum, Filament, Scramble, Pulse; pin phiên bản khi cài.
 
-**Gate tuần 1 (N5):** clone/build/chạy theo hướng dẫn; migration và seed lặp được; auth/pet/listing DRAFT/booking REQUESTED chạy qua API; người ngoài không sửa dữ liệu; ba owner thống nhất contract, state và lỗi. Booking được kiểm bằng fixture ACTIVE, chưa yêu cầu màn hình admin.
+**Gate tuần 1 (N5):** clone/build/chạy theo hướng dẫn trên database mới; migration và seed lặp được; auth/pet/listing DRAFT/booking REQUESTED chạy qua API; người ngoài không sửa dữ liệu; ba owner thống nhất contract, state và lỗi. Booking được kiểm bằng fixture ACTIVE, chưa yêu cầu màn hình admin.
 
 ## 5. Tuần 2 — Nghiệp vụ lõi
 

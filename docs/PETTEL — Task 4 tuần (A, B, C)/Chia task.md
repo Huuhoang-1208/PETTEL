@@ -48,7 +48,7 @@ Trong phạm vi: tài khoản/quyền, pet, caregiver/listing, tìm kiếm/Smart
 
 Để sau: video/camera, AI matching, xác minh lý lịch thật, thanh toán thật và tính năng P1.
 
-Sau đợt dọn nền ngày 27/10, backend là Laravel API shell, Livewire/Fortify đã gỡ; `frontend/` chỉ có `.gitkeep`. BE-H01 phải cài Breeze API + Sanctum; FE-H01 tạo Vue SPA. Các issue mô tả việc cần làm, không phải tiến độ đã hoàn thành. Đầu N1 kiểm kê phần đã có và ghi kết quả vào issue; chỉ bổ sung phần cần thiết kèm kiểm tra hồi quy.
+Hiện trạng sau đợt khởi tạo lại ngày 27/10: `backend/` là Laravel 13 API shell, `frontend/` chỉ có `.gitkeep`; Breeze API, Sanctum, Vue SPA, Filament, Scramble và Pulse chưa được cài. Migration passkeys/2FA mồ côi đã được gỡ khỏi source; migration nền users/password reset/session của Laravel vẫn còn. Không có dữ liệu user từ repo cũ cần chuyển hoặc bảo toàn. BE-H01 cài Breeze API + Sanctum trên baseline mới; FE-H01 tạo Vue SPA. Các issue mô tả việc cần làm, không phải tiến độ đã hoàn thành. N1 xác nhận baseline Laravel, migration, Docker và CI để giao việc đúng; không chuyển thành công việc thay thế một auth scaffold cũ.
 
 Mã issue dưới đây là mã kế hoạch. Khi đưa lên tracker, tìm issue tương đương để cập nhật hoặc liên kết, tránh tạo trùng.
 
@@ -68,7 +68,7 @@ Không hai người sửa cùng file dùng chung đồng thời. N2 Thịnh côn
 
 # 4\. Các quyết định cần chốt đầu tuần 1
 
-* Xác nhận Laravel 13/PHP 8.3, Breeze API + Vue SPA + Sanctum và phiên bản tương thích của Filament, Scramble, Pulse.
+* Kiểm tra tương thích và chốt phiên bản Breeze API, Sanctum, Filament, Scramble, Pulse với Laravel 13/PHP 8.3; lưu dependency lockfile. Stack Laravel 13 + Breeze API + Vue SPA + Sanctum đã được chọn.
 * Một pet/booking, công suất listing và thời hạn giữ chỗ; tài liệu đang đề xuất công suất một và giữ chỗ 15 phút.  
 * Chính sách hủy, void/refund sandbox và xử lý callback đến sau khi hết hạn.  
 * Thời hạn owner xác nhận hoàn tất; cách xử lý release sandbox thất bại.  
@@ -104,13 +104,13 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 ## Tuần 1 — Nền tảng backend
 
-### BE-H01 — Identity, đăng nhập và phân quyền
+### BE-H01 — Khởi tạo xác thực, Identity và phân quyền
 
 **Owner:** Hoàng \| **Reviewer:** Hào
 
 **Lịch:** N1–N3 \| **Timebox:** 10 giờ
 
-**Phụ thuộc:** Chốt cơ chế auth và ma trận quyền
+**Phụ thuộc:** BE-T01 chốt cấu trúc users/roles; nhóm chốt ma trận quyền và origin/session của SPA
 
 **Phạm vi:** M01 — Identity & Roles
 
@@ -118,13 +118,15 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Tasks to do:**
 
-☐ Kiểm kê Livewire/Fortify, route và migration hiện có; thay auth scaffold bằng Breeze API, giữ dữ liệu user và test hồi quy. Hoàn thiện đăng ký, đăng nhập, đăng xuất và khôi phục mật khẩu theo phạm vi đã chốt.
+☐ Xác nhận baseline auth sạch: `User`, auth config, routes và migration users/password reset/session khớp M01; không đưa passkeys/2FA ngoài phạm vi P0 trở lại. Không backfill user từ repo cũ.
 
-☐ Cài Breeze API + Sanctum stateful; áp dụng session, CSRF, giới hạn đăng nhập và policy owner/caregiver/admin; admin không được cấp qua tự đăng ký.
+☐ Cài Breeze API stack tương thích Laravel 13 và Sanctum; hoàn thiện đăng ký, đăng nhập, đăng xuất, đặt lại mật khẩu, session cookie, CSRF và throttle login/reset. Email verification chỉ bật nếu nhóm chốt được luồng gửi mail.
 
-☐ Test chưa đăng nhập, sai quyền, truy cập dữ liệu người khác và đăng xuất.
+☐ Thiết lập role/auth contract: đăng ký công khai không nhận role tùy ý và không thể tạo admin; cấp admin qua quy trình tin cậy, seed chỉ dùng cho demo. Một user có thể đồng thời là owner và caregiver. Tạo guard/policy nền; policy theo từng tài nguyên do issue module tương ứng hoàn thiện.
 
-**Acceptance criteria:** Breeze/Sanctum auth hoạt động qua cookie/session; login có CSRF, API riêng tư trả 401 khi hết session, thao tác sai quyền trả 403, CSRF sai trả 419; người dùng không tự nâng quyền; không lưu bearer token trong SPA.
+☐ Viết feature test cho đăng ký/login/logout/reset password, session hết hạn, CSRF hợp lệ/sai (419), API riêng tư không session (401), role không đủ quyền (403), chống tự gán admin và thông báo reset không tiết lộ email có tồn tại. Kiểm thử truy cập dữ liệu người khác thuộc BE-H02/BE-HA02.
+
+**Acceptance criteria:** Migration thuộc scope auth chạy được trên database trống; không có migration auth ngoài phạm vi đã chọn. Breeze/Sanctum xác thực SPA bằng cookie/session và CSRF; logout hủy session; API riêng tư trả 401 khi chưa đăng nhập/hết session, thao tác sai quyền trả 403, CSRF sai trả 419. User mới mặc định là owner; payload đăng ký không thể tự cấp caregiver/admin; admin chỉ được cấp qua quy trình tin cậy. Password reset có throttle và phản hồi không tiết lộ tài khoản tồn tại. SPA không lưu bearer token.
 
 ### BE-T01 — Chốt schema, trạng thái và hợp đồng nghiệp vụ
 
@@ -132,7 +134,7 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Lịch:** N1–N2 \| **Timebox:** 8 giờ
 
-**Phụ thuộc:** Kickoff và kiểm tra schema hiện có
+**Phụ thuộc:** Kickoff và xác nhận baseline Laravel; chưa có schema nghiệp vụ hoặc dữ liệu user cần kế thừa
 
 **Phạm vi:** Schema chung; Booking/Payment
 
@@ -140,13 +142,13 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Tasks to do:**
 
-☐ Đối chiếu schema hiện có; thống nhất quan hệ users, pets, listings, bookings, payments và các bảng liên quan với owner.
+☐ Thiết kế schema mới và thống nhất quan hệ users/roles, pets, listings, bookings, payments cùng các bảng liên quan với owner.
 
 ☐ Chốt trạng thái, quyền chuyển trạng thái, khoảng thời gian \[start,end), tiền VND nguyên và thời gian UTC.
 
 ☐ Phân lịch migration; thống nhất validation, lỗi, idempotency và ghi lại quyết định nghiệp vụ.
 
-**Acceptance criteria:** Có sơ đồ dữ liệu và bảng trạng thái thống nhất; migration không phá dữ liệu hiện có; các quyết định chưa chốt được ghi rõ cùng issue phụ thuộc.
+**Acceptance criteria:** Có sơ đồ dữ liệu và bảng trạng thái thống nhất; migration chạy được từ database trống và không phụ thuộc dữ liệu/schema của repo cũ; quyết định chưa chốt được ghi rõ cùng issue phụ thuộc.
 
 ### BE-HA01 — Môi trường chạy, CI và dữ liệu mẫu
 
@@ -522,11 +524,11 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 ☐ Dựng Vue SPA shell/router/API client; chốt layout, điều hướng theo vai trò, thành phần form và cách hiển thị lỗi dùng chung sáng N16.
 
-☐ Làm giao diện auth và quản lý pet bằng JSON API đã nghiệm thu; xử lý 401/419 và CSRF cookie.
+☐ Làm giao diện đăng ký, đăng nhập, đăng xuất, yêu cầu/hoàn tất đặt lại mật khẩu và quản lý pet bằng JSON API đã nghiệm thu; xử lý 401/419 và CSRF cookie.
 
 ☐ Kiểm tra mobile, bàn phím, validation, phiên hết hạn/419 và thao tác trái quyền.
 
-**Acceptance criteria:** Vue đăng nhập bằng Sanctum cookie/CSRF và quản lý pet qua JSON API; 401/419 được xử lý rõ; các owner khác tái sử dụng được shell/API client.
+**Acceptance criteria:** Owner đăng ký, đăng nhập, đăng xuất, đặt lại mật khẩu và quản lý pet qua Sanctum cookie/CSRF API; 401/419 được xử lý rõ; các owner khác tái sử dụng được shell/API client.
 
 ### FE-T01 — Giao diện tạo và quản lý booking
 
