@@ -30,6 +30,11 @@ x-laravel: &laravel
     REDIS_PORT: 6379
     REDIS_PASSWORD: ${REDIS_PASSWORD:-null}
     MAIL_MAILER: log
+    FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8080}
+    SANCTUM_STATEFUL_DOMAINS: ${SANCTUM_STATEFUL_DOMAINS:-localhost:8080,127.0.0.1:8080}
+    SESSION_DOMAIN: ${SESSION_DOMAIN:-null}
+    SESSION_SECURE_COOKIE: ${SESSION_SECURE_COOKIE:-false}
+    REDIS_QUEUE_RETRY_AFTER: ${REDIS_QUEUE_RETRY_AFTER:-90}
   depends_on:
     db:
       condition: service_healthy
@@ -45,8 +50,8 @@ services:
 
   worker:
     <<: *laravel
-    command: ["php", "artisan", "queue:work", "redis", "--sleep=3", "--tries=3", "--timeout=90"]
-
+    stop_grace_period: 75s
+    command: ["php", "artisan", "queue:work", "redis", "--sleep=3", "--tries=3", "--timeout=60"]
   scheduler:
     <<: *laravel
     command: ["php", "artisan", "schedule:work"]
