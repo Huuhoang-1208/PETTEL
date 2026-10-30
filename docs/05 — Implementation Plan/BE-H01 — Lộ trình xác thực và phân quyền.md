@@ -2,7 +2,7 @@
 
 **Nguồn:** [GitHub issue #1](https://github.com/Huuhoang-1208/PETTEL/issues/1) · **Owner:** Hoàng · **Reviewer:** Hào · **Mốc kế hoạch:** N1–N3 · **Timebox:** 10 người-giờ, gồm ít nhất 1 giờ review.
 
-Tài liệu này là lộ trình thực hiện issue, **không phải báo cáo đã triển khai**. Ngày N1–N3 theo [kế hoạch 4 tuần](<05 — Kế hoạch 4 tuần — Backend trước, frontend sau.md>); nếu lịch khởi động đổi, dịch mốc cùng toàn dự án. Schema M01 lấy từ [Database Design — PETTEL P0](<../08 — Architecture & Technical Design/database design.md>) và các quyền P0 lấy từ [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>). Phạm vi BE-H01 là xác thực, schema Identity và hợp đồng quyền nền. Policy theo tài nguyên và kiểm thử truy cập dữ liệu người khác được hoàn thiện trong BE-H02, BE-HA02 và các issue module tương ứng.
+Tài liệu này là lộ trình thực hiện issue, **không phải báo cáo đã triển khai**. Ngày N1–N3 theo [kế hoạch 4 tuần](<05 — Kế hoạch 4 tuần — Backend trước, frontend sau.md>); nếu lịch khởi động đổi, dịch mốc cùng toàn dự án. Schema M01 lấy từ [Database Design — PETTEL P0](<../08 — Architecture & Technical Design/database design.md>) và các quyền P0 lấy từ [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>). Phạm vi BE-H01 là xác thực, schema Identity và hợp đồng quyền nền. Policy theo tài nguyên và kiểm thử truy cập dữ liệu người khác được hoàn thiện trong BE-T02, BE-H02, BE-HA02 và các issue module tương ứng.
 
 **Cập nhật 27/10/2026:** Breeze API + Sanctum, schema Identity, đăng ký OWNER, tự bật CAREGIVER có audit, middleware kiểm tra role và lệnh CLI cấp/thu hồi ADMIN đã được triển khai. 15 feature test đạt. MySQL 8.4 migration up/down/up đạt; kiểm tra HTTP tạm xác nhận `/sanctum/csrf-cookie` và đăng ký có CSRF trả 204, request thiếu CSRF trả 419. Chưa có reviewer sign-off; policy riêng cho booking/report và xử lý đầy đủ `DELETION_PENDING` thuộc issue downstream.
 
@@ -50,7 +50,7 @@ Nếu origin/session, mail hoặc migration audit dùng chung chưa sẵn sàng,
 - [x] Password reset có throttle và phản hồi không tiết lộ email tồn tại; email verification chưa bật do luồng mail chưa được chốt.
 - [ ] Hào review; ghi commit/PR, môi trường, lệnh test, expected/actual, kết quả và giới hạn còn lại. Chỉ đánh dấu Done sau review và tích hợp theo quy tắc backlog.
 
-**Bàn giao phụ thuộc:** BE-H02 và BE-HA02 nhận contract quyền ở N2, nghiệm thu sau BE-H01 N3. FE-H01 nhận API auth/session/CSRF đã nghiệm thu ở Gate BE, rồi mới dựng Vue auth UI trong tuần 4. Kiểm thử IDOR của pet/listing, Policy theo booking/message/review/report, Filament admin UI và quyền đọc dữ liệu riêng tư thuộc issue module sau.
+**Bàn giao phụ thuộc:** BE-T02, BE-H02 và BE-HA02 nhận contract quyền ở N2, nghiệm thu sau BE-H01 N3. FE-H01 nhận API auth/session/CSRF đã nghiệm thu ở Gate BE, rồi mới dựng Vue auth UI trong tuần 4. Kiểm thử IDOR của pet/listing, Policy theo booking/message/review/report, Filament admin UI và quyền đọc dữ liệu riêng tư thuộc issue module sau.
 
 ## Tài liệu đối chiếu
 

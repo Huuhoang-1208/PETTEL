@@ -56,15 +56,15 @@ Mã issue dưới đây là mã kế hoạch. Khi đưa lên tracker, tìm issue
 
 | Thành viên | Trách nhiệm chính | Reviewer |
 | :---- | :---- | :---- |
-| **Hoàng** | Identity, pet, search, Smart Match, review; giao diện chung và chủ nuôi | Hào |
-| **Thịnh** | Schema nghiệp vụ, booking, chống trùng lịch, payment; giao diện đặt lịch | Hoàng |
-| **Hào** | Listing, messaging, report/admin, hạ tầng; giao diện người chăm/quản trị | Thịnh |
+| **Hoàng** | Identity, tạo booking, search, Smart Match, review; giao diện chung và chủ nuôi | Hào |
+| **Thịnh** | Schema nghiệp vụ, pet, listing/lịch, care update, report/admin; giao diện đặt lịch | Hoàng |
+| **Hào** | Hạ tầng, nhận booking, messaging, payment sandbox/completion; giao diện người chăm/quản trị | Thịnh |
 
 Quy ước mã issue: **H \= Hoàng**, **T \= Thịnh**, **HA \= Hào**. Ví dụ: BE-H01 thuộc Hoàng; BE-T01 thuộc Thịnh; BE-HA01 thuộc Hào.
 
 Hoàng điều phối bố cục và thành phần frontend dùng chung sau Gate BE. Thịnh điều phối schema và thứ tự migration; mỗi owner viết migration của module mình. Hào điều phối môi trường chạy và CI.
 
-Không hai người sửa cùng file dùng chung đồng thời. N2 Thịnh công bố schema/state; N3 Hoàng và Hào công bố pet/listing contract và fixture ACTIVE để Thịnh làm booking; N6 Hào công bố availability/listing lifecycle contract; N11 Thịnh công bố payment callback contract; sáng N16 Hoàng bàn giao Vue shell/API client. Thay đổi input/output phải báo owner liên quan và cập nhật OpenAPI trước khi tích hợp.
+Không hai người sửa cùng file dùng chung đồng thời. N2 Thịnh công bố schema/state; N3 Thịnh công bố pet contract, Hoàng làm booking theo fixture pet/listing ACTIVE; N6 Thịnh công bố availability/listing lifecycle contract, Hào tích hợp nhận booking; N11 Hào công bố payment callback contract; sáng N16 Hoàng bàn giao Vue shell/API client. Thay đổi input/output phải báo owner liên quan và cập nhật OpenAPI trước khi tích hợp.
 
 # 4\. Quyết định P0 và việc cần kiểm tra đầu tuần 1
 
@@ -72,7 +72,7 @@ Các quy tắc sản phẩm P0 đã chốt trong [P0 Decision Contract](<../02 �
 
 Đầu tuần 1 còn phải kiểm tra tương thích và chốt phiên bản Breeze API, Sanctum, Filament, Scramble, Pulse với Laravel 13/PHP 8.3; lưu dependency lockfile. Cần chốt môi trường demo, storage và kênh gửi email thực tế trước khi tích hợp. Chính sách tiền thật, xác minh thật và tuân thủ pháp lý nằm ngoài P0.
 
-Hoàng chuẩn bị quyền và dữ liệu pet; Thịnh chuẩn bị booking/payment; Hào chuẩn bị listing, storage và quản trị. Khi đổi contract, cả ba cập nhật tài liệu liên quan trước khi code phụ thuộc.
+Hoàng chuẩn bị auth và booking; Thịnh chuẩn bị schema, pet, listing/lịch và dữ liệu care/report; Hào chuẩn bị môi trường, nhận booking, messaging và payment. Khi đổi contract, cả ba cập nhật tài liệu liên quan trước khi code phụ thuộc.
 
 # 5\. Cổng kiểm tra
 
@@ -119,7 +119,7 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 ☐ Thiết lập role/auth contract: đăng ký công khai không nhận role tùy ý và không thể tạo admin; cấp admin qua quy trình tin cậy, seed chỉ dùng cho demo. Một user có thể đồng thời là owner và caregiver. Tạo guard/policy nền; policy theo từng tài nguyên do issue module tương ứng hoàn thiện.
 
-☐ Viết feature test cho đăng ký/login/logout/reset password, session hết hạn, CSRF hợp lệ/sai (419), API riêng tư không session (401), role không đủ quyền (403), chống tự gán admin và thông báo reset không tiết lộ email có tồn tại. Kiểm thử truy cập dữ liệu người khác thuộc BE-H02/BE-HA02.
+☐ Viết feature test cho đăng ký/login/logout/reset password, session hết hạn, CSRF hợp lệ/sai (419), API riêng tư không session (401), role không đủ quyền (403), chống tự gán admin và thông báo reset không tiết lộ email có tồn tại. Kiểm thử truy cập dữ liệu người khác thuộc BE-T02/BE-HA02.
 
 **Acceptance criteria:** Migration thuộc scope auth chạy được trên database trống; không có migration auth ngoài phạm vi đã chọn. Breeze/Sanctum xác thực SPA bằng cookie/session và CSRF; logout hủy session; API riêng tư trả 401 khi chưa đăng nhập/hết session, thao tác sai quyền trả 403, CSRF sai trả 419. User mới mặc định là owner; payload đăng ký không thể tự cấp caregiver/admin; admin chỉ được cấp qua quy trình tin cậy. Password reset có throttle và phản hồi không tiết lộ tài khoản tồn tại. SPA không lưu bearer token.
 
@@ -167,9 +167,9 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Acceptance criteria:** Thành viên chạy được dự án theo README; migration/seed/test tái lập được; test không tác động database demo.
 
-### BE-H02 — Quản lý hồ sơ thú cưng và quyền dữ liệu
+### BE-T02 — Quản lý hồ sơ thú cưng và quyền dữ liệu
 
-**Owner:** Hoàng \| **Reviewer:** Hào
+**Owner:** Thịnh \| **Reviewer:** Hào
 
 **Lịch:** N3–N5 \| **Timebox:** 8 giờ
 
@@ -177,7 +177,7 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Phạm vi:** M02 — Pet Profiles
 
-**Branch đề xuất:** codex/4w-be-h02
+**Branch đề xuất:** codex/4w-be-t02
 
 **Tasks to do:**
 
@@ -189,17 +189,17 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Acceptance criteria:** Owner quản lý nhiều pet của mình; người ngoài không đọc hồ sơ riêng; pet có lịch sử booking không bị xóa cứng.
 
-### BE-T02 — Tạo booking và lưu snapshot
+### BE-H02 — Tạo booking và lưu snapshot
 
-**Owner:** Thịnh \| **Reviewer:** Hoàng
+**Owner:** Hoàng \| **Reviewer:** Thịnh
 
 **Lịch:** N4–N5 \| **Timebox:** 8 giờ
 
-**Phụ thuộc:** BE-T01; auth contract từ BE-H01 và pet/listing contract + fixture ACTIVE từ BE-H02/BE-HA02 công bố N3. Nghiệm thu tích hợp sau khi BE-H02/BE-HA02 hoàn tất N5
+**Phụ thuộc:** BE-T01; auth contract từ BE-H01 và pet/listing contract + fixture ACTIVE từ BE-T02/BE-HA02 công bố N3. Nghiệm thu tích hợp sau khi BE-T02/BE-HA02 hoàn tất N5
 
 **Phạm vi:** M05 — Booking creation
 
-**Branch đề xuất:** codex/4w-be-t02
+**Branch đề xuất:** codex/4w-be-h02
 
 **Tasks to do:**
 
@@ -241,7 +241,7 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Lịch:** N6–N8 \| **Timebox:** 8 giờ
 
-**Phụ thuộc:** BE-HA02; tích hợp BE-HA03 trước nghiệm thu
+**Phụ thuộc:** BE-T03/BE-HA02; tích hợp BE-HA03 trước nghiệm thu
 
 **Phạm vi:** M04 — Discovery & Search
 
@@ -257,17 +257,17 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Acceptance criteria:** Kết quả đúng bộ lọc và quyền công khai; không lộ dữ liệu pet; danh sách và chi tiết áp dụng cùng quy tắc hiển thị.
 
-### BE-T03 — Nhận/từ chối booking và chống trùng lịch
+### BE-HA03 — Nhận/từ chối booking và chống trùng lịch
 
-**Owner:** Thịnh \| **Reviewer:** Hoàng
+**Owner:** Hào \| **Reviewer:** Hoàng
 
 **Lịch:** N7–N9 \| **Timebox:** 10 giờ
 
-**Phụ thuộc:** BE-T02; availability/listing lifecycle contract từ BE-HA03 công bố N6. Nghiệm thu tích hợp sau BE-HA03
+**Phụ thuộc:** BE-H02; availability/listing lifecycle contract từ BE-T03 công bố N6. Nghiệm thu tích hợp sau BE-T03
 
 **Phạm vi:** M05 — Booking acceptance
 
-**Branch đề xuất:** codex/4w-be-t03
+**Branch đề xuất:** codex/4w-be-ha03
 
 **Tasks to do:**
 
@@ -279,17 +279,17 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Acceptance criteria:** Hai REQUESTED có thể trùng nhưng chỉ một được accept khi lịch xung đột; thao tác còn lại nhận lỗi rõ; không tồn tại trạng thái ghi dở.
 
-### BE-HA03 — Duyệt listing và lịch khả dụng
+### BE-T03 — Duyệt listing và lịch khả dụng
 
-**Owner:** Hào \| **Reviewer:** Thịnh
+**Owner:** Thịnh \| **Reviewer:** Hào
 
 **Lịch:** N6–N8 \| **Timebox:** 10 giờ
 
-**Phụ thuộc:** BE-HA02, BE-H01 và trạng thái từ BE-T01; công bố availability contract N6 cho BE-T03/BE-H03
+**Phụ thuộc:** BE-HA02, BE-H01 và trạng thái từ BE-T01; công bố availability contract N6 cho BE-HA03/BE-H03
 
 **Phạm vi:** M03 — Listing lifecycle & availability
 
-**Branch đề xuất:** codex/4w-be-ha03
+**Branch đề xuất:** codex/4w-be-t03
 
 **Tasks to do:**
 
@@ -307,7 +307,7 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Lịch:** N8–N10 \| **Timebox:** 8 giờ
 
-**Phụ thuộc:** BE-H02, BE-H03
+**Phụ thuộc:** BE-T02, BE-H03
 
 **Phạm vi:** M04 — Smart Match
 
@@ -329,7 +329,7 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Lịch:** N9–N10 \| **Timebox:** 6 giờ
 
-**Phụ thuộc:** BE-T03 công bố accept/expiry contract đầu N9 và tích hợp cuối N9; áp dụng thời hạn/chính sách hủy trong P0 Decision Contract
+**Phụ thuộc:** BE-HA03 công bố accept/expiry contract đầu N9 và tích hợp cuối N9; áp dụng thời hạn/chính sách hủy trong P0 Decision Contract
 
 **Phạm vi:** M05 — Expiry & cancellation
 
@@ -351,7 +351,7 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Lịch:** N9–N10 \| **Timebox:** 6 giờ
 
-**Phụ thuộc:** BE-T02, BE-HA01; chốt quyền nhắn tin theo trạng thái
+**Phụ thuộc:** BE-H02, BE-HA01; chốt quyền nhắn tin theo trạng thái
 
 **Phạm vi:** M07 — Messaging & Storage
 
@@ -375,7 +375,7 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Lịch:** N11–N15 \| **Timebox:** 8 giờ
 
-**Phụ thuộc:** Trạng thái từ BE-T01 và fixture COMPLETED cho test; tích hợp BE-T06 trước nghiệm thu N15
+**Phụ thuộc:** Trạng thái từ BE-T01 và fixture COMPLETED cho test; tích hợp BE-HA06 trước nghiệm thu N15
 
 **Phạm vi:** M08 — Reviews & Trust Signals
 
@@ -391,17 +391,17 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Acceptance criteria:** Không review trước hoàn tất hoặc tạo trùng; review bị ẩn không tính điểm; dữ liệu seed được nhận diện là minh họa.
 
-### BE-T05 — Payment sandbox và callback idempotent
+### BE-HA05 — Payment sandbox và callback idempotent
 
-**Owner:** Thịnh \| **Reviewer:** Hoàng
+**Owner:** Hào \| **Reviewer:** Thịnh
 
 **Lịch:** N11–N13 \| **Timebox:** 10 giờ
 
-**Phụ thuộc:** BE-T03, BE-T04; chốt quy tắc callback đến muộn
+**Phụ thuộc:** BE-HA03, BE-T04; chốt quy tắc callback đến muộn
 
 **Phạm vi:** M06 — Payment Sandbox
 
-**Branch đề xuất:** codex/4w-be-t05
+**Branch đề xuất:** codex/4w-be-ha05
 
 **Tasks to do:**
 
@@ -413,17 +413,17 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Acceptance criteria:** Chỉ callback hợp lệ đổi trạng thái; không authorize hai lần; payment lỗi không xác nhận booking; toàn bộ là tiền mô phỏng.
 
-### BE-HA05 — Ảnh cập nhật chăm sóc và bảo vệ dữ liệu
+### BE-T05 — Ảnh cập nhật chăm sóc và bảo vệ dữ liệu
 
-**Owner:** Hào \| **Reviewer:** Thịnh
+**Owner:** Thịnh \| **Reviewer:** Hoàng
 
 **Lịch:** N11–N15 \| **Timebox:** 6 giờ
 
-**Phụ thuộc:** BE-HA04; trạng thái từ BE-T01 và tích hợp BE-T06
+**Phụ thuộc:** BE-HA04; trạng thái từ BE-T01 và tích hợp BE-HA06
 
 **Phạm vi:** M07 — Care Updates
 
-**Branch đề xuất:** codex/4w-be-ha05
+**Branch đề xuất:** codex/4w-be-t05
 
 **Tasks to do:**
 
@@ -457,17 +457,17 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Acceptance criteria:** OpenAPI Scramble khớp endpoint đã test và nêu rõ quyền/lỗi/state; Gate BE chỉ đạt khi đủ điều kiện ở mục 5 và cả ba xác nhận bằng commit, kết quả CI và checklist. Nếu chưa đạt, frontend tiếp tục Blocked.
 
-### BE-T06 — Vòng đời chăm sóc và release/void/refund
+### BE-HA06 — Vòng đời chăm sóc và release/void/refund
 
-**Owner:** Thịnh \| **Reviewer:** Hoàng
+**Owner:** Hào \| **Reviewer:** Thịnh
 
 **Lịch:** N13–N15 \| **Timebox:** 6 giờ
 
-**Phụ thuộc:** BE-T05; chính sách hoàn tất và hủy đã chốt
+**Phụ thuộc:** BE-HA05; chính sách hoàn tất và hủy đã chốt
 
 **Phạm vi:** M05/M06 — Completion & settlement sandbox
 
-**Branch đề xuất:** codex/4w-be-t06
+**Branch đề xuất:** codex/4w-be-ha06
 
 **Tasks to do:**
 
@@ -479,9 +479,9 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Acceptance criteria:** COMPLETED chỉ khi owner xác nhận và release sandbox thành công; lỗi release không bị coi là hoàn tất; retry không release hai lần.
 
-### BE-HA06 — Report, quản trị, audit và tác vụ nền
+### BE-T06 — Report, quản trị, audit và tác vụ nền
 
-**Owner:** Hào \| **Reviewer:** Thịnh
+**Owner:** Thịnh \| **Reviewer:** Hoàng
 
 **Lịch:** N13–N15 \| **Timebox:** 10 giờ
 
@@ -489,7 +489,7 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Phạm vi:** M09 — Reports & Admin; vận hành backend
 
-**Branch đề xuất:** codex/4w-be-ha06
+**Branch đề xuất:** codex/4w-be-t06
 
 **Tasks to do:**
 
@@ -509,7 +509,7 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Lịch:** N16–N17 \| **Timebox:** 6 giờ
 
-**Phụ thuộc:** Gate BE đạt; BE-H01, BE-H02. Bàn giao Vue shell/router/API client sáng N16 cho FE-T01 và FE-HA01
+**Phụ thuộc:** Gate BE đạt; BE-H01, BE-T02. Bàn giao Vue shell/router/API client sáng N16 cho FE-T01 và FE-HA01
 
 **Phạm vi:** Layout, auth và pet UI
 
@@ -531,7 +531,7 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Lịch:** N17 \| **Timebox:** 6 giờ
 
-**Phụ thuộc:** Gate BE đạt; BE-T02–BE-T04; Vue shell/API client từ FE-H01 bàn giao N16
+**Phụ thuộc:** Gate BE đạt; BE-H02, BE-HA03, BE-T04; Vue shell/API client từ FE-H01 bàn giao N16
 
 **Phạm vi:** Booking UI cho owner/caregiver
 
@@ -553,7 +553,7 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Lịch:** N17 \| **Timebox:** 6 giờ
 
-**Phụ thuộc:** Gate BE đạt; BE-HA02, BE-HA03; Vue shell/API client từ FE-H01 bàn giao N16
+**Phụ thuộc:** Gate BE đạt; BE-HA02, BE-T03; Vue shell/API client từ FE-H01 bàn giao N16
 
 **Phạm vi:** Caregiver và listing moderation UI
 
@@ -563,7 +563,7 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 ☐ Trang hồ sơ người chăm, tạo/sửa/gửi duyệt listing và lịch khả dụng.
 
-☐ Dùng Filament đã cài ở BE-HA06 để làm trang duyệt/từ chối/suspend qua service/action và Policy backend, ghi audit; xác nhận panel chỉ admin mở được.
+☐ Dùng Filament đã cài ở BE-T06 để làm trang duyệt/từ chối/suspend qua service/action và Policy backend, ghi audit; xác nhận panel chỉ admin mở được.
 
 ☐ Hiển thị lý do từ chối, trạng thái duyệt lại, lỗi lịch/ảnh và dữ liệu rỗng.
 
@@ -597,7 +597,7 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Lịch:** N18 \| **Timebox:** 6 giờ
 
-**Phụ thuộc:** FE-T01 được tích hợp cuối N17; BE-T05, BE-T06
+**Phụ thuộc:** FE-T01 được tích hợp cuối N17; BE-HA05, BE-HA06
 
 **Phạm vi:** Payment và lifecycle UI
 
@@ -619,7 +619,7 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Lịch:** N18 \| **Timebox:** 6 giờ
 
-**Phụ thuộc:** FE-HA01 được tích hợp cuối N17; BE-HA04–BE-HA06
+**Phụ thuộc:** FE-HA01 được tích hợp cuối N17; BE-HA04, BE-T05, BE-T06
 
 **Phạm vi:** Messaging, care updates và report UI
 
