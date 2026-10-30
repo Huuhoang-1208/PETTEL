@@ -14,9 +14,9 @@ Mỗi người dành 20 giờ/tuần, tổng 80 giờ/người hoặc 240 giờ 
 
 | Người | Backend tuần 1–3 | Frontend tuần 4 | QA/bàn giao tuần 4 | Reviewer chính |
 | --- | --- | --- | --- | --- |
-| Hoàng | Khởi tạo Breeze/Sanctum, role/pet, search/Smart Match, review, Scramble và API contract | Vue nền, auth/pet, khám phá/review | Hành trình owner, truy cập và mobile | Hào |
-| Thịnh | Schema/state, booking/availability, payment sandbox, idempotency | Vue booking, checkout và hoàn tất | Race/retry, payment và dữ liệu | Hoàng |
-| Hào | Docker/CI, listing, messaging/storage, report/audit, Pulse | Vue caregiver/messaging; Filament admin | Deploy, restore, README và demo | Thịnh |
+| Hoàng | Breeze/Sanctum, tạo booking, search/Smart Match, review, Scramble và API contract | Vue nền, auth/pet, khám phá/review | Hành trình owner, truy cập và mobile | Hào |
+| Thịnh | Schema/state, hồ sơ pet, listing/lịch, giữ chỗ/hủy, care update, report/audit | Vue booking, checkout và hoàn tất | Race/retry, payment và dữ liệu | Hoàng |
+| Hào | Docker/CI, caregiver/listing DRAFT, nhận booking, messaging/storage, payment sandbox, vòng đời hoàn tất, Pulse | Vue caregiver/messaging; Filament admin | Deploy, restore, README và demo | Thịnh |
 
 Mỗi issue có một owner và một reviewer. Owner chịu trách nhiệm code, test và bằng chứng; reviewer kiểm tra quyền, trạng thái, dữ liệu và khả năng tích hợp. Quyết định schema/API chung được chốt trước khi các owner triển khai song song. Không hai người sửa cùng file dùng chung cùng lúc.
 
@@ -35,7 +35,9 @@ Không tính cuối tuần là ngày phát triển. Nếu một mốc phụ thu�
 
 **Hoàng:** khởi tạo Breeze API + Sanctum stateful trên Laravel API shell; rà User/auth config/routes/migrations để xác nhận baseline sạch và phù hợp M01. Xác định role contract, admin provisioning, session/CSRF/throttle, đăng ký/đăng nhập/đăng xuất/reset password; kiểm thử 401/403/419. Không chuyển user từ repo cũ và không xây Vue UI ở tuần này. Policy truy cập pet/listing cụ thể thuộc các issue module tương ứng.
 
-**Thịnh:** thiết kế schema mới, chốt trạng thái Listing/Booking/Payment, đơn vị VND nguyên, UTC, khoảng `[start,end)`, lỗi API và idempotency. Sau khi pet/listing contract và fixture sẵn sàng, tạo booking REQUESTED và snapshot giá/chính sách/hướng dẫn.
+**Thịnh:** thiết kế schema mới, chốt trạng thái Listing/Booking/Payment, đơn vị VND nguyên, UTC, khoảng `[start,end)`, lỗi API và idempotency; hoàn thiện hồ sơ pet theo quyền owner.
+
+**Hoàng:** sau khi pet/listing contract và fixture sẵn sàng, tạo booking REQUESTED và snapshot giá/chính sách/hướng dẫn.
 
 **Hào:** hoàn thiện Compose/CI/test DB/seed; tạo caregiver profile và listing DRAFT API, fixture listing ACTIVE riêng cho test. Công bố listing/availability contract cho Hoàng và Thịnh. Kiểm tra `composer` tương thích với Breeze, Sanctum, Filament, Scramble, Pulse; pin phiên bản khi cài.
 
@@ -45,9 +47,11 @@ Không tính cuối tuần là ngày phát triển. Nếu một mốc phụ thu�
 
 **Hoàng:** GET listing/search với lọc và phân trang; chỉ ACTIVE công khai. Smart Match trả lý do dựa trên quy tắc; không lộ pet notes hoặc tuyên bố AI.
 
-**Thịnh:** accept/reject với transaction và khóa DB để chống trùng lịch; giữ chỗ chờ payment, timeout và hủy. Test hai accept đồng thời, job chạy lại, sai actor và lịch xung đột.
+**Hào:** accept/reject với transaction và khóa DB để chống trùng lịch; test hai accept đồng thời, sai actor và lịch xung đột.
 
-**Hào:** lifecycle listing, lịch khả dụng, upload private và admin action/service/policy; messaging theo booking. Admin duyệt qua API/service trong Gate BE, Filament UI làm ở tuần 4. Thay đổi listing phải làm mới search/cache phù hợp.
+**Thịnh:** lifecycle listing, lịch khả dụng, giữ chỗ, hết hạn và hủy theo contract. Admin duyệt qua API/service trong Gate BE, Filament UI làm ở tuần 4. Thay đổi listing phải làm mới search/cache phù hợp.
+
+**Hào:** messaging theo booking, upload private và admin action/service/policy theo phạm vi phụ trách.
 
 **Gate tuần 2 (N10):** qua API/service, caregiver tạo và gửi listing → admin duyệt → owner tìm kiếm, tạo booking → caregiver accept. Chứng minh một trong hai booking trùng lịch bị chặn; timeout/hủy giải phóng lịch; tin nhắn không lộ cho người ngoài.
 
@@ -55,9 +59,9 @@ Không tính cuối tuần là ngày phát triển. Nếu một mốc phụ thu�
 
 **Hoàng:** review một lần sau booking COMPLETED, rating từ review công khai, kiểm thử search/cache. Dùng Scramble sinh OpenAPI; review thủ công quyền, state, lỗi và idempotency với Thịnh/Hào.
 
-**Thịnh:** payment sandbox success/failure/timeout, callback xác thực và idempotent; release/void/refund mô phỏng, hoàn tất booking. Test callback lặp/đến muộn, race hủy/callback và lỗi release.
+**Hào:** payment sandbox success/failure/timeout, callback xác thực và idempotent; release/void/refund mô phỏng, hoàn tất booking. Test callback lặp/đến muộn, race hủy/callback và lỗi release.
 
-**Hào:** care update/ảnh riêng tư, report/moderation/audit, worker/scheduler và log request ID. Cài Pulse ở môi trường demo có kiểm soát; giới hạn dashboard theo quyền admin. Cài Filament, cấu hình panel auth/Policy và chuẩn bị service; màn hình admin dựng ở tuần 4.
+**Thịnh:** care update/ảnh riêng tư, report/moderation/audit, worker/scheduler và log request ID. Cài Pulse ở môi trường demo có kiểm soát; giới hạn dashboard theo quyền admin. Cài Filament, cấu hình panel auth/Policy và chuẩn bị service; màn hình admin dựng ở tuần 4.
 
 **Gate BE (cuối N15):** bốn workflow chạy bằng API/service và seed demo; kiểm thử quyền, trạng thái, lịch trùng, callback lặp và file riêng tư đạt; CI xanh; OpenAPI khớp API đã test; worker/scheduler chạy; không còn lỗi P0 chặn luồng hoặc rò dữ liệu. Cả ba xác nhận bằng commit, kết quả test và danh sách giới hạn. Nếu chưa đạt, sửa backend trước khi mở issue FE.
 
@@ -73,6 +77,6 @@ Không tính cuối tuần là ngày phát triển. Nếu một mốc phụ thu�
 
 ## 8. Phụ thuộc, thay đổi và quyết định còn mở
 
-Đường găng: BE-T01 + BE-H01 + BE-HA02 fixture/contract → BE-T02 → BE-T03/BE-HA03 → BE-T04/BE-T05 → BE-T06 → BE-H05 → Gate BE → Vue/Filament → Gate FE → QA/deploy. Hoàng và Hào có thể phát triển search, messaging, report song song khi contract đã ổn định. Mọi thay đổi API/schema sau N15 cần có lý do lỗi chặn, reviewer của các owner liên quan và test hồi quy.
+Đường găng: BE-T01 + BE-H01 + BE-T02/BE-HA02 fixture/contract → BE-H02 → BE-T03/BE-HA03 → BE-T04/BE-HA05 → BE-HA06 → BE-H05 → Gate BE → Vue/Filament → Gate FE → QA/deploy. Hoàng và Hào có thể phát triển search, messaging, payment song song khi contract đã ổn định. Mọi thay đổi API/schema sau N15 cần có lý do lỗi chặn, reviewer của các owner liên quan và test hồi quy.
 
 Quy tắc P0 về công suất, giá, giữ chỗ, hủy/void/refund sandbox, owner xác nhận, chat, role caregiver và badge đã chốt trong [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>). N1–N2 kiểm tra package, hosting/storage và phân công triển khai theo contract; thay đổi quy tắc phải cập nhật Domain Docs, API và database design cùng lúc.

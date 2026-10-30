@@ -8,6 +8,23 @@ Breeze API scaffold cung cấp route đăng ký/đăng nhập/đăng xuất/khô
 
 GET /api/listings?service\_type=\&area_code=\&start\_at=\&end\_at=\&pet\_id= — public filters; pet\_id chỉ khi owner đăng nhập. GET /api/listings/{id} — chỉ ACTIVE hoặc owner/admin có quyền. POST /api/bookings — pet\_id, listing\_id, start\_at, end\_at, instructions, Idempotency-Key. POST /api/bookings/{id}/accept — caregiver; POST /api/bookings/{id}/cancel — actor được phép; POST /api/bookings/{id}/sandbox-payments — owner. POST /api/sandbox/callback — chỉ adapter sandbox. POST /api/bookings/{id}/updates và /confirm-completion; POST /api/reports.
 
+## M02 — Pet Profiles
+
+Các route pet yêu cầu `auth:sanctum`, account `ACTIVE` và role `OWNER`; mọi truy vấn chỉ trả pet chưa xóa mềm của owner hiện tại. ID không thuộc owner trả 404. Caregiver không có route đọc pet live; dữ liệu chăm sóc chỉ được cung cấp trong snapshot của booking liên quan.
+
+| Method / route | Dùng để | Request / response |
+| --- | --- | --- |
+| `GET /api/pets` | Liệt kê pet của owner, gồm `ACTIVE` và `ARCHIVED` | Pagination chuẩn `data`, `links`, `meta`. |
+| `POST /api/pets` | Tạo pet | `name`, `species` bắt buộc; các trường hồ sơ khác tùy chọn; trả resource 201. |
+| `GET /api/pets/{pet}` | Xem hồ sơ | `PetResource`; chỉ owner của pet. |
+| `PATCH /api/pets/{pet}` | Cập nhật hồ sơ | Chỉ field hồ sơ được gửi; `user_id` và `status` do server quản lý. |
+| `PATCH /api/pets/{pet}/archive` / `activate` | Lưu trữ hoặc kích hoạt lại hồ sơ | Cập nhật `status`; chỉ pet ACTIVE được dùng tạo booking. |
+| `DELETE /api/pets/{pet}` | Xóa mềm | Đặt `deleted_at`; luôn giữ row khi booking tham chiếu. Trả 204. |
+
+Mã `species`: `DOG`, `CAT`, `OTHER`; `size`: `SMALL`, `MEDIUM`, `LARGE`; `sex`: `MALE`, `FEMALE`, `UNKNOWN`. Tên tối đa 100, `age_note` tối đa 100 và mỗi trường ghi chú tối đa 2.000 ký tự Unicode sau trim/NFC. Ngày sinh không được ở tương lai. Ảnh chỉ nhận `photo_media_id` thuộc owner hiện tại và đang `READY`; API này không upload ảnh hay trả URL ảnh.
+
+`Pet::snapshotForBooking()` tạo allowlist version 1 gồm ID, tên, loài, ngày sinh/ghi chú tuổi, giới tính, kích cỡ và ghi chú chăm sóc; không gồm owner ID hoặc media ID. BE-H02 chịu trách nhiệm kiểm tra owner, chỉ nhận pet ACTIVE chưa xóa mềm và lưu kết quả này vào `pet_snapshot_json` lúc tạo booking. Thay đổi hồ sơ về sau không cập nhật snapshot đã lưu.
+
 # Quy ước request/response
 
 JSON UTF-8, timestamp ISO 8601 có offset/UTC; tiền số nguyên VND. ID dạng chuỗi trong response. Pagination \`data\`, \`links\`, \`meta\`. Thành công tạo tài nguyên trả 201 \+ resource/status hiện tại. Idempotency-Key bắt buộc cho booking và payment create; cùng key+payload trả cùng kết quả, khác payload trả 409\.

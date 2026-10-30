@@ -55,8 +55,8 @@ ERD đầy đủ dùng [Database Design §3](<../08 — Architecture & Technical
 | Thứ tự | Bảng / ràng buộc | Owner triển khai theo module và điều phối |
 | --- | --- | --- |
 | 0 — kế thừa | Laravel users/reset/session/cache/jobs; Identity mở rộng users, `user_roles`, `audit_logs` đã có; migration forward đổi các cột trạng thái/role sang VARCHAR + CHECK | BE-T01 thêm migration sửa tương thích. Giữ `password`, không đổi sang `password_hash`; `sessions.user_id` không có FK. |
-| 1 — schema đã tạo | `media_objects`, `pets`, `caregiver_profiles`, `listings`, `availability_slots`, `listing_change_requests`, `listing_media` | BE-T01 tạo DDL; Hoàng/BE-H02 và Hào/BE-HA02–BE-HA03 triển khai model/service/API, không tạo lại migration trùng. |
-| 2 — booking/payment đã tạo | `bookings`, `booking_status_events`, `payment_attempts`, `payment_events`, gồm FK vòng current attempt được thêm sau | BE-T01 tạo DDL; BE-T02–BE-T06 triển khai nghiệp vụ trên schema này. |
+| 1 — schema đã tạo | `media_objects`, `pets`, `caregiver_profiles`, `listings`, `availability_slots`, `listing_change_requests`, `listing_media` | BE-T01 tạo DDL; Thịnh/BE-T02 và BE-T03, Hoàng/BE-H02, Hào/BE-HA02 triển khai model/service/API, không tạo lại migration trùng. |
+| 2 — booking/payment đã tạo | `bookings`, `booking_status_events`, `payment_attempts`, `payment_events`, gồm FK vòng current attempt được thêm sau | BE-T01 tạo DDL; BE-H02, BE-HA03, BE-T04, BE-HA05 và BE-HA06 triển khai nghiệp vụ trên schema này. |
 | 3 — content/moderation đã tạo | `messages`, `care_updates`, `reviews`, `reports`, `moderation_actions`; dùng `audit_logs` hiện có | BE-T01 tạo DDL; các owner module triển khai API, policy, event và UI theo phụ thuộc. |
 
 
@@ -102,7 +102,7 @@ Listing change request không có thêm state `PENDING`; `PENDING_REVIEW` là t�
 | `AWAITING_PAYMENT → CONFIRMED` | Callback sandbox hợp lệ, current attempt AUTHORIZED, đúng amount và `now < payment_due_at` | Tiếp tục khóa lịch; không confirm từ frontend hoặc callback muộn. |
 | `AWAITING_PAYMENT → CANCELLED` | Owner/caregiver hủy hoặc job hết hạn | PENDING phải VOIDED thành công trước; FAILED giữ lịch sử; chưa có attempt thì không có thao tác void. Lỗi adapter giữ state cũ, retry/admin; chưa thả lịch. |
 | `CONFIRMED → CANCELLED` | Owner/caregiver hủy trước `start_at` | AUTHORIZED phải REFUNDED mô phỏng thành công rồi mới hủy/thả lịch. |
-| `CONFIRMED → IN_PROGRESS` | Caregiver bắt đầu chăm theo workflow; BE-T06 cụ thể hóa kiểm tra thời điểm bắt đầu, không tự thêm ngưỡng thời gian mới trong BE-T01 | Vẫn khóa lịch. |
+| `CONFIRMED → IN_PROGRESS` | Caregiver bắt đầu chăm theo workflow; BE-HA06 cụ thể hóa kiểm tra thời điểm bắt đầu, không tự thêm ngưỡng thời gian mới trong BE-T01 | Vẫn khóa lịch. |
 | `IN_PROGRESS → AWAITING_CONFIRMATION` | Caregiver báo xong | Vẫn khóa lịch; dừng quyền tạo care update. |
 | `AWAITING_CONFIRMATION → COMPLETED` | Owner xác nhận, hoặc admin xác nhận thay theo P0 với lý do/audit, không có report đang xử lý chặn release | Chỉ complete khi release thành công; RELEASED tối đa một lần. |
 | `IN_PROGRESS/AWAITING_CONFIRMATION → CANCELLED` | Chỉ admin xử lý ngoại lệ sau xác minh/tranh chấp, có lý do và audit | Refund mô phỏng thành công trước khi hủy; ghi moderation/booking/payment event. |
@@ -144,17 +144,14 @@ Kết quả thực hiện BE-T01 ngày 28/10/2026:
 - [x] Kiểm tra `information_schema`: status/role là VARCHAR; business time là DATETIME(6); tiền là BIGINT UNSIGNED; các CHECK cho state, range, giá/capacity, vùng, rating, care update và đúng một report target hiện diện.
 - [x] Checklist race/expiry/callback/release được bàn giao cho issue triển khai nghiệp vụ; migration test không được ghi thành bằng chứng những workflow đó đã chạy.
 
-BE-T01 hoàn tất schema và contract. Các workflow race/expiry/callback/release vẫn là acceptance của BE-T03–BE-T06 và chưa được đánh dấu là đã test trong issue này.
+BE-T01 hoàn tất schema và contract. Các workflow race/expiry/callback/release vẫn là acceptance của BE-HA03, BE-T04, BE-HA05 và BE-HA06; migration test không được xem là bằng chứng các workflow đó đã chạy.
 
 ## 8. Bàn giao và theo dõi quyết định
 
 | Bên nhận | Đầu vào nhận từ BE-T01 | Mốc theo backlog |
 | --- | --- | --- |
-| Hoàng — BE-H01/BE-H02 | Identity đã đối chiếu, pet ownership/dictionary, snapshot và lịch FK media | Contract N2; pet contract/fixture N3, tích hợp N5. |
-| Hào — BE-HA02/BE-HA03 | Schema caregiver/listing/change request/slot, state và cùng lock listing | Schema N2; listing fixture ACTIVE N3; availability contract N6. |
-| Thịnh — BE-T02 | Booking REQUESTED, quote/giá/snapshot, key/hash/unique và lỗi | Triển khai N4–N5 sau đầu vào N3. |
-| Thịnh — BE-T03/BE-T04 | Accept/overlap, hold 15 phút, request expiry, cancel/void/refund contract | N7–N10; không nghiệm thu phần payment chưa tích hợp bằng mock. |
-| Thịnh — BE-T05/BE-T06 | Attempt/event/current FK, callback/late event, release và admin ngoại lệ | Callback contract chi tiết N11; triển khai/tích hợp N11–N15. |
-| Hoàng/Hào — BE-H05/BE-H06/BE-HA04–BE-HA06 | State mở/đóng chat/update/review, report/audit/retention, error contract | Theo backlog tới Gate BE N15. |
+| Hoàng — BE-H01/BE-H02/BE-H03/BE-H04/BE-H05/BE-H06 | Identity, booking REQUESTED, search/Smart Match, review/OpenAPI/Gate BE | Fixture booking N3; tích hợp đến N15. |
+| Thịnh — BE-T02/BE-T03/BE-T04/BE-T05/BE-T06 | Pet, listing/lịch, hold/expiry/cancel, care update, report/audit | Pet contract N3; availability N6; tích hợp đến N15. |
+| Hào — BE-HA01/BE-HA02/BE-HA03/BE-HA04/BE-HA05/BE-HA06 | Hạ tầng, listing DRAFT, nhận booking, messaging, payment callback, completion/release | Bàn giao availability N6; callback N11; tích hợp đến N15. |
 
 Decision log của BE-T01 ghi các lựa chọn ở §2 là contract hiện hành. Khi phát sinh thay đổi thực sự so với P0, ghi theo mẫu: `ID · nội dung cũ/mới · lý do · owner · issue nhận ảnh hưởng · tài liệu/commit · ngày cập nhật`; phân biệt rõ thay đổi sản phẩm với chi tiết triển khai. Các issue phụ thuộc dùng file này làm đầu vào và không tự tạo biến thể schema/state/API. Không coi tiền thật, xác minh thật hay P1 là điều kiện chặn schema P0.

@@ -27,6 +27,12 @@ class User extends Authenticatable
         return $this->hasMany(UserRole::class);
     }
 
+    /** @return HasMany<Pet, $this> */
+    public function pets(): HasMany
+    {
+        return $this->hasMany(Pet::class);
+    }
+
     public function hasRole(string $role): bool
     {
         return $this->roles()->where('role', $role)->exists();
