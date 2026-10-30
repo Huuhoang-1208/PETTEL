@@ -1,49 +1,33 @@
-name: tests
+name: Backend CI
 
 on:
   push:
     branches:
       - main
+      - be-ha01
   pull_request:
 
 permissions:
   contents: read
 
 jobs:
-  ci:
+  backend:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
-    env:
-      APP_ENV: testing
-      DB_CONNECTION: sqlite
-      DB_DATABASE: ':memory:'
-      CACHE_STORE: array
-      SESSION_DRIVER: array
-      QUEUE_CONNECTION: sync
-      MAIL_MAILER: array
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
-        with:
-          php-version: '8.3'
-          tools: composer:v2
-          coverage: none
+      - name: Format, analyse, migrate, seed and test
+        run: docker compose -p pettel-test -f compose.test.yaml run --build --rm test
 
-      - name: Install PHP dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Show test database logs on failure
+        if: failure()
+        run: docker compose -p pettel-test -f compose.test.yaml logs --no-color db-test
 
-      - name: Prepare CI environment
-        run: |
-          cp .env.example .env
-          php artisan key:generate --force
-
-      - name: Run CI Checks
-        run: composer ci:check
+      - name: Clean up test environment
+        if: always()
+        run: docker compose -p pettel-test -f compose.test.yaml down -v --remove-orphans
