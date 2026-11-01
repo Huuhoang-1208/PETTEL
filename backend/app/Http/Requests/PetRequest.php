@@ -14,8 +14,16 @@ class PetRequest extends FormRequest
         $values = [];
 
         foreach ($this->only([
-            'name', 'species', 'birth_date', 'age_note', 'sex', 'size',
-            'diet_notes', 'vaccination_note', 'temperament', 'special_needs',
+            'name',
+            'species',
+            'birth_date',
+            'age_note',
+            'sex',
+            'size',
+            'diet_notes',
+            'vaccination_note',
+            'temperament',
+            'special_needs',
         ]) as $key => $value) {
             if (is_string($value)) {
                 $value = trim($value);
@@ -30,6 +38,7 @@ class PetRequest extends FormRequest
         }
     }
 
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         $required = $this->isMethod('POST') ? 'required' : 'sometimes';

@@ -2,9 +2,11 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Pet;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/** @mixin Pet */
 class PetResource extends JsonResource
 {
     /** @return array<string, mixed> */

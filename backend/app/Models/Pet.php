@@ -49,6 +49,7 @@ class Pet extends Model
         ];
     }
 
+    /** @return array{birth_date: 'date'} */
     protected function casts(): array
     {
         return [
