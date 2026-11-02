@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\EnableCaregiverRoleController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\CaregiverProfileController;
 use App\Http\Controllers\PetController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -26,3 +27,11 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:OWNER'])->group(funct
     Route::patch('/pets/{pet}/activate', [PetController::class, 'activate'])->name('pets.activate');
     Route::delete('/pets/{pet}', [PetController::class, 'destroy'])->name('pets.destroy');
 });
+
+Route::middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
+    ->prefix('caregiver')
+    ->group(function () {
+        Route::post('/profile', [CaregiverProfileController::class, 'store']);
+        Route::get('/profile', [CaregiverProfileController::class, 'show']);
+        Route::patch('/profile', [CaregiverProfileController::class, 'update']);
+    });
