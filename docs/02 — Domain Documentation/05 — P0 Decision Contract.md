@@ -115,7 +115,33 @@ Cùng owner/key/payload trả cùng booking, HTTP **200** với trạng thái hi
 
 Dùng bảng tình huống/HTTP/mã lỗi tại [API Contract — M05](<../08 — Architecture & Technical Design/04 — API Contracts & Error Conventions.md>) làm nguồn chung cho BE-H02, frontend và test. Phân biệt 404 để không lộ tài nguyên, 409 khi trạng thái/khả dụng không còn hợp lệ và 422 cho dữ liệu hoặc điều kiện pet không phù hợp. Hai `REQUESTED` giao nhau không xung đột vì chưa khóa lịch.
 
+## 12. Accept/reject booking — chốt BE-HA03 ngày 02/11/2026
+
+Người dùng đã đồng ý các quyết định dưới đây. Đây là contract để triển khai và viết test; không xác nhận BE-HA03 đã có code, kiểm thử đạt hoặc Hoàng đã review.
+
+- Caregiver chỉ xử lý booking có `caregiver_user_id` là user đang đăng nhập. Kiểm tra auth/quyền trước khi trả chi tiết trạng thái, listing hoặc lịch; booking không tồn tại hoặc thuộc caregiver khác trả `404 NOT_FOUND`. Account/role không được phép thao tác trả 403 theo auth contract hiện có.
+- Accept chỉ chuyển `REQUESTED` còn hiệu lực sang `AWAITING_PAYMENT`, đặt `payment_due_at` bằng thời điểm accept + 15 phút. Mốc hết hiệu lực là `min(created_at + 24 giờ, start_at)`; tại hoặc sau mốc này phải từ chối accept với `409 REQUEST_EXPIRED`, kể cả job chưa chạy. Accept từ trạng thái khác, kể cả accept lặp, trả `409 INVALID_STATE`; không gia hạn, không thêm event.
+- Reject chuyển `REQUESTED` sang `CANCELLED`, ghi `booking_status_events` với `reason_code=CAREGIVER_REJECTED`, `source=USER`, `actor_user_id` là caregiver. Không thêm booking status `ACCEPTED` hoặc `REJECTED`. Reject lặp trả 200 với booking đã lưu chỉ khi booking đang `CANCELLED` do chính caregiver đó từ chối trước đó; không thêm event. Hủy vì lý do khác hoặc reject từ trạng thái khác trả `409 INVALID_STATE`; hủy sau accept thuộc luồng cancel/payment ở §3.
+- Listing không còn `ACTIVE` chặn accept với `409 INVALID_STATE`, nhưng không chặn reject yêu cầu đang chờ hợp lệ. Accept phải kiểm tra lại listing/caregiver đủ điều kiện theo §8. Giữ nguyên giá và snapshots nếu chỉ giá listing thay đổi; loại dịch vụ hoặc điều kiện nhận pet trọng yếu thay đổi so với snapshot thì trả `409 INVALID_STATE`, yêu cầu owner tạo booking mới. Không sửa snapshot theo nguồn mới.
+- Kiểm tra xung đột theo **cùng `listing_id`**, `capacity=1`; chưa chia sẻ công suất giữa nhiều listing của cùng caregiver. Booking phải nằm trọn trong một slot mở chưa xóa mềm; không tự ghép các slot rời. Thời gian UTC, giữ microsecond; khoảng `[start_at,end_at)` giao nhau khi `existing.start_at < incoming.end_at AND existing.end_at > incoming.start_at`. `end = next start` không xung đột.
+- Chỉ `AWAITING_PAYMENT`, `CONFIRMED`, `IN_PROGRESS`, `AWAITING_CONFIRMATION` giữ lịch; `REQUESTED`, `CANCELLED`, `COMPLETED` không giữ lịch. Không có slot bao trọn hoặc giao booking giữ lịch trả `409 AVAILABILITY_CONFLICT`. Không tự bỏ qua `AWAITING_PAYMENT` quá hạn khi trạng thái chưa được chuyển theo quy trình expiry/void/refund; BE-T04 phối hợp thả lịch nhất quán với create/search/accept.
+- Accept dùng DB làm nguồn quyết định trong transaction và khóa chung listing để bảo vệ cả trường hợp chưa có booking giữ lịch. Chỉ khóa hai booking riêng lẻ không đủ. Kiểm tra lại quyền/trạng thái/expiry/listing/slot/overlap trong transaction; ghi trạng thái, hạn thanh toán và event cùng transaction. Reject cũng ghi trạng thái/event cùng transaction. Hai accept xung đột chỉ một thành công, thao tác còn lại nhận `409 AVAILABILITY_CONFLICT`, không tồn tại cập nhật một phần.
+
+Bảng lỗi và thứ tự xử lý tại [API Contract — M05 accept/reject](<../08 — Architecture & Technical Design/04 — API Contracts & Error Conventions.md>). Checklist triển khai và test tại [BE-HA03 — Quy tắc accept/reject và chống trùng lịch](<../05 — Implementation Plan/BE-HA03 — Quy tắc accept-reject và chống trùng lịch.md>).
+
 ## Decision log
+
+### Bổ sung contract BE-HA03 task 1 (02/11/2026)
+
+Người dùng đã đồng ý quy tắc tại §12; Hoàng vẫn cần review triển khai và kết quả kiểm thử trước nghiệm thu.
+
+| ID | Quyết định | Issue nhận ảnh hưởng |
+| --- | --- | --- |
+| HA03-D01 | Accept REQUESTED còn hiệu lực → AWAITING_PAYMENT trong 15 phút; accept lặp trả INVALID_STATE, không gia hạn. | BE-HA03, BE-T04, frontend booking. |
+| HA03-D02 | Reject → CANCELLED với CAREGIVER_REJECTED; replay cùng caregiver trả 200, không thêm event; listing ngừng nhận không chặn reject hợp lệ. | BE-HA03, lịch sử booking, frontend booking. |
+| HA03-D03 | Giữ công suất theo listing, bốn trạng thái giữ lịch, slot bao trọn và khoảng nửa mở; không bỏ qua hold chỉ vì quá hạn. | BE-H02, BE-H03, BE-T03, BE-HA03, BE-T04. |
+| HA03-D04 | Sai caregiver trả 404; state/listing/điều kiện thay đổi trả 409 INVALID_STATE; lịch trả AVAILABILITY_CONFLICT; accept REQUESTED hết hạn trả REQUEST_EXPIRED. | BE-HA03, frontend, test API. |
+| HA03-D05 | Giữ giá snapshot khi chỉ đổi giá; thay đổi dịch vụ/điều kiện trọng yếu yêu cầu booking mới; transaction DB bảo vệ lịch và event. | BE-HA03, BE-T03, BE-T04. |
 
 ### Bổ sung contract BE-H03 task 1 (02/11/2026)
 

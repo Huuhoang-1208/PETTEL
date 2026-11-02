@@ -12,6 +12,18 @@ REQUESTED không khóa lịch. Khi accept, transaction khóa listing/khoảng th
 
 **Create contract chốt 02/11/2026:** owner ACTIVE/có role OWNER dùng pet ACTIVE/chưa xóa mềm thuộc mình; listing ACTIVE/chưa xóa mềm có slot bao trọn, không giao booking đang khóa lịch và điều kiện `acceptance_rules_json` v1 hợp lệ. Version 1 chỉ đối chiếu `species`/`sizes`, không tự lọc tuổi/nhu cầu đặc biệt. Profile chưa xóa mềm; user caregiver ACTIVE/còn CAREGIVER và khác owner. Server xác định owner/caregiver/giá. Request mới cần start trong tương lai, timestamp có Z/offset, tính thời lượng thực giữ giây lẻ theo P0; không giới hạn thêm số ngày đặt trước.
 
+## Accept/reject — chốt BE-HA03 ngày 02/11/2026
+
+Người dùng đã đồng ý contract tại [P0 §12](<../02 — Domain Documentation/05 — P0 Decision Contract.md>) và [API M05 accept/reject](<../08 — Architecture & Technical Design/04 — API Contracts & Error Conventions.md>); đây chưa phải xác nhận triển khai hoặc reviewer sign-off.
+
+- Chỉ caregiver của booking được xử lý; booking không tồn tại/thuộc caregiver khác trả `404 NOT_FOUND`, kiểm tra quyền trước chi tiết trạng thái/lịch. Auth/role dùng contract hiện có.
+- Accept chỉ từ REQUESTED trước `min(created_at + 24 giờ, start_at)` → AWAITING_PAYMENT, hạn thanh toán 15 phút. Accept lặp hoặc từ trạng thái khác trả `409 INVALID_STATE`, không gia hạn/event trùng; REQUESTED đã hết hiệu lực trả `409 REQUEST_EXPIRED` dù job chưa chạy.
+- Reject REQUESTED → CANCELLED, event USER của caregiver có `reason_code=CAREGIVER_REJECTED`. Replay cùng caregiver sau chính lần từ chối đó trả 200, không thêm event; hủy vì lý do khác/trạng thái khác trả `409 INVALID_STATE`. Listing ngừng ACTIVE không chặn reject hợp lệ. Không thêm status ACCEPTED/REJECTED.
+- Lịch xét cùng listing, capacity=1; không chia sẻ công suất giữa listing cùng caregiver. Một slot mở chưa xóa mềm phải bao trọn booking. Khoảng UTC/microsecond `[start_at,end_at)`, hai khoảng chỉ chạm đầu/cuối không xung đột.
+- Chỉ AWAITING_PAYMENT, CONFIRMED, IN_PROGRESS, AWAITING_CONFIRMATION giữ lịch. Không tự bỏ qua hold quá hạn nếu trạng thái chưa chuyển theo BE-T04; create/search/accept phải nhất quán.
+- Accept phải kiểm tra lại listing ACTIVE và caregiver đủ điều kiện. Giữ giá/snapshot khi chỉ đổi giá; thay dịch vụ/điều kiện nhận pet trọng yếu trả `409 INVALID_STATE`, yêu cầu booking mới. Không có slot/trùng lịch trả `409 AVAILABILITY_CONFLICT`.
+- Transaction và khóa chung listing bảo vệ overlap; dữ liệu quyết định lấy từ DB. Booking/hạn thanh toán/event ghi cùng transaction; reject cũng ghi booking/event cùng transaction. Hai accept xung đột chỉ một thành công, thao tác còn lại lỗi rõ và không có dữ liệu ghi dở.
+
 # Dữ liệu và phụ thuộc
 
 `bookings`, `booking_status_events`, `price_snapshot_vnd`, `price_unit`, `price_quantity`, `pricing_version`, `cancellation_policy_version`, `pet_snapshot_json`, `listing_snapshot_json`, `policy_snapshot_json`, `instructions_snapshot`, `start_at`/`end_at` UTC, `payment_due_at`; REQUESTED hết hạn sau 24 giờ hoặc tại start_at, tùy mốc nào trước. Đọc Identity/Pet/Listing; gọi Payment Sandbox để authorize/release; mở Messaging/Update/Review theo trạng thái. Không đọc trạng thái từ cache để quyết định chấp nhận.
