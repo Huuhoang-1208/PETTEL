@@ -474,13 +474,126 @@ class BookingCreationTest extends TestCase
         $this->assertDatabaseCount('booking_status_events', 0);
     }
 
-    public function test_task4_duplicate_key_returns_a_controlled_conflict(): void
+    public function test_replay_returns_current_booking_without_revalidating_sources(): void
+    {
+        $fixture = $this->bookingFixture();
+        $first = $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', $fixture['idempotency_key'])
+            ->postJson('/api/bookings', $fixture['payload'])->assertCreated();
+        $booking = Booking::findOrFail($first->json('id'));
+
+        $fixture['pet']->update(['diet_notes' => 'Changed notes', 'status' => 'ARCHIVED']);
+        $fixture['pet']->delete();
+        DB::table('listings')->where('id', $fixture['active_listing_id'])
+            ->update(['price_vnd' => 90000, 'status' => 'DRAFT', 'deleted_at' => now()]);
+        DB::table('availability_slots')->where('listing_id', $fixture['active_listing_id'])->delete();
+        $booking->update(['status' => 'CANCELLED']);
+        $saved = $booking->refresh()->getAttributes();
+        $calculator = \Mockery::mock(CalculateBookingPrice::class);
+        $calculator->shouldNotReceive('calculate');
+        $this->app->instance(CalculateBookingPrice::class, $calculator);
+
+        $this->travelTo($fixture['end_at']->addDay());
+        try {
+            $this->postJson('/api/bookings', $fixture['payload'])->assertOk()
+                ->assertJsonPath('id', $first->json('id'))
+                ->assertJsonPath('status', 'CANCELLED')
+                ->assertJsonPath('price_snapshot_vnd', 150000);
+        } finally {
+            $this->travelBack();
+        }
+        $this->assertSame($saved, $booking->refresh()->getAttributes());
+        $this->assertDatabaseCount('bookings', 1);
+        $this->assertDatabaseCount('booking_status_events', 1);
+    }
+
+    public function test_reusing_a_key_with_any_changed_business_field_returns_conflict(): void
     {
         $fixture = $this->bookingFixture();
         $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', $fixture['idempotency_key'])
             ->postJson('/api/bookings', $fixture['payload'])->assertCreated();
-        $this->postJson('/api/bookings', $fixture['payload'])->assertConflict()
-            ->assertJsonPath('error.code', 'IDEMPOTENCY_CONFLICT');
+
+        foreach ([
+            'pet_id' => (string) $fixture['foreign_pet']->id,
+            'listing_id' => (string) $fixture['draft_listing_id'],
+            'start_at' => $fixture['start_at']->subSecond()->toIso8601String(),
+            'end_at' => $fixture['end_at']->addSecond()->toIso8601String(),
+            'instructions' => 'Different instructions',
+        ] as $field => $value) {
+            $this->postJson('/api/bookings', array_replace($fixture['payload'], [$field => $value]))
+                ->assertConflict()->assertJsonPath('error.code', 'IDEMPOTENCY_CONFLICT');
+        }
+        $this->assertDatabaseCount('bookings', 1);
+        $this->assertDatabaseCount('booking_status_events', 1);
+    }
+
+    public function test_equivalent_ids_offsets_and_unicode_replay_the_same_booking(): void
+    {
+        $fixture = $this->bookingFixture();
+        $payload = array_replace($fixture['payload'], [
+            'instructions' => "  Cafe\u{0301} / feed  ",
+        ]);
+        $first = $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', $fixture['idempotency_key'])
+            ->postJson('/api/bookings', $payload)->assertCreated();
+
+        $replay = array_replace($payload, [
+            'pet_id' => '00'.$fixture['pet']->id,
+            'listing_id' => '00'.$fixture['active_listing_id'],
+            'start_at' => $fixture['start_at']->setTimezone('Asia/Ho_Chi_Minh')->format('Y-m-d\TH:i:s.uP'),
+            'end_at' => $fixture['end_at']->setTimezone('Asia/Ho_Chi_Minh')->format('Y-m-d\TH:i:s.uP'),
+            'instructions' => 'Café / feed',
+            'owner_id' => $fixture['caregiver']->id,
+            'status' => 'CONFIRMED',
+            'amount' => 1,
+        ]);
+        $this->postJson('/api/bookings', $replay)->assertOk()->assertExactJson($first->json());
+        $booking = Booking::findOrFail($first->json('id'));
+        $this->assertSame('Café / feed', $booking->instructions_snapshot);
+        $this->assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/', $booking->request_payload_hash);
+        $this->assertDatabaseCount('bookings', 1);
+        $this->assertDatabaseCount('booking_status_events', 1);
+    }
+
+    public function test_missing_null_and_empty_instructions_have_the_same_hash(): void
+    {
+        $fixture = $this->bookingFixture();
+        $payload = $fixture['payload'];
+        unset($payload['instructions']);
+        $first = $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', $fixture['idempotency_key'])
+            ->postJson('/api/bookings', $payload)->assertCreated();
+        foreach ([null, '', '   '] as $instructions) {
+            $this->postJson('/api/bookings', $payload + ['instructions' => $instructions])
+                ->assertOk()->assertExactJson($first->json());
+        }
+        $this->assertDatabaseCount('bookings', 1);
+        $this->assertDatabaseCount('booking_status_events', 1);
+    }
+
+    public function test_the_same_key_is_independent_for_different_owners(): void
+    {
+        $fixture = $this->bookingFixture();
+        $first = $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', $fixture['idempotency_key'])
+            ->postJson('/api/bookings', $fixture['payload'])->assertCreated();
+        $otherOwner = User::findOrFail($fixture['foreign_pet']->user_id);
+        $payload = array_replace($fixture['payload'], ['pet_id' => (string) $fixture['foreign_pet']->id]);
+        $second = $this->actingAs($otherOwner)->postJson('/api/bookings', $payload)->assertCreated();
+        $this->assertNotSame($first->json('id'), $second->json('id'));
+        $this->postJson('/api/bookings', $payload)->assertOk()->assertJsonPath('id', $second->json('id'));
+        $this->assertDatabaseCount('bookings', 2);
+        $this->assertDatabaseCount('booking_status_events', 2);
+    }
+
+    public function test_replay_still_requires_an_active_owner(): void
+    {
+        $fixture = $this->bookingFixture();
+        $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', $fixture['idempotency_key'])
+            ->postJson('/api/bookings', $fixture['payload'])->assertCreated();
+        $fixture['owner']->status = 'SUSPENDED';
+        $fixture['owner']->save();
+        $this->postJson('/api/bookings', $fixture['payload'])->assertForbidden();
+        $fixture['owner']->status = 'ACTIVE';
+        $fixture['owner']->save();
+        DB::table('user_roles')->where('user_id', $fixture['owner']->id)->where('role', 'OWNER')->delete();
+        $this->postJson('/api/bookings', $fixture['payload'])->assertForbidden();
         $this->assertDatabaseCount('bookings', 1);
         $this->assertDatabaseCount('booking_status_events', 1);
     }

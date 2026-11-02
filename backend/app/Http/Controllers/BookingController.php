@@ -22,6 +22,9 @@ class BookingController extends Controller
     {
         $booking = $createBooking->handle($request);
 
-        return response()->json(BookingResource::make($booking)->resolve($request), 201);
+        return response()->json(
+            BookingResource::make($booking)->resolve($request),
+            $booking->wasRecentlyCreated ? 201 : 200,
+        );
     }
 }

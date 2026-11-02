@@ -19,9 +19,28 @@ class CreateBooking
             abort(401);
         }
         $data = $request->validated();
+        $hash = $request->payloadHash();
 
         try {
-            return DB::transaction(function () use ($request, $owner, $data): Booking {
+            return DB::transaction(function () use ($request, $owner, $data, $hash): Booking {
+                // Serialize creation per owner before locking any listing.
+                $currentOwner = User::query()->whereKey($owner->id)->lockForUpdate()->first();
+                if ($currentOwner === null) {
+                    abort(401);
+                }
+                $role = DB::table('user_roles')->where('user_id', $owner->id)
+                    ->where('role', 'OWNER')->lockForUpdate()->first();
+                if ($currentOwner->status !== 'ACTIVE' || $role === null) {
+                    abort(403);
+                }
+
+                $existing = Booking::query()->where('owner_id', $owner->id)
+                    ->where('request_idempotency_key', $data['Idempotency-Key'])
+                    ->lockForUpdate()->first();
+                if ($existing !== null) {
+                    return $this->replay($existing, $hash);
+                }
+
                 // Short database lock for consistent source reads, not a calendar hold.
                 DB::table('listings')->where('id', $data['listing_id'])
                     ->lockForUpdate()->first(['id']);
@@ -65,7 +84,7 @@ class CreateBooking
                     'payment_due_at' => null,
                     'current_payment_attempt_id' => null,
                     'request_idempotency_key' => $data['Idempotency-Key'],
-                    'request_payload_hash' => $request->payloadHash(),
+                    'request_payload_hash' => $hash,
                     'version' => 1,
                 ]);
 
@@ -83,21 +102,30 @@ class CreateBooking
                 return $booking->refresh();
             }, 3);
         } catch (UniqueConstraintViolationException $exception) {
-            if (
-                ! Booking::query()->where('owner_id', $owner->id)
-                    ->where('request_idempotency_key', $data['Idempotency-Key'])->exists()
-            ) {
+            // The failed transaction has rolled back. Read the committed winner.
+            $existing = Booking::query()->useWritePdo()->where('owner_id', $owner->id)
+                ->where('request_idempotency_key', $data['Idempotency-Key'])->first();
+            if ($existing === null) {
                 throw $exception;
             }
 
-            // Task 5 will distinguish identical replay from a changed payload.
+            return $this->replay($existing, $hash);
+        }
+    }
+
+    private function replay(Booking $booking, string $hash): Booking
+    {
+        if (! hash_equals($booking->request_payload_hash, $hash)) {
             throw new HttpResponseException(response()->json([
                 'error' => [
                     'code' => 'IDEMPOTENCY_CONFLICT',
-                    'message' => 'This booking request key has already been used.',
+                    'message' => 'This booking request key was used with a different payload.',
+                    'details' => [],
                     'request_id' => (string) Str::uuid(),
                 ],
             ], 409));
         }
+
+        return $booking;
     }
 }
