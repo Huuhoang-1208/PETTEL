@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\EnableCaregiverRoleController;
+use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PetController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -14,6 +15,8 @@ Route::post('/user/roles/caregiver', EnableCaregiverRoleController::class)
     ->name('user.roles.caregiver');
 
 Route::middleware(['auth:sanctum', 'account.active', 'role:OWNER'])->group(function () {
+    Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
+
     Route::get('/pets', [PetController::class, 'index'])->name('pets.index');
     Route::post('/pets', [PetController::class, 'store'])->name('pets.store');
     Route::get('/pets/{pet}', [PetController::class, 'show'])->name('pets.show');
