@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\Booking\Actions\CreateBooking;
 use App\Http\Requests\QuoteBookingRequest;
 use App\Http\Requests\StoreBookingRequest;
+use App\Http\Resources\BookingResource;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 
 class BookingController extends Controller
@@ -17,12 +18,10 @@ class BookingController extends Controller
         return response()->json(Arr::except($context['pricing'], ['unit_price_vnd']));
     }
 
-    public function store(StoreBookingRequest $request): Response
+    public function store(StoreBookingRequest $request, CreateBooking $createBooking): JsonResponse
     {
-        // This also calculates the price using the same action as quote.
-        $request->validateSources();
+        $booking = $createBooking->handle($request);
 
-        // Task 4 will persist the booking and its snapshots.
-        return response()->noContent();
+        return response()->json(BookingResource::make($booking)->resolve($request), 201);
     }
 }

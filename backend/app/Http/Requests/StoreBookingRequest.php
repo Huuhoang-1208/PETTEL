@@ -58,16 +58,29 @@ class StoreBookingRequest extends FormRequest
     }
 
     // Call after replay handling and inside the create transaction in task 4/5.
-    /** @return array{pet: Pet, listing: object, start: CarbonImmutable, end: CarbonImmutable, pricing: array<string, int|string>} */
-    public function validateSources(): array
+    /** @return array{pet: Pet, listing: \stdClass, start: CarbonImmutable, end: CarbonImmutable, pricing: array<string, int|string>} */
+    public function validateSources(bool $lockForCreation = false): array
     {
         $owner = $this->user();
         if (! $owner instanceof User) {
             $this->reject(401, 'UNAUTHENTICATED', 'Login required.');
         }
 
+        if ($lockForCreation) {
+            $owner = User::query()->whereKey($owner->id)->lockForUpdate()->first();
+            if ($owner === null) {
+                $this->reject(401, 'UNAUTHENTICATED', 'Login required.');
+            }
+            $ownerRole = DB::table('user_roles')->where('user_id', $owner->id)
+                ->where('role', 'OWNER')->lockForUpdate()->first();
+            if ($owner->status !== 'ACTIVE' || $ownerRole === null) {
+                $this->reject(403, 'FORBIDDEN', 'An active owner account is required.');
+            }
+        }
+
         $data = $this->validated();
-        $pet = Pet::query()->where('user_id', $owner->id)->whereKey($data['pet_id'])->first();
+        $petQuery = Pet::query()->where('user_id', $owner->id)->whereKey($data['pet_id']);
+        $pet = $lockForCreation ? $petQuery->lockForUpdate()->first() : $petQuery->first();
         if ($pet === null) {
             $this->reject(404, 'NOT_FOUND', 'Pet not found.');
         }
@@ -75,7 +88,7 @@ class StoreBookingRequest extends FormRequest
             $this->reject(409, 'INVALID_STATE', 'Pet is not active.');
         }
 
-        $listing = DB::table('listings')
+        $listingQuery = DB::table('listings')
             ->join('caregiver_profiles as profiles', 'profiles.id', '=', 'listings.caregiver_profile_id')
             ->join('users as caregivers', 'caregivers.id', '=', 'profiles.user_id')
             ->where('listings.id', $data['listing_id'])
@@ -85,8 +98,8 @@ class StoreBookingRequest extends FormRequest
                 'profiles.user_id as caregiver_user_id',
                 'profiles.deleted_at as profile_deleted_at',
                 'caregivers.status as caregiver_status'
-            )
-            ->first();
+            );
+        $listing = $lockForCreation ? $listingQuery->lockForUpdate()->first() : $listingQuery->first();
 
         if ($listing === null) {
             $this->reject(404, 'NOT_FOUND', 'Listing not found.');
@@ -100,9 +113,11 @@ class StoreBookingRequest extends FormRequest
             $this->reject(409, 'INVALID_STATE', 'Listing is not active.');
         }
 
-        $hasCaregiverRole = DB::table('user_roles')
-            ->where('user_id', $listing->caregiver_user_id)
-            ->where('role', 'CAREGIVER')->exists();
+        $roleQuery = DB::table('user_roles')
+            ->where('user_id', $listing->caregiver_user_id)->where('role', 'CAREGIVER');
+        $hasCaregiverRole = $lockForCreation
+            ? $roleQuery->lockForUpdate()->first() !== null
+            : $roleQuery->exists();
 
         if ($listing->profile_deleted_at !== null || $listing->caregiver_status !== 'ACTIVE' || ! $hasCaregiverRole) {
             $this->reject(409, 'INVALID_STATE', 'Listing cannot receive bookings.');
@@ -174,6 +189,23 @@ class StoreBookingRequest extends FormRequest
             'end' => $end,
             'pricing' => $pricing,
         ];
+    }
+
+    public function payloadHash(): string
+    {
+        $data = $this->validated();
+        $payload = [
+            'pet_id' => (string) $data['pet_id'],
+            'listing_id' => (string) $data['listing_id'],
+            'start_at' => CarbonImmutable::parse($data['start_at'])->utc()->format('Y-m-d\TH:i:s.u\Z'),
+            'end_at' => CarbonImmutable::parse($data['end_at'])->utc()->format('Y-m-d\TH:i:s.u\Z'),
+            'instructions' => $data['instructions'] ?? null,
+        ];
+
+        return hash('sha256', json_encode(
+            $payload,
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
+        ));
     }
 
     protected function failedValidation(Validator $validator): void
