@@ -10,6 +10,7 @@ BR-02. Người chăm chỉ sửa listing của mình. Sửa giá, loại dịch
 # Booking
 
 BR-03. Booking P0 gắn một pet profile thuộc chủ nuôi và một listing. Chụp snapshot giá, thời gian, hướng dẫn và chính sách tại lúc gửi yêu cầu.  
+Chốt bổ sung 02/11/2026: pet ACTIVE/chưa xóa mềm, owner ACTIVE/có OWNER; profile chưa xóa mềm, user caregiver ACTIVE/có CAREGIVER và khác owner. Listing ACTIVE/chưa xóa mềm có điều kiện JSON v1 chỉ tự kiểm tra loài/kích cỡ. Start ở tương lai, timestamp có Z/offset; giữ giây lẻ khi tính giá. Allowlist snapshot và instructions riêng theo P0 Contract §8–9.
 BR-04. Khi người chăm chấp nhận, hệ thống khóa/transaction DB để chặn booking trùng khoảng \[start,end) trên cùng listing; trả AVAILABILITY\_CONFLICT nếu có xung đột.  
 BR-05. Sau khi chấp nhận, giữ chỗ 15 phút chờ sandbox payment; retry không gia hạn. Hết hạn thì hủy và thả chỗ. Giá listing đổi sau đó không đổi booking hiện có.
 BR-06. Chỉ hai bên booking được xem hướng dẫn, tin nhắn và ảnh cập nhật; admin chỉ đọc khi có lý do xử lý được ghi log.
@@ -24,3 +25,5 @@ BR-10. Admin có thể ẩn listing, xử lý report và can thiệp booking the
 # Quyết định P0
 
 [P0 Decision Contract](<05 — P0 Decision Contract.md>) là nguồn chuẩn cho biểu giá, hủy, hoàn tất, quyền chat, retention và danh mục. BR-11. P0 không thu phí hủy sandbox; CONFIRMED chỉ CANCELLED sau REFUNDED mô phỏng thành công. BR-12. Không tự hoàn tất khi owner im lặng: nhắc sau 24 giờ, đưa admin sau 72 giờ; admin có lý do và audit. BR-13. Một listing chỉ có một booking khóa lịch đồng thời. Giá/ngày/đêm tính theo contract; P0 không có tiền hoặc phân xử tài chính thật.
+
+BR-14 (02/11/2026). Create booking trả 201; replay cùng owner/key/payload chuẩn hóa trả 200 với cùng booking/status hiện tại và dữ liệu snapshot đã lưu. Không tính lại theo nguồn mới; khác payload trả 409 IDEMPOTENCY_CONFLICT. Key và chuẩn hash/bảng lỗi tại API Contract M05; replay không tạo booking/event thứ hai.

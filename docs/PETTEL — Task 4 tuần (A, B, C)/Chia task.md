@@ -211,6 +211,8 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Acceptance criteria:** Request hợp lệ tạo một booking; gửi lại cùng key/payload không tạo trùng; sửa dữ liệu nguồn không thay snapshot booking.
 
+**Contract bổ sung đã chốt 02/11/2026:** áp dụng [P0 Decision Contract §8–11](<../02 — Domain Documentation/05 — P0 Decision Contract.md>) và [API Contract M05](<../08 — Architecture & Technical Design/04 — API Contracts & Error Conventions.md>). JSON điều kiện v1 chỉ tự lọc loài/kích cỡ; snapshot theo allowlist, instructions riêng; thời gian có offset/start tương lai/giữ giây lẻ; dùng bảng lỗi create; key chuẩn hóa và response 201 create/200 replay; kiểm tra caregiver hợp lệ và chặn tự đặt listing. Fixture ACTIVE/DRAFT cùng slot hợp lệ được tạo trực tiếp trong database test. Các quyết định đã được người dùng đồng ý; checklist triển khai/review vẫn phải có bằng chứng trước khi đánh dấu hoàn tất.
+
 ### BE-HA02 — Hồ sơ người chăm và listing nháp
 
 **Owner:** Hào \| **Reviewer:** Thịnh
@@ -315,7 +317,7 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Tasks to do:**
 
-☐ Gợi ý theo loài, tuổi/kích cỡ nếu có, lịch, giá và điều kiện hỗ trợ đã khai.
+☐ Gợi ý theo loài/kích cỡ trong `acceptance_rules_json` v1, lịch và tổng giá; theo quyết định 02/11/2026, chưa tự lọc theo tuổi/nhu cầu đặc biệt hoặc tuyên bố đã kiểm tra hỗ trợ. Thông tin này vẫn được giữ trong pet snapshot cho caregiver theo quyền.
 
 ☐ Trả lý do phù hợp; cho phép lọc thủ công khi chưa chọn pet.
 

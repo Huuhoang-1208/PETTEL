@@ -2,16 +2,20 @@
 
 **Trạng thái:** quyết định thiết kế P0 ngày 27/10/2026 theo yêu cầu chốt các mục còn mở. Đây là hợp đồng cho bản mẫu PETTEL tại Đà Nẵng, chỉ dùng thanh toán sandbox. Không mô tả chính sách tiền thật hoặc tuyên bố tuân thủ pháp lý. Nếu mở sản phẩm thật, chủ sản phẩm và người phụ trách pháp lý phải duyệt lại giá, hủy và thời hạn lưu dữ liệu.
 
+**Cập nhật 02/11/2026:** người dùng đã đồng ý sáu quyết định bổ sung cho BE-H02: điều kiện nhận pet, snapshot, thời gian, mã lỗi, idempotency và điều kiện caregiver/tự đặt listing. Các mục dưới đây là contract đã chốt để triển khai; cập nhật tài liệu không đồng nghĩa các hành vi này đã có trong code.
+
 ## 1. Giá và mã dịch vụ
 
 P0 có hai `service_type` cố định: `DAYCARE` (chăm ban ngày) và `BOARDING` (lưu trú). `DAYCARE` chỉ dùng `price_unit=HOUR`; `BOARDING` chỉ dùng `price_unit=NIGHT`. `price_vnd` là số nguyên VND dương. Không có phụ phí, mã giảm giá, thuế hoặc giá theo ngày đặc biệt trong P0.
 
 | Dịch vụ | Khoảng hợp lệ | Số đơn vị tính tiền | Ví dụ |
 | --- | --- | --- | --- |
-| `DAYCARE` | Cùng một ngày theo `Asia/Ho_Chi_Minh`, từ 1 đến 12 giờ | `ceil(thời lượng thực tính bằng phút / 60)` | 2 giờ 10 phút tính 3 giờ. |
-| `BOARDING` | Tối thiểu 12 giờ, tối đa 30 ngày | `ceil(thời lượng thực tính bằng phút / 1440)` | Nhận 15:00, trả 10:00 hôm sau tính 1 đêm; 25 giờ tính 2 đêm. |
+| `DAYCARE` | Cùng một ngày theo `Asia/Ho_Chi_Minh`, từ 1 đến 12 giờ | `ceil(thời lượng thực tính bằng giây / 3600)` | 2 giờ 10 phút tính 3 giờ; 1 giờ 1 giây tính 2 giờ. |
+| `BOARDING` | Tối thiểu 12 giờ, tối đa 30 ngày | `ceil(thời lượng thực tính bằng giây / 86400)` | Nhận 15:00, trả 10:00 hôm sau tính 1 đêm; 24 giờ 1 giây tính 2 đêm. |
 
 Trong UI, `NIGHT` được giải thích là một block tối đa 24 giờ lưu trú, không phụ thuộc giờ qua nửa đêm. Giá cuối = `price_vnd × số đơn vị`; dùng thời điểm UTC để tính thời lượng, chỉ dùng múi giờ Việt Nam để kiểm tra cùng ngày và hiển thị. Server tính và trả tổng trước khi owner gửi booking; client không gửi amount. Booking lưu `price_snapshot_vnd`, đơn giá, đơn vị, số đơn vị và `pricing_version=1` trong snapshot. Cùng công thức phải dùng ở preview, create booking và lịch sử. Chặn tràn số, giá bằng 0 và khoảng thời gian không hợp lệ.
+
+Khi tạo booking mới, `start_at` phải lớn hơn thời điểm server kiểm tra request; `start_at < end_at`. Timestamp bắt buộc có `Z` hoặc offset như `+07:00`; không nhận thời gian thiếu múi giờ. Nhận giây lẻ và dùng thời lượng thực, không cắt phần giây trước khi tính giá hoặc kiểm tra giới hạn thời lượng. Công thức giây chi tiết hóa công thức phút trước đây, giữ `pricing_version=1`. Không đặt thêm giới hạn số ngày được đặt trước trong P0. Gửi lại cùng idempotency key/payload của booking đã tạo tuân theo §10, không coi đó là yêu cầu đặt mới.
 
 `REQUESTED` hết hiệu lực sau 24 giờ kể từ khi tạo hoặc lúc `start_at` đến, tùy mốc nào trước; job chuyển `CANCELLED` với lý do `REQUEST_EXPIRED`. Caregiver chỉ accept trước mốc này. Nếu giá listing đổi trong lúc chờ, giữ giá đã báo; nếu loại dịch vụ hoặc điều kiện nhận pet trọng yếu đổi, yêu cầu owner tạo booking mới. Không tự sửa snapshot hoặc bắt owner trả giá mới.
 
@@ -67,7 +71,64 @@ P0 dùng mã cố định trong API và validation; nhãn giao diện được d
 
 Giới hạn Unicode theo số ký tự: tên user/pet/profile 100; title listing 120; bio/description 2.000; pet notes và instructions 2.000 mỗi trường; message 2.000; care update 2.000; review 1.000; report description 2.000. Server kiểm tra sau chuẩn hóa Unicode và trim. Địa chỉ công khai chỉ hiển thị `area_code` và nhãn vùng; địa chỉ giao nhận chi tiết, nếu cần, chỉ hiển thị cho hai bên sau `CONFIRMED` và không được đưa vào search/log công khai. P0 chưa cần bảng địa chỉ giao nhận riêng; thống nhất điểm giao qua chat, không đưa địa chỉ chi tiết vào listing hoặc kết quả tìm kiếm.
 
+## 8. Điều kiện nhận pet và caregiver — chốt 02/11/2026
+
+`listings.acceptance_rules_json` phiên bản 1 có cấu trúc:
+
+```json
+{
+  "schema_version": 1,
+  "species": ["DOG", "CAT"],
+  "sizes": ["SMALL", "MEDIUM"]
+}
+```
+
+- `schema_version` là số nguyên `1`; `species` và `sizes` là mảng không rỗng, chỉ chứa mã P0 tương ứng. Nhận mọi kích cỡ thì liệt kê cả `SMALL`, `MEDIUM`, `LARGE`; nhận `OTHER` phải liệt kê rõ.
+- Pet phải khớp cả loài và kích cỡ; pet thiếu kích cỡ không tự được xem là phù hợp. Thiếu key bắt buộc, sai kiểu, mã không hợp lệ hoặc version chưa hỗ trợ thì listing chưa đủ điều kiện nhận booking.
+- Phiên bản đầu chỉ tự động đối chiếu loài và kích cỡ. Tuổi và nhu cầu đặc biệt chưa là điều kiện lọc tự động; dữ liệu tuổi/ghi chú vẫn nằm trong snapshot pet để caregiver xem theo quyền. Không dùng key tuổi/nhu cầu đặc biệt để tuyên bố hệ thống đã kiểm tra hỗ trợ; bổ sung sau phải chốt schema và quy tắc trước.
+- Để nhận booking mới, listing phải `ACTIVE`, chưa xóa mềm; caregiver profile chưa xóa mềm; user của profile phải `ACTIVE` và còn role `CAREGIVER`. Không chỉ dựa vào status listing khi caregiver đã bị khóa.
+- Owner không được đặt listing do chính mình quản lý. Server lấy `caregiver_user_id` qua `listing → caregiver_profile → user`; nếu trùng owner thì trả `422 VALIDATION_ERROR` tại `listing_id`.
+
+BE-HA02 ghi điều kiện listing; BE-H02 kiểm tra khi tạo booking; BE-H03/BE-H04 dùng cùng contract cho search/Smart Match. Fixture test được tạo trực tiếp listing ACTIVE và slot mở, không phụ thuộc luồng admin duyệt.
+
+## 9. Snapshot booking — chốt 02/11/2026
+
+| Nơi lưu | Nội dung đã chốt |
+| --- | --- |
+| `pet_snapshot_json` | Nguyên kết quả `Pet::snapshotForBooking()`, gồm `schema_version=1`; không dump toàn bộ pet/user. |
+| `listing_snapshot_json` | `schema_version=1`, `listing_id`, `listing_version`, `title`, `service_type`, `area_code`, `unit_price_vnd`, `price_unit`, `acceptance_rules`. |
+| `policy_snapshot_json` | `schema_version=1`, `cancellation_policy_version=1`, `cancellation_fee_vnd=0`, `payment_mode="SANDBOX"`. |
+| `instructions_snapshot` | Hướng dẫn riêng từ request sau chuẩn hóa Unicode NFC và trim; thiếu/null/rỗng sau trim lưu `null`. Tối đa 2.000 ký tự sau chuẩn hóa. |
+| Các cột booking | `start_at`, `end_at` UTC; `price_snapshot_vnd` là tổng tiền; `price_unit`, `price_quantity`, `pricing_version=1`, `cancellation_policy_version=1`. |
+
+`listing_id` trong JSON là chuỗi ID; `listing_version` lấy từ `listings.version`; `unit_price_vnd` lấy từ `listings.price_vnd`; `acceptance_rules` là object đã kiểm tra từ `acceptance_rules_json`. Ghi chú pet giữ trong `pet_snapshot_json`, không gộp hoặc ghi đè bằng `instructions_snapshot`. Đơn giá, tổng giá, số lượng, các phiên bản và snapshots phải lấy từ cùng lần tính trong transaction tạo booking; ghi event tạo `REQUESTED` cùng transaction. Sửa pet/listing/policy về sau không cập nhật lịch sử booking. Redaction theo retention ở §6 vẫn áp dụng cho nội dung riêng tư.
+
+## 10. Idempotency tạo booking — chốt 02/11/2026
+
+`Idempotency-Key` bắt buộc, dài 1–128 ký tự ASCII gồm chữ thường, số và các dấu `-`, `_`, `.`, `:`; không tự trim hoặc đổi key. Key sai định dạng trả `422 VALIDATION_ERROR`. Giới hạn chữ thường giúp hành vi thống nhất với collation database không phân biệt hoa/thường; không cần thay unique constraint `(owner_id,request_idempotency_key)` hiện có.
+
+Hash SHA-256 chỉ gồm `pet_id`, `listing_id`, `start_at`, `end_at`, `instructions` đã chuẩn hóa: ID là chuỗi số, timestamp về UTC với định dạng cố định, instructions NFC + trim và quy về `null` khi thiếu/null/rỗng. Giá nguồn, snapshot, owner/status/amount do client gửi không nằm trong hash. Quy trình chuẩn hóa cụ thể và bảng lỗi được ghi trong [API Contract — M05](<../08 — Architecture & Technical Design/04 — API Contracts & Error Conventions.md>).
+
+Cùng owner/key/payload trả cùng booking, HTTP **200** với trạng thái hiện tại; tạo lần đầu trả **201**. Không tính lại giá hoặc thay snapshot theo dữ liệu nguồn mới. Vẫn kiểm tra đăng nhập và quyền truy cập booking. Khi booking đã tồn tại, xử lý replay trước các kiểm tra dữ liệu nguồn dành cho tạo mới: không từ chối replay chỉ vì pet/listing vừa đổi hoặc thời điểm bắt đầu đã đến. Khác payload trả `409 IDEMPOTENCY_CONFLICT`. Hai request đồng thời cùng key phải được bảo vệ bằng unique constraint và transaction, không tạo booking/event trùng.
+
+## 11. Lỗi tạo booking — chốt 02/11/2026
+
+Dùng bảng tình huống/HTTP/mã lỗi tại [API Contract — M05](<../08 — Architecture & Technical Design/04 — API Contracts & Error Conventions.md>) làm nguồn chung cho BE-H02, frontend và test. Phân biệt 404 để không lộ tài nguyên, 409 khi trạng thái/khả dụng không còn hợp lệ và 422 cho dữ liệu hoặc điều kiện pet không phù hợp. Hai `REQUESTED` giao nhau không xung đột vì chưa khóa lịch.
+
 ## Decision log
+
+### Bổ sung contract BE-H02 (02/11/2026)
+
+Người dùng đã đồng ý sáu đề xuất trong phiên làm việc ngày 02/11/2026. Đây là cập nhật contract, không phải bằng chứng triển khai hoặc reviewer sign-off.
+
+| ID | Nội dung cũ → quyết định mới | Lý do | Issue nhận ảnh hưởng |
+| --- | --- | --- | --- |
+| H02-D01 | JSON điều kiện chưa có key/schema cụ thể → version 1 gồm `schema_version`, `species`, `sizes`; chưa tự lọc tuổi/nhu cầu đặc biệt. | Listing, booking và Smart Match dùng chung cấu trúc; thu gọn phiên bản đầu có chủ đích. | BE-HA02, BE-H02, BE-H03, BE-H04; Hào/Hoàng, Thịnh review booking. |
+| H02-D02 | Chỉ có cột snapshot → allowlist pet/listing/policy và hướng dẫn riêng theo §9. | Giữ lịch sử đúng dữ liệu lúc đặt, không sao chép dư PII. | BE-T02, BE-HA02, BE-H02; Thịnh/Hào/Hoàng. |
+| H02-D03 | Công thức phút chưa nói giây lẻ/thời điểm bắt đầu → nhận offset bắt buộc, bắt đầu trong tương lai, tính thời lượng thực bằng giây. | Không cắt giây gây thiếu tiền hoặc vượt giới hạn thời lượng. | BE-H02, BE-H03, frontend booking; Hoàng, Thịnh review. |
+| H02-D04 | Lỗi chung chưa ánh xạ case create → bảng lỗi M05 trong API Contract. | Server, frontend và test thống nhất 404/409/422. | BE-H02 và frontend booking; Hoàng, Thịnh review. |
+| H02-D05 | Hash chuẩn hóa/replay chưa đủ chi tiết → key ASCII chữ thường, chuẩn hóa payload cố định, 201 create/200 replay, 409 khi khác payload. | Chống trùng và giữ giá/snapshot khi dữ liệu nguồn thay đổi. | BE-H02 và frontend booking; Hoàng, Thịnh review. |
+| H02-D06 | Chưa nói rõ caregiver bị khóa/tự đặt → kiểm tra profile/user/role và chặn self-booking. | Listing ACTIVE không đủ bảo đảm caregiver còn hoạt động; tách hai bên giao dịch. | BE-HA02, BE-H02, BE-H03; Hào/Hoàng, Thịnh review booking. |
 
 ### Schema và lifecycle BE-T01 (28/10/2026)
 

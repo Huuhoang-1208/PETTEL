@@ -4,6 +4,8 @@
 **Lịch:** N1–N2 · **Timebox:** 8 người-giờ, gồm ít nhất 1 giờ review · **Branch đề xuất:** `codex/4w-be-t01`.
 **Ngày triển khai:** 28/10/2026 · **Trạng thái:** schema và contract BE-T01 đã được triển khai; kết quả MySQL up/down/up được ghi trong §7.
 
+**Bổ sung 02/11/2026:** người dùng đã đồng ý sáu quyết định chi tiết BE-H02 tại §6.1 và P0 Contract §8–11. Đây là cập nhật contract sau bàn giao schema; kết quả migration/test lịch sử ở §7 không phải bằng chứng các hành vi bổ sung đã được code hoặc reviewer nghiệm thu.
+
 ## 1. Mục tiêu và nguồn chuẩn
 
 Chốt đầu vào để các owner viết migration và nghiệp vụ nhất quán: quan hệ dữ liệu, trạng thái/quyền chuyển, transaction, validation, lỗi và idempotency. Codex là người quyết định contract BE-T01; không cần Hoàng hoặc Hào phê duyệt trước. Sau khi chốt, Hoàng và Hào nhận bàn giao và dùng contract này cho phần việc phụ thuộc. Thịnh giữ vai trò owner triển khai issue #2. Tái sử dụng P0 đã có; các quyết định chi tiết hóa dưới đây là nguồn chuẩn khi tài liệu rút gọn hoặc baseline code chưa đồng bộ.
@@ -124,13 +126,26 @@ Không lưu thêm `bookings.payment_status`; đọc current attempt. Callback au
 
 ## 6. Validation, lỗi và idempotency chung
 
-- **Thời gian/giá:** DAYCARE/HOUR 1–12 giờ trong cùng ngày Việt Nam, quantity làm tròn lên giờ; BOARDING/NIGHT 12 giờ–30 ngày, quantity làm tròn lên block 24 giờ. Tính thời lượng bằng UTC theo công thức phút của P0 Contract. Quote và create dùng cùng công thức; create tính lại trong transaction, không tin amount/owner/status client gửi.
+- **Thời gian/giá:** DAYCARE/HOUR 1–12 giờ trong cùng ngày Việt Nam, quantity `ceil(duration_seconds/3600)`; BOARDING/NIGHT 12 giờ–30 ngày, quantity `ceil(duration_seconds/86400)`. Dùng thời lượng UTC thực, giữ giây lẻ. Tạo mới có start trong tương lai, timestamp có Z/offset; không thêm hạn đặt trước. Quote và create dùng chung công thức; create tính lại trong transaction, không tin amount/owner/status client gửi. Replay giữ booking/giá đã lưu theo §6.1.
 - **Lịch:** booking phải nằm trọn trong một slot mở liên tục; không có slot thì không nhận. Capacity 1/listing, không khóa chéo mọi listing của cùng caregiver. Overlap khi `existing.start_at < new.end_at AND existing.end_at > new.start_at`; hai khoảng sát nhau không xung đột.
 - **Mã và text:** dùng service/species/size/area_code và giới hạn ký tự Unicode sau chuẩn hóa/trim của P0 Contract §7. Không free text cho mã lọc; pet thiếu size không tự phù hợp listing giới hạn size.
 - **Quyền:** backend kiểm tra role, account status, ownership và resource state. OWNER mặc định, CAREGIVER tự bật có audit; ADMIN không tự cấp. `DELETION_PENDING` chỉ xử lý tối thiểu booking/report đang mở, không tạo mới; `DEACTIVATED` không đăng nhập. Chat cho hai bên từ REQUESTED đến AWAITING_CONFIRMATION, terminal chỉ đọc; care update chỉ caregiver trong IN_PROGRESS; admin đọc private có lý do/audit.
 - **Lỗi:** JSON `error: { code, message, details?, request_id }`; 400 cấu trúc sai, 401 thiếu session, 403 sai quyền, 404 không tồn tại/không được lộ, 409 cho `AVAILABILITY_CONFLICT`, `INVALID_STATE`, `IDEMPOTENCY_CONFLICT`, `REQUEST_EXPIRED`, `PAYMENT_EXPIRED`; 422 `VALIDATION_ERROR` theo field, 429 throttle; CSRF lỗi 419 theo M01. Không lộ stack trace/PII.
 - **Idempotency:** bắt buộc key cho create booking/payment; booking scope owner, payment scope booking; hash payload chuẩn hóa. Cùng key/payload trả kết quả cũ, khác payload trả 409. Callback dedupe `(provider,external_event_id)` sau xác thực; event khác ID vẫn kiểm tra state/current attempt. Hủy, job expiry và release gọi lặp không tạo transition/release thứ hai.
 - **Transaction:** nếu đụng nhiều loại row, lock theo `listing → booking → payment attempt`; callback/job chỉ cần booking/attempt thì khóa booking trước. Accept và sửa slot cùng khóa listing. Transition + status event ghi cùng transaction; queue sau commit. Không giữ lock khi gọi mạng/xử lý file; adapter lỗi giữ state hợp lệ và có retry/admin.
+
+### 6.1. Sáu quyết định BE-H02 đã chốt 02/11/2026
+
+| Decision log | Contract bàn giao | Bên áp dụng |
+| --- | --- | --- |
+| H02-D01 | `acceptance_rules_json` v1 gồm integer `schema_version=1`, mảng `species`/`sizes` không rỗng chỉ mã P0. JSON sai/không hỗ trợ không nhận booking; chưa tự lọc tuổi/nhu cầu đặc biệt. | Hào/BE-HA02, Hoàng/BE-H02/BE-H03/BE-H04. |
+| H02-D02 | Pet snapshot dùng nguyên `snapshotForBooking()`; listing/policy theo allowlist Database Design §4 M05; instructions NFC + trim lưu riêng. Giá/phiên bản/snapshot và event tạo REQUESTED ghi cùng transaction. | Thịnh/BE-T02 và review BE-H02, Hoàng/BE-H02, Hào/BE-HA02. |
+| H02-D03 | Timestamp bắt buộc Z/offset, start mới > server now; nhận giây lẻ, không cắt trước tính giá/giới hạn. DAYCARE 1 giờ 1 giây = 2 giờ; BOARDING 24 giờ 1 giây = 2 block. | Hoàng/BE-H02/BE-H03 và frontend booking. |
+| H02-D04 | Bảng lỗi create tại API Contract M05: 404 bảo vệ dữ liệu, 409 INVALID_STATE/AVAILABILITY_CONFLICT, 422 dữ liệu/điều kiện không phù hợp và key sai. | Hoàng/BE-H02, Thịnh review, frontend booking. |
+| H02-D05 | Key ASCII chữ thường/số/`-_.:` dài 1–128, không tự sửa; SHA-256 JSON chuẩn hóa năm trường theo API Contract M05. 201 create, 200 replay cùng booking/status hiện tại và dữ liệu đã lưu, 409 khác payload; không thêm event khi replay. | Hoàng/BE-H02, Thịnh review, frontend booking. |
+| H02-D06 | Profile chưa xóa mềm, user caregiver ACTIVE/còn CAREGIVER, ID lấy qua listing/profile; owner không tự đặt listing của mình (422 tại listing_id). | Hào/BE-HA02, Hoàng/BE-H02/BE-H03; Thịnh review booking. |
+
+Nguồn chuẩn: [P0 Contract §8–11 và decision log](<../02 — Domain Documentation/05 — P0 Decision Contract.md>), [Database Design](<../08 — Architecture & Technical Design/database design.md>) và [API Contract M05](<../08 — Architecture & Technical Design/04 — API Contracts & Error Conventions.md>). Đây là các quyết định đã được đồng ý, không còn là blocker chờ chốt. Fixture BE-H02 dựng owner/pet ACTIVE, caregiver hợp lệ, listing ACTIVE/DRAFT và slot bao trọn trực tiếp trong database test; không chờ admin duyệt. Nghiệm thu endpoint/snapshot/replay vẫn thuộc BE-H02.
 
 ## 7. Kiểm chứng và tiêu chí đóng issue
 

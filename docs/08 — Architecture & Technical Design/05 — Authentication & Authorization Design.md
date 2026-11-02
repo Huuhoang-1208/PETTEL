@@ -10,6 +10,8 @@ Laravel Breeze API stack cung cấp route auth; Vue SPA dùng Sanctum stateful s
 
 Policy/Gate ở server cho từng tài nguyên: PetPolicy owner; ListingPolicy caregiver owner/admin; BookingPolicy owner hoặc caregiver của listing và kiểm tra status; Message/UpdatePolicy chỉ hai bên booking; ReviewPolicy owner của booking COMPLETED; ReportPolicy reporter và admin; AdminGate riêng. Kiểm tra quyền ở cả trang lẫn endpoint, không dựa vào ẩn nút.
 
+**Create booking, chốt 02/11/2026:** actor qua `auth:sanctum`, `account.active`, `role:OWNER`; pet ACTIVE/chưa xóa mềm thuộc actor. Listing ACTIVE chưa đủ: profile phải chưa xóa mềm, user caregiver ACTIVE/còn CAREGIVER. Server lấy caregiver từ listing/profile/user; chặn owner tự đặt listing của mình, trả 422 VALIDATION_ERROR tại `listing_id`. Pet ngoài quyền/xóa mềm trả 404; không tiết lộ trạng thái riêng của caregiver qua thông báo lỗi listing. Replay booking vẫn kiểm tra auth/quyền, chỉ trả booking theo owner/key; bảng lỗi và xử lý replay tại API Contract M05, nguồn quyết định tại P0 Contract §8–11. Đây là contract BE-H02 cần triển khai, không thay đổi auth code trong lần cập nhật tài liệu.
+
 # Sanctum và token
 
 P0 dùng Sanctum cho Vue SPA: gọi `/sanctum/csrf-cookie`, gửi cookie/CSRF trên login và request ghi, bảo vệ API riêng tư bằng `auth:sanctum`. Phục vụ frontend/API cùng origin khi demo; nếu tách subdomain, cấu hình stateful domains, session domain và CORS credentials. SPA không lưu personal access token; chỉ phát token có ability/thời hạn/thu hồi nếu có client bên ngoài thật. Xử lý 401/419 bằng điều hướng đăng nhập hoặc làm mới CSRF theo luồng phù hợp.
