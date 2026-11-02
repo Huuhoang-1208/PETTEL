@@ -27,18 +27,22 @@ Mã `species`: `DOG`, `CAT`, `OTHER`; `size`: `SMALL`, `MEDIUM`, `LARGE`; `sex`:
 
 ## M03 — Caregiver profile & draft listings
 
-**Chốt ngày 02/11/2026:** người dùng đã xác nhận schema và đồng ý danh sách API, request/response, trường hệ thống và bảng lỗi dưới đây cho BE-HA02. Đây là contract để triển khai; các endpoint quản lý caregiver dưới đây chưa có trong `backend/routes/api.php` tại thời điểm đối chiếu. Kết quả kiểm tra schema không xác nhận API, validation hoặc phân quyền đã hoạt động.
+**Trạng thái triển khai BE-HA02:** đã có tám API quản lý caregiver profile và listing nháp trong `backend/routes/api.php`. Các API yêu cầu đăng nhập, account ACTIVE và role CAREGIVER; tài nguyên được giới hạn theo chủ sở hữu. Listing mới là DRAFT; chỉ DRAFT được sửa/xóa qua API nháp.
+
+Code tại commit `6eb0e3a` đã được kiểm tra local: định dạng và phân tích kiểu đạt; migration/seed đạt; toàn bộ 119 tests đạt với 1.922 assertions. Kết quả này không thay thế CI hoặc xác nhận reviewer trên commit cuối của PR.
+
+API công khai `/api/listings` chưa được triển khai. Kiểm thử tích hợp loại DRAFT khỏi danh sách/chi tiết công khai được bàn giao BE-H03.
 
 ### Schema tái sử dụng và kết quả kiểm tra
 
 Tái sử dụng migration `2026_10_28_000002_create_profiles_and_listing_schema` từ BE-T01; không cần migration mới cho contract này.
 
-| Bảng | Cột / quan hệ chính | Ràng buộc đã đối chiếu |
-| --- | --- | --- |
-| `caregiver_profiles` | `id`, `user_id`, `type`, `display_name`, `bio`, `area_code`, `deleted_at`, `created_at`, `updated_at` | Unique `user_id`, FK tới user với `RESTRICT`; loại `INDIVIDUAL`/`FACILITY`; mã khu vực P0. Không có status riêng. |
-| `listings` | `id`, `caregiver_profile_id`, `title`, `description`, `service_type`, `area_code`, `price_vnd`, `price_unit`, `capacity`, `acceptance_rules_json`, `status`, `published_at`, `version`, `deleted_at`, `created_at`, `updated_at` | FK tới profile với `RESTRICT`; giá nguyên dương; `capacity=1`; cặp `DAYCARE/HOUR` hoặc `BOARDING/NIGHT`; mặc định `status=DRAFT`, `version=1`, `published_at=null`. |
-| `listing_media` | `listing_id`, `media_object_id`, `sort_order` | PK `(listing_id,media_object_id)`; unique `(listing_id,sort_order)`; FK tới listing/media với `RESTRICT`. Không có cột `id` hoặc timestamps riêng. |
-| `availability_slots` | `id`, `listing_id`, `start_at`, `end_at`, `created_by_user_id`, `deleted_at`, `created_at`, `updated_at` | FK tới listing/user với `RESTRICT`; thời gian `DATETIME(6)`; CHECK `start_at < end_at`. |
+| Bảng                 | Cột / quan hệ chính                                                                                                                                                                                                              | Ràng buộc đã đối chiếu                                                                                                                                              |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `caregiver_profiles` | `id`, `user_id`, `type`, `display_name`, `bio`, `area_code`, `deleted_at`, `created_at`, `updated_at`                                                                                                                            | Unique `user_id`, FK tới user với `RESTRICT`; loại `INDIVIDUAL`/`FACILITY`; mã khu vực P0. Không có status riêng.                                                   |
+| `listings`           | `id`, `caregiver_profile_id`, `title`, `description`, `service_type`, `area_code`, `price_vnd`, `price_unit`, `capacity`, `acceptance_rules_json`, `status`, `published_at`, `version`, `deleted_at`, `created_at`, `updated_at` | FK tới profile với `RESTRICT`; giá nguyên dương; `capacity=1`; cặp `DAYCARE/HOUR` hoặc `BOARDING/NIGHT`; mặc định `status=DRAFT`, `version=1`, `published_at=null`. |
+| `listing_media`      | `listing_id`, `media_object_id`, `sort_order`                                                                                                                                                                                    | PK `(listing_id,media_object_id)`; unique `(listing_id,sort_order)`; FK tới listing/media với `RESTRICT`. Không có cột `id` hoặc timestamps riêng.                  |
+| `availability_slots` | `id`, `listing_id`, `start_at`, `end_at`, `created_by_user_id`, `deleted_at`, `created_at`, `updated_at`                                                                                                                         | FK tới listing/user với `RESTRICT`; thời gian `DATETIME(6)`; CHECK `start_at < end_at`.                                                                             |
 
 Quan hệ: user có tối đa một profile; profile có nhiều listing; listing có nhiều slot và nhiều media qua `listing_media`. Profile, listing và slot có xóa mềm. Một profile đã xóa mềm vẫn chịu unique `user_id`; contract này không thêm API tự khôi phục hoặc tạo profile thứ hai.
 
@@ -57,16 +61,16 @@ docker compose exec -T backend php artisan tinker --execute="dump(DB::select('SH
 
 Tất cả route dùng `auth:sanctum`, `account.active`, `role:CAREGIVER`; Vue sử dụng cookie/CSRF theo BE-H01. Nhóm `/api/caregiver` dành cho quản lý của chính caregiver, tách với API tìm kiếm công khai `/api/listings`. Role ADMIN không tự thay thế quyền sở hữu trong nhóm route này; moderation thuộc workflow riêng.
 
-| Method / route | Mục đích | Response thành công |
-| --- | --- | --- |
-| `POST /api/caregiver/profile` | Tạo profile của tài khoản đăng nhập | 201 + profile resource. |
-| `GET /api/caregiver/profile` | Xem profile của tài khoản đăng nhập | 200 + profile resource. |
-| `PATCH /api/caregiver/profile` | Cập nhật profile của tài khoản đăng nhập | 200 + profile resource. |
-| `POST /api/caregiver/listings` | Tạo listing DRAFT thuộc profile của tài khoản đăng nhập | 201 + listing resource. |
-| `GET /api/caregiver/listings` | Liệt kê listing DRAFT chưa xóa mềm thuộc tài khoản đăng nhập | 200; pagination `data`, `links`, `meta`. |
-| `GET /api/caregiver/listings/{id}` | Xem listing chưa xóa mềm thuộc tài khoản đăng nhập, kể cả trạng thái ngoài DRAFT | 200 + listing resource. |
-| `PATCH /api/caregiver/listings/{id}` | Sửa listing DRAFT thuộc tài khoản đăng nhập | 200 + listing resource. |
-| `DELETE /api/caregiver/listings/{id}` | Xóa mềm listing DRAFT thuộc tài khoản đăng nhập | 204, không response body. |
+| Method / route                        | Mục đích                                                                         | Response thành công                      |
+| ------------------------------------- | -------------------------------------------------------------------------------- | ---------------------------------------- |
+| `POST /api/caregiver/profile`         | Tạo profile của tài khoản đăng nhập                                              | 201 + profile resource.                  |
+| `GET /api/caregiver/profile`          | Xem profile của tài khoản đăng nhập                                              | 200 + profile resource.                  |
+| `PATCH /api/caregiver/profile`        | Cập nhật profile của tài khoản đăng nhập                                         | 200 + profile resource.                  |
+| `POST /api/caregiver/listings`        | Tạo listing DRAFT thuộc profile của tài khoản đăng nhập                          | 201 + listing resource.                  |
+| `GET /api/caregiver/listings`         | Liệt kê listing DRAFT chưa xóa mềm thuộc tài khoản đăng nhập                     | 200; pagination `data`, `links`, `meta`. |
+| `GET /api/caregiver/listings/{id}`    | Xem listing chưa xóa mềm thuộc tài khoản đăng nhập, kể cả trạng thái ngoài DRAFT | 200 + listing resource.                  |
+| `PATCH /api/caregiver/listings/{id}`  | Sửa listing DRAFT thuộc tài khoản đăng nhập                                      | 200 + listing resource.                  |
+| `DELETE /api/caregiver/listings/{id}` | Xóa mềm listing DRAFT thuộc tài khoản đăng nhập                                  | 204, không response body.                |
 
 Chỉ truy vấn profile chưa xóa mềm và listing chưa xóa mềm trong quan hệ của user hiện tại. Listing không tồn tại hoặc thuộc caregiver khác trả 404; không trả chi tiết trạng thái của listing ngoài quyền sở hữu. Kiểm tra quyền sở hữu trước khi trả lỗi trạng thái. Listing thuộc mình nhưng không còn DRAFT trả 409 khi PATCH/DELETE; không dùng API này sửa listing ACTIVE hoặc xử lý change request.
 
@@ -83,12 +87,12 @@ API công khai vẫn chỉ trả listing ACTIVE đủ điều kiện hiển th�
 }
 ```
 
-| Trường client được sửa | POST | Validation |
-| --- | --- | --- |
-| `type` | Bắt buộc | `INDIVIDUAL` hoặc `FACILITY`. |
-| `display_name` | Bắt buộc | Chuỗi không rỗng, tối đa 100 ký tự Unicode sau NFC + trim. |
-| `bio` | Tùy chọn, mặc định null | Chuỗi hoặc null, tối đa 2.000 ký tự Unicode sau NFC + trim. |
-| `area_code` | Bắt buộc | `DN_CENTER`, `DN_NORTH`, `DN_SOUTH`, `DN_WEST`, `DN_EAST`. |
+| Trường client được sửa | POST                    | Validation                                                  |
+| ---------------------- | ----------------------- | ----------------------------------------------------------- |
+| `type`                 | Bắt buộc                | `INDIVIDUAL` hoặc `FACILITY`.                               |
+| `display_name`         | Bắt buộc                | Chuỗi không rỗng, tối đa 100 ký tự Unicode sau NFC + trim.  |
+| `bio`                  | Tùy chọn, mặc định null | Chuỗi hoặc null, tối đa 2.000 ký tự Unicode sau NFC + trim. |
+| `area_code`            | Bắt buộc                | `DN_CENTER`, `DN_NORTH`, `DN_SOUTH`, `DN_WEST`, `DN_EAST`.  |
 
 PATCH chỉ sửa các trường được gửi; trường bỏ qua giữ nguyên, chỉ `bio` cho phép null. Không nhận `user_id` từ client để xác định profile. Profile không có trường status. POST khi đã tồn tại profile, kể cả row đã xóa mềm, trả 409 `INVALID_STATE`; không tự cập nhật hoặc khôi phục profile qua POST.
 
@@ -112,28 +116,28 @@ PATCH chỉ sửa các trường được gửi; trường bỏ qua giữ nguyê
 
 Tất cả bảy trường cấp ngoài trong ví dụ listing đều bắt buộc khi POST, không nhận null. PATCH chỉ sửa trường được gửi và giữ nguyên trường bỏ qua; nếu gửi `acceptance_rules_json` thì gửi nguyên object v1 hợp lệ, thay thế object cũ, không ngầm merge mảng hoặc key thiếu.
 
-| Trường client được sửa | Validation |
-| --- | --- |
-| `title` | Chuỗi không rỗng, tối đa 120 ký tự Unicode sau NFC + trim. |
-| `description` | Chuỗi không rỗng, tối đa 2.000 ký tự Unicode sau NFC + trim. |
-| `service_type` | `DAYCARE` hoặc `BOARDING`. |
-| `area_code` | Một trong năm mã khu vực P0 như profile. |
-| `price_vnd` | Số nguyên VND lớn hơn 0, trong phạm vi số nguyên backend hỗ trợ; không nhận số thập phân hoặc tính giá bằng số thực. |
-| `price_unit` | Chỉ cặp `DAYCARE/HOUR` hoặc `BOARDING/NIGHT`; khi PATCH kiểm tra cặp sau khi áp dụng thay đổi lên dữ liệu hiện tại. |
+| Trường client được sửa  | Validation                                                                                                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`                 | Chuỗi không rỗng, tối đa 120 ký tự Unicode sau NFC + trim.                                                                                                                |
+| `description`           | Chuỗi không rỗng, tối đa 2.000 ký tự Unicode sau NFC + trim.                                                                                                              |
+| `service_type`          | `DAYCARE` hoặc `BOARDING`.                                                                                                                                                |
+| `area_code`             | Một trong năm mã khu vực P0 như profile.                                                                                                                                  |
+| `price_vnd`             | Số nguyên VND lớn hơn 0, trong phạm vi số nguyên backend hỗ trợ; không nhận số thập phân hoặc tính giá bằng số thực.                                                      |
+| `price_unit`            | Chỉ cặp `DAYCARE/HOUR` hoặc `BOARDING/NIGHT`; khi PATCH kiểm tra cặp sau khi áp dụng thay đổi lên dữ liệu hiện tại.                                                       |
 | `acceptance_rules_json` | Object v1 theo P0 Contract §8: `schema_version` là integer 1; `species` và `sizes` là mảng không rỗng; mã loài `DOG`, `CAT`, `OTHER`; kích cỡ `SMALL`, `MEDIUM`, `LARGE`. |
 
 Không tự lọc theo tuổi hoặc nhu cầu đặc biệt trong v1. Không nhận ảnh hoặc slot lồng trong request tạo/sửa BE-HA02. BE-T03 tiếp tục quản lý ảnh/lịch trên `listing_media`/`availability_slots` hiện có; không thêm cột `availability` boolean hoặc lưu danh sách ảnh vào JSON listing.
 
 ### Trường do server quản lý
 
-| Trường | Nguồn / giá trị |
-| --- | --- |
-| Profile `user_id` | User đăng nhập. |
-| Listing `caregiver_profile_id` | Profile chưa xóa mềm của user đăng nhập. |
-| Listing `status` | Khi tạo luôn là `DRAFT`; client không được tự đổi trạng thái. |
-| Listing `capacity` | Cố định 1 tại P0. |
-| Listing `version` | Khi tạo là 1; server quản lý, client không được sửa. |
-| Listing `published_at` | Khi tạo là null; workflow duyệt quản lý về sau. |
+| Trường                                         | Nguồn / giá trị                                                                |
+| ---------------------------------------------- | ------------------------------------------------------------------------------ |
+| Profile `user_id`                              | User đăng nhập.                                                                |
+| Listing `caregiver_profile_id`                 | Profile chưa xóa mềm của user đăng nhập.                                       |
+| Listing `status`                               | Khi tạo luôn là `DRAFT`; client không được tự đổi trạng thái.                  |
+| Listing `capacity`                             | Cố định 1 tại P0.                                                              |
+| Listing `version`                              | Khi tạo là 1; server quản lý, client không được sửa.                           |
+| Listing `published_at`                         | Khi tạo là null; workflow duyệt quản lý về sau.                                |
 | `id`, `created_at`, `updated_at`, `deleted_at` | Hệ thống quản lý; DELETE thực hiện xóa mềm, không nhận `deleted_at` từ client. |
 
 Nếu request chứa các trường hệ thống trên thì trả 422 `VALIDATION_ERROR` tại trường tương ứng, kể cả gửi null hoặc gửi đúng giá trị mặc định. Chỉ ghi các trường thuộc danh sách được phép đã qua validation; không dùng toàn bộ request để tạo/cập nhật model. Quy tắc từ chối trường hệ thống ở M03 không thay quy tắc bỏ qua trường client của endpoint booking.
@@ -187,17 +191,17 @@ GET/PATCH trả cùng cấu trúc resource với dữ liệu hiện tại và HT
 
 ### Bảng lỗi M03
 
-| Tình huống | HTTP | Mã lỗi / chi tiết |
-| --- | --- | --- |
-| Chưa đăng nhập | 401 | Theo BE-H01. |
-| Account không ACTIVE hoặc thiếu role CAREGIVER | 403 | Theo BE-H01. |
-| Thiếu/sai/hết hạn CSRF | 419 | Theo BE-H01. |
-| GET/PATCH profile không tồn tại hoặc đã xóa mềm | 404 | Không trả dữ liệu profile. |
-| Listing không tồn tại, đã xóa mềm hoặc thuộc người khác | 404 | Không tiết lộ trạng thái hoặc dữ liệu ngoài quyền sở hữu. |
-| Tạo profile khi đã có profile | 409 | `INVALID_STATE`; bao gồm profile đã xóa mềm vì unique theo user. |
-| Tạo listing khi chưa có profile chưa xóa mềm | 409 | `INVALID_STATE`. |
-| PATCH/DELETE listing thuộc mình nhưng không còn DRAFT | 409 | `INVALID_STATE`. |
-| Dữ liệu không hợp lệ hoặc có trường hệ thống bị cấm | 422 | `VALIDATION_ERROR`; `details` chỉ ra trường tương ứng. |
+| Tình huống                                              | HTTP | Mã lỗi / chi tiết                                                |
+| ------------------------------------------------------- | ---- | ---------------------------------------------------------------- |
+| Chưa đăng nhập                                          | 401  | Theo BE-H01.                                                     |
+| Account không ACTIVE hoặc thiếu role CAREGIVER          | 403  | Theo BE-H01.                                                     |
+| Thiếu/sai/hết hạn CSRF                                  | 419  | Theo BE-H01.                                                     |
+| GET/PATCH profile không tồn tại hoặc đã xóa mềm         | 404  | Không trả dữ liệu profile.                                       |
+| Listing không tồn tại, đã xóa mềm hoặc thuộc người khác | 404  | Không tiết lộ trạng thái hoặc dữ liệu ngoài quyền sở hữu.        |
+| Tạo profile khi đã có profile                           | 409  | `INVALID_STATE`; bao gồm profile đã xóa mềm vì unique theo user. |
+| Tạo listing khi chưa có profile chưa xóa mềm            | 409  | `INVALID_STATE`.                                                 |
+| PATCH/DELETE listing thuộc mình nhưng không còn DRAFT   | 409  | `INVALID_STATE`.                                                 |
+| Dữ liệu không hợp lệ hoặc có trường hệ thống bị cấm     | 422  | `VALIDATION_ERROR`; `details` chỉ ra trường tương ứng.           |
 
 Lỗi nghiệp vụ dùng envelope `error: { code, message, details?, request_id }` chung. Auth/CSRF giữ response của BE-H01 hiện hành, không giả định lớp auth đã có envelope giống lỗi nghiệp vụ. Test HTTP cho các tình huống trên thuộc bước triển khai BE-HA02 tiếp theo; mục này chỉ chốt contract.
 
