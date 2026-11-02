@@ -77,6 +77,18 @@ requested() đăng nhập owner khi gọi create; chuyển sang caregiver trư�
 
 Task accept phải tự kiểm tra lại quyền caregiver, trạng thái/expiry, slot và booking đang giữ chỗ dưới transaction; REQUESTED hiện tại chưa giữ lịch. Khi accept thành công theo contract, chuyển sang AWAITING_PAYMENT và đặt hạn thanh toán 15 phút. Tạo REQUESTED thành công không chứng minh luồng accept/payment/expiry đã triển khai.
 
+### Contract BE-HA03 nhận bàn giao — chốt 02/11/2026
+
+Người dùng đã đồng ý [P0 §12](<../02 — Domain Documentation/05 — P0 Decision Contract.md>) và [API M05 accept/reject](<../08 — Architecture & Technical Design/04 — API Contracts & Error Conventions.md>). Không thay kết quả test, trạng thái bàn giao hoặc xác nhận reviewer của BE-H02; chưa xác nhận BE-HA03 đã triển khai.
+
+- Giữ lịch theo cùng listing, capacity=1; không chia sẻ công suất giữa các listing cùng caregiver. Bốn trạng thái giữ lịch và khoảng `[start_at,end_at)` dùng chung với create/search; slot phải bao trọn.
+- Accept REQUESTED chưa hết hiệu lực → AWAITING_PAYMENT trong 15 phút; accept lặp trả INVALID_STATE, không gia hạn. Hết hiệu lực tại `min(created_at + 24 giờ, start_at)` trả REQUEST_EXPIRED dù job chưa chạy.
+- Reject REQUESTED → CANCELLED, event CAREGIVER_REJECTED của caregiver. Replay chính lần reject trước trả 200, không thêm event; trạng thái/lý do hủy khác trả INVALID_STATE. Listing ngừng nhận không chặn reject hợp lệ.
+- Sai caregiver trả 404 NOT_FOUND; listing ngừng ACTIVE/điều kiện trọng yếu thay đổi trả 409 INVALID_STATE; thiếu slot hoặc overlap trả 409 AVAILABILITY_CONFLICT. Giữ giá/snapshot nếu chỉ đổi giá.
+- Accept kiểm tra lại nguồn dưới transaction/khóa listing; booking/hạn thanh toán/event phải nguyên tử. Không bỏ qua AWAITING_PAYMENT quá hạn khi trạng thái chưa chuyển theo BE-T04.
+
+Checklist triển khai và test riêng: [BE-HA03 — Quy tắc accept/reject và chống trùng lịch](<BE-HA03 — Quy tắc accept-reject và chống trùng lịch.md>). Hào triển khai, Hoàng review BE-HA03; không đánh dấu thay checklist review BE-H02 của Thịnh bên dưới.
+
 ## Checklist review của Thịnh
 
 Giữ các ô bên dưới chưa chọn cho đến khi Thịnh review trên commit bàn giao.

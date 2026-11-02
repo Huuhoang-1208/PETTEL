@@ -355,6 +355,51 @@ Chỉ khi chưa có booking mới kiểm tra nguồn dữ liệu/thời gian/slo
 
 404 về quyền nhìn thấy tài nguyên được xét trước khi trả chi tiết trạng thái/điều kiện của tài nguyên đó. Bảng này bổ sung tình huống cho envelope `error: { code, message, details?, request_id }` chung; không thay các mã lỗi auth đã bàn giao.
 
+## M05 — Accept/reject booking — chốt BE-HA03 ngày 02/11/2026
+
+**Trạng thái:** contract được người dùng đồng ý để triển khai; chưa xác nhận endpoint accept/reject đã tồn tại, test đã đạt hoặc Hoàng đã review. Nguồn chuẩn: [P0 Decision Contract §12](<../02 — Domain Documentation/05 — P0 Decision Contract.md>).
+
+### Quyền, kết quả và thao tác lặp
+
+Contract cho `POST /api/bookings/{id}/accept` và `POST /api/bookings/{id}/reject`: xác thực theo auth contract, actor có quyền caregiver và booking có `caregiver_user_id` trùng user đang đăng nhập. Không lấy caregiver/status/giá/hạn thanh toán từ client. Thành công trả HTTP 200 với object booking theo BookingResource hiện có, không bọc `data`.
+
+| Thao tác / trạng thái | Kết quả |
+| --- | --- |
+| Accept REQUESTED trước `min(created_at + 24 giờ, start_at)`; listing, slot và lịch hợp lệ | AWAITING_PAYMENT; `payment_due_at = thời điểm accept + 15 phút`; thêm một event USER của caregiver. |
+| Accept REQUESTED tại hoặc sau mốc hết hiệu lực, job chưa chuyển trạng thái | 409 REQUEST_EXPIRED; không được nhận booking. |
+| Accept từ trạng thái khác, kể cả đã AWAITING_PAYMENT | 409 INVALID_STATE; không gia hạn, không thêm event. |
+| Reject REQUESTED hợp lệ | CANCELLED; thêm một event `REQUESTED → CANCELLED`, `reason_code=CAREGIVER_REJECTED`, `source=USER`, actor là caregiver. |
+| Reject lặp khi CANCELLED do chính caregiver đó từ chối trước đó | 200 với booking đã lưu; không thêm event, không sửa snapshot. |
+| Reject khi đã hủy vì lý do khác hoặc từ trạng thái khác | 409 INVALID_STATE; hủy booking sau accept thuộc luồng cancel/payment. |
+
+Listing ngừng ACTIVE chặn accept nhưng không chặn reject yêu cầu đang chờ hợp lệ. Reject lặp phải được nhận diện bằng trạng thái và event của chính caregiver, không chỉ bằng `status=CANCELLED`; vẫn kiểm tra auth/quyền khi replay. Không thêm booking status ACCEPTED/REJECTED. Accept/reject không thay giá hoặc snapshot đã lưu. Nếu chỉ giá listing đổi, giữ giá cũ; nếu loại dịch vụ hoặc điều kiện nhận pet trọng yếu đổi so với snapshot thì accept trả INVALID_STATE và yêu cầu owner tạo booking mới. Không chỉ dùng thay đổi `listing_version` để kết luận điều kiện trọng yếu đã đổi, vì thay đổi giá đơn thuần vẫn được giữ giá cũ.
+
+### Lịch và tính toàn vẹn
+
+Chỉ xét booking cùng `listing_id`, capacity=1; nhiều listing cùng caregiver chưa chia sẻ công suất. Slot mở chưa xóa mềm phải bao trọn booking, không tự ghép các slot rời. Khoảng `[start_at,end_at)` dùng UTC/microsecond; overlap khi `existing.start_at < incoming.end_at AND existing.end_at > incoming.start_at`; hai khoảng chỉ chạm đầu/cuối không xung đột.
+
+Các trạng thái giữ lịch là AWAITING_PAYMENT, CONFIRMED, IN_PROGRESS, AWAITING_CONFIRMATION; REQUESTED, CANCELLED, COMPLETED không giữ lịch. Không bỏ qua AWAITING_PAYMENT chỉ vì `payment_due_at` đã qua: BE-T04 phải chuyển trạng thái theo cùng quy trình expiry/void/refund trước khi lịch được thả. Quy tắc này phải nhất quán với quote/create/search.
+
+Accept kiểm tra lại quyền, trạng thái/expiry, điều kiện listing/caregiver, slot và overlap trong transaction với khóa chung listing; không chỉ khóa từng booking và không dùng cache làm nguồn quyết định. Booking, hạn thanh toán và event được ghi cùng transaction; reject cũng ghi booking/event cùng transaction. Hai accept đồng thời trên hai REQUESTED xung đột chỉ một thành công, thao tác còn lại trả 409 AVAILABILITY_CONFLICT, booking thua vẫn REQUESTED và không có event accept. Lỗi ghi event phải rollback thay đổi booking.
+
+### Bảng lỗi accept/reject
+
+| Tình huống | HTTP | Mã lỗi / quy tắc |
+| --- | --- | --- |
+| Chưa đăng nhập | 401 | Theo auth contract hiện có. |
+| Account/role không được phép thao tác | 403 | Theo auth contract hiện có. |
+| CSRF thiếu, sai hoặc hết hạn | 419 | Theo auth contract hiện có. |
+| Booking không tồn tại hoặc thuộc caregiver khác | 404 | NOT_FOUND; không tiết lộ booking ngoài quyền. |
+| Chuyển trạng thái không hợp lệ hoặc accept lặp | 409 | INVALID_STATE. |
+| Listing ngừng ACTIVE hoặc không còn đủ điều kiện nhận booking khi accept | 409 | INVALID_STATE; không áp điều kiện nhận mới này cho reject hợp lệ. |
+| Loại dịch vụ/điều kiện nhận pet trọng yếu thay đổi so với snapshot | 409 | INVALID_STATE; thông báo yêu cầu tạo booking mới, giữ snapshot cũ. |
+| Không có slot mở bao trọn hoặc giao booking đang giữ lịch | 409 | AVAILABILITY_CONFLICT. |
+| REQUESTED đã hết hiệu lực tại thời điểm accept | 409 | REQUEST_EXPIRED; không phụ thuộc job đã chạy hay chưa. |
+
+Thứ tự xử lý: auth/quyền nhìn thấy booking trước; sau đó nhận diện reject replay và kiểm tra trạng thái; với accept kiểm tra expiry trước listing/điều kiện/slot/overlap. Không trả thông tin trạng thái/lịch hoặc ID của booking xung đột cho người ngoài quyền. Lỗi nghiệp vụ dùng envelope `error: { code, message, details?, request_id }` chung; message phân biệt listing ngừng nhận, trạng thái sai và lịch xung đột. Auth/CSRF giữ response hiện hành.
+
+Các test bắt buộc gồm hai accept đồng thời cùng listing chỉ một thắng, khác listing cùng caregiver không bị chặn vì overlap, sai caregiver trả 404, listing ngừng nhận chặn accept nhưng cho reject hợp lệ, thao tác lặp, ranh giới expiry, slot bao trọn/tiếp giáp, thay đổi giá/điều kiện và rollback booking/event. Checklist: [BE-HA03 — Quy tắc accept/reject và chống trùng lịch](<../05 — Implementation Plan/BE-HA03 — Quy tắc accept-reject và chống trùng lịch.md>).
+
 # Tài liệu API
 
 Dùng Scramble sinh OpenAPI từ routes/FormRequest/Resource phục vụ Vue; review thủ công ví dụ lỗi, quyền, state và idempotency. Giới hạn truy cập tài liệu API ở demo nếu có endpoint nội bộ.
