@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Listing extends Model
@@ -30,6 +32,22 @@ class Listing extends Model
     public function caregiverProfile(): BelongsTo
     {
         return $this->belongsTo(CaregiverProfile::class);
+    }
+
+    /** @return BelongsToMany<MediaObject, $this> */
+    public function media(): BelongsToMany
+    {
+        return $this->belongsToMany(MediaObject::class, 'listing_media')
+            ->withPivot('sort_order')
+            ->orderByPivot('sort_order');
+    }
+
+    /** @return HasMany<AvailabilitySlot, $this> */
+    public function availabilitySlots(): HasMany
+    {
+        return $this->hasMany(AvailabilitySlot::class)
+            ->orderBy('start_at')
+            ->orderBy('id');
     }
 
     /** @return array{price_vnd: 'integer', capacity: 'integer', version: 'integer', acceptance_rules_json: 'array', published_at: 'datetime'} */
