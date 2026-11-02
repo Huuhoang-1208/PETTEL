@@ -15,6 +15,7 @@ Route::post('/user/roles/caregiver', EnableCaregiverRoleController::class)
     ->name('user.roles.caregiver');
 
 Route::middleware(['auth:sanctum', 'account.active', 'role:OWNER'])->group(function () {
+    Route::post('/bookings/quote', [BookingController::class, 'quote'])->name('bookings.quote');
     Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
 
     Route::get('/pets', [PetController::class, 'index'])->name('pets.index');

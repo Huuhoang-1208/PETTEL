@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Domain\Booking\Actions\CalculateBookingPrice;
 use App\Models\Pet;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -57,7 +58,8 @@ class StoreBookingRequest extends FormRequest
     }
 
     // Call after replay handling and inside the create transaction in task 4/5.
-    public function validateSources(): void
+    /** @return array{pet: Pet, listing: object, start: CarbonImmutable, end: CarbonImmutable, pricing: array<string, int|string>} */
+    public function validateSources(): array
     {
         $owner = $this->user();
         if (! $owner instanceof User) {
@@ -143,26 +145,13 @@ class StoreBookingRequest extends FormRequest
             ]);
         }
 
-        if ($end->lessThanOrEqualTo($start)) {
-            $this->reject(422, 'VALIDATION_ERROR', 'End must be after start.', [
-                'end_at' => ['End must be after start.'],
-            ]);
-        }
-
-        $seconds = $start->diffInSeconds($end);
-        $validDuration = match ($listing->service_type) {
-            'DAYCARE' => $seconds >= 3600 && $seconds <= 43200
-                && $start->setTimezone('Asia/Ho_Chi_Minh')->isSameDay($end->setTimezone('Asia/Ho_Chi_Minh')),
-            'BOARDING' => $seconds >= 43200 && $seconds <= 2592000,
-            default => false,
-        };
-
-        if (! $validDuration) {
-            $this->reject(422, 'VALIDATION_ERROR', 'Invalid service duration.', [
-                'end_at' => ['Time range does not meet service requirements.'],
-            ]);
-        }
-
+        $pricing = app(CalculateBookingPrice::class)->calculate(
+            $listing->service_type,
+            $listing->price_unit,
+            $listing->price_vnd,
+            $start,
+            $end,
+        );
         $startSql = $start->format('Y-m-d H:i:s.u');
         $endSql = $end->format('Y-m-d H:i:s.u');
 
@@ -177,6 +166,14 @@ class StoreBookingRequest extends FormRequest
         if (! $covered || $conflict) {
             $this->reject(409, 'AVAILABILITY_CONFLICT', 'Time range is unavailable.');
         }
+
+        return [
+            'pet' => $pet,
+            'listing' => $listing,
+            'start' => $start,
+            'end' => $end,
+            'pricing' => $pricing,
+        ];
     }
 
     protected function failedValidation(Validator $validator): void

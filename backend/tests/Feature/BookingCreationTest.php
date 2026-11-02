@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Domain\Booking\Actions\CalculateBookingPrice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -270,6 +271,97 @@ class BookingCreationTest extends TestCase
             $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', $fixture['idempotency_key'])
                 ->postJson('/api/bookings', $payload)->assertStatus($status);
         }
+        $this->assertDatabaseCount('bookings', 0);
+    }
+
+    public function test_quote_needs_no_key_and_ignores_client_price(): void
+    {
+        $fixture = $this->bookingFixture();
+        $this->actingAs($fixture['owner'])->postJson('/api/bookings/quote', $fixture['payload'] + [
+            'amount' => 1,
+            'price_vnd' => 1,
+            'owner_id' => $fixture['caregiver']->id,
+        ])->assertOk()->assertExactJson([
+            'price_total_vnd' => 150000,
+            'price_unit' => 'HOUR',
+            'quantity' => 3,
+            'pricing_version' => 1,
+            'cancellation_policy_version' => 1,
+        ]);
+        $this->assertDatabaseCount('bookings', 0);
+        $this->assertDatabaseCount('booking_status_events', 0);
+    }
+
+    public function test_quote_and_create_call_the_same_calculator(): void
+    {
+        $calculator = \Mockery::mock(CalculateBookingPrice::class)->makePartial();
+        $calculator->shouldReceive('calculate')->twice()->passthru();
+        $this->app->instance(CalculateBookingPrice::class, $calculator);
+
+        $fixture = $this->bookingFixture();
+        $this->actingAs($fixture['owner'])->postJson('/api/bookings/quote', $fixture['payload'])
+            ->assertOk()->assertJsonPath('price_total_vnd', 150000);
+        $this->withHeader('Idempotency-Key', $fixture['idempotency_key'])
+            ->postJson('/api/bookings', $fixture['payload'])->assertNoContent();
+        $this->assertDatabaseCount('bookings', 0);
+    }
+
+    public function test_quote_reflects_current_listing_price(): void
+    {
+        $fixture = $this->bookingFixture();
+        $this->actingAs($fixture['owner'])->postJson('/api/bookings/quote', $fixture['payload'])
+            ->assertOk()->assertJsonPath('price_total_vnd', 150000);
+        DB::table('listings')->where('id', $fixture['active_listing_id'])->update(['price_vnd' => 70000]);
+        $this->postJson('/api/bookings/quote', $fixture['payload'])
+            ->assertOk()->assertJsonPath('price_total_vnd', 210000);
+        $this->assertDatabaseCount('bookings', 0);
+    }
+
+    public function test_quote_uses_the_same_auth_ownership_and_availability_checks(): void
+    {
+        $fixture = $this->bookingFixture();
+        $this->postJson('/api/bookings/quote', $fixture['payload'])->assertUnauthorized();
+        $foreign = array_replace($fixture['payload'], ['pet_id' => (string) $fixture['foreign_pet']->id]);
+        $this->actingAs($fixture['owner'])->postJson('/api/bookings/quote', $foreign)->assertNotFound();
+        DB::table('availability_slots')->where('listing_id', $fixture['active_listing_id'])->delete();
+        $this->postJson('/api/bookings/quote', $fixture['payload'])
+            ->assertConflict()->assertJsonPath('error.code', 'AVAILABILITY_CONFLICT');
+        $this->assertDatabaseCount('bookings', 0);
+    }
+
+    public function test_quote_rounds_up_an_extra_microsecond(): void
+    {
+        $fixture = $this->bookingFixture();
+        $payload = array_replace($fixture['payload'], [
+            'end_at' => $fixture['start_at']->addHour()->addMicrosecond()->format('Y-m-d\TH:i:s.u\Z'),
+        ]);
+        $this->actingAs($fixture['owner'])->postJson('/api/bookings/quote', $payload)
+            ->assertOk()->assertJsonPath('quantity', 2)->assertJsonPath('price_total_vnd', 100000);
+    }
+
+    public function test_boarding_quote_uses_blocks_of_24_hours(): void
+    {
+        $fixture = $this->bookingFixture();
+        DB::table('listings')->where('id', $fixture['active_listing_id'])
+            ->update(['service_type' => 'BOARDING', 'price_unit' => 'NIGHT', 'price_vnd' => 200000]);
+        $end = $fixture['start_at']->addHours(25);
+        DB::table('availability_slots')->where('listing_id', $fixture['active_listing_id'])
+            ->update(['end_at' => $end->addHour()->format('Y-m-d H:i:s.u')]);
+        $payload = array_replace($fixture['payload'], ['end_at' => $end->toIso8601String()]);
+        $this->actingAs($fixture['owner'])->postJson('/api/bookings/quote', $payload)
+            ->assertOk()->assertJsonPath('quantity', 2)->assertJsonPath('price_unit', 'NIGHT')
+            ->assertJsonPath('price_total_vnd', 400000);
+    }
+
+    public function test_quote_and_create_both_reject_price_overflow(): void
+    {
+        $fixture = $this->bookingFixture();
+        DB::table('listings')->where('id', $fixture['active_listing_id'])->update(['price_vnd' => PHP_INT_MAX]);
+        $this->actingAs($fixture['owner'])->postJson('/api/bookings/quote', $fixture['payload'])
+            ->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
+        $this->withHeader('Idempotency-Key', $fixture['idempotency_key'])
+            ->postJson('/api/bookings', $fixture['payload'])
+            ->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
         $this->assertDatabaseCount('bookings', 0);
     }
 
