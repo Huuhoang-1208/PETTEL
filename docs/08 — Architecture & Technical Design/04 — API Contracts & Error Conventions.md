@@ -6,20 +6,20 @@ PETTEL — Architecture & Technical Design \| Hợp đồng JSON cho Vue SPA; Fi
 
 Breeze API scaffold cung cấp route đăng ký/đăng nhập/đăng xuất/khôi phục mật khẩu; Vue lấy `/sanctum/csrf-cookie` trước thao tác auth. Route riêng tư dùng `auth:sanctum`; không phát hành bearer token cho SPA.
 
-GET /api/listings?service\_type=\&area_code=\&start\_at=\&end\_at=\&pet\_id= — public filters; pet\_id chỉ khi owner đăng nhập. GET /api/listings/{id} — chỉ ACTIVE hoặc owner/admin có quyền. POST /api/bookings — pet\_id, listing\_id, start\_at, end\_at, instructions, Idempotency-Key. POST /api/bookings/{id}/accept — caregiver; POST /api/bookings/{id}/cancel — actor được phép; POST /api/bookings/{id}/sandbox-payments — owner. POST /api/sandbox/callback — chỉ adapter sandbox. POST /api/bookings/{id}/updates và /confirm-completion; POST /api/reports.
+GET /api/listings?service_type=\&area_code=\&start_at=\&end_at=\&pet_id= — public filters; pet_id chỉ khi owner đăng nhập. GET /api/listings/{id} — chỉ ACTIVE hoặc owner/admin có quyền. POST /api/bookings — pet_id, listing_id, start_at, end_at, instructions, Idempotency-Key. POST /api/bookings/{id}/accept — caregiver; POST /api/bookings/{id}/cancel — actor được phép; POST /api/bookings/{id}/sandbox-payments — owner. POST /api/sandbox/callback — chỉ adapter sandbox. POST /api/bookings/{id}/updates và /confirm-completion; POST /api/reports.
 
 ## M02 — Pet Profiles
 
 Các route pet yêu cầu `auth:sanctum`, account `ACTIVE` và role `OWNER`; mọi truy vấn chỉ trả pet chưa xóa mềm của owner hiện tại. ID không thuộc owner trả 404. Caregiver không có route đọc pet live; dữ liệu chăm sóc chỉ được cung cấp trong snapshot của booking liên quan.
 
-| Method / route | Dùng để | Request / response |
-| --- | --- | --- |
-| `GET /api/pets` | Liệt kê pet của owner, gồm `ACTIVE` và `ARCHIVED` | Pagination chuẩn `data`, `links`, `meta`. |
-| `POST /api/pets` | Tạo pet | `name`, `species` bắt buộc; các trường hồ sơ khác tùy chọn; trả resource 201. |
-| `GET /api/pets/{pet}` | Xem hồ sơ | `PetResource`; chỉ owner của pet. |
-| `PATCH /api/pets/{pet}` | Cập nhật hồ sơ | Chỉ field hồ sơ được gửi; `user_id` và `status` do server quản lý. |
-| `PATCH /api/pets/{pet}/archive` / `activate` | Lưu trữ hoặc kích hoạt lại hồ sơ | Cập nhật `status`; chỉ pet ACTIVE được dùng tạo booking. |
-| `DELETE /api/pets/{pet}` | Xóa mềm | Đặt `deleted_at`; luôn giữ row khi booking tham chiếu. Trả 204. |
+| Method / route                               | Dùng để                                           | Request / response                                                            |
+| -------------------------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `GET /api/pets`                              | Liệt kê pet của owner, gồm `ACTIVE` và `ARCHIVED` | Pagination chuẩn `data`, `links`, `meta`.                                     |
+| `POST /api/pets`                             | Tạo pet                                           | `name`, `species` bắt buộc; các trường hồ sơ khác tùy chọn; trả resource 201. |
+| `GET /api/pets/{pet}`                        | Xem hồ sơ                                         | `PetResource`; chỉ owner của pet.                                             |
+| `PATCH /api/pets/{pet}`                      | Cập nhật hồ sơ                                    | Chỉ field hồ sơ được gửi; `user_id` và `status` do server quản lý.            |
+| `PATCH /api/pets/{pet}/archive` / `activate` | Lưu trữ hoặc kích hoạt lại hồ sơ                  | Cập nhật `status`; chỉ pet ACTIVE được dùng tạo booking.                      |
+| `DELETE /api/pets/{pet}`                     | Xóa mềm                                           | Đặt `deleted_at`; luôn giữ row khi booking tham chiếu. Trả 204.               |
 
 Mã `species`: `DOG`, `CAT`, `OTHER`; `size`: `SMALL`, `MEDIUM`, `LARGE`; `sex`: `MALE`, `FEMALE`, `UNKNOWN`. Tên tối đa 100, `age_note` tối đa 100 và mỗi trường ghi chú tối đa 2.000 ký tự Unicode sau trim/NFC. Ngày sinh không được ở tương lai. Ảnh chỉ nhận `photo_media_id` thuộc owner hiện tại và đang `READY`; API này không upload ảnh hay trả URL ảnh.
 
@@ -65,22 +65,22 @@ Chỉ khi chưa có booking mới kiểm tra nguồn dữ liệu/thời gian/slo
 
 ### Bảng lỗi tạo booking
 
-| Tình huống | HTTP | Mã lỗi / chi tiết |
-| --- | --- | --- |
-| Chưa đăng nhập | 401 | Theo auth contract. |
-| Thiếu role OWNER hoặc account actor không ACTIVE | 403 | Theo auth/role contract. |
-| CSRF thiếu, sai hoặc hết hạn | 419 | Theo auth contract. |
-| Pet không tồn tại, xóa mềm hoặc thuộc owner khác | 404 | Không tiết lộ tài nguyên riêng. |
-| Pet thuộc owner nhưng ARCHIVED | 409 | `INVALID_STATE`. |
-| Listing không tồn tại, xóa mềm hoặc actor không được phép xem | 404 | Không tiết lộ listing ngoài quyền xem. |
-| Listing actor được phép xem nhưng không ACTIVE | 409 | `INVALID_STATE`. |
-| Listing thấy được nhưng điều kiện JSON sai/không hỗ trợ, hoặc caregiver không còn đủ điều kiện | 409 | `INVALID_STATE`; thông báo chung về listing, không lộ trạng thái tài khoản caregiver. |
-| Pet không khớp điều kiện loài/kích cỡ | 422 | `VALIDATION_ERROR`, tại `pet_id`. |
-| Owner tự đặt listing của mình | 422 | `VALIDATION_ERROR`, tại `listing_id`. |
-| Sai định dạng/thời lượng hoặc bắt đầu trong quá khứ/bằng hiện tại | 422 | `VALIDATION_ERROR`, tại trường thời gian tương ứng. |
-| Không có slot bao trọn hoặc giao booking đang khóa lịch | 409 | `AVAILABILITY_CONFLICT`; không tính các REQUESTED khác là khóa lịch. |
-| Thiếu/sai định dạng idempotency key | 422 | `VALIDATION_ERROR`, chi tiết tại header `Idempotency-Key`. |
-| Cùng owner/key nhưng khác payload chuẩn hóa | 409 | `IDEMPOTENCY_CONFLICT`. |
+| Tình huống                                                                                     | HTTP | Mã lỗi / chi tiết                                                                     |
+| ---------------------------------------------------------------------------------------------- | ---- | ------------------------------------------------------------------------------------- |
+| Chưa đăng nhập                                                                                 | 401  | Theo auth contract.                                                                   |
+| Thiếu role OWNER hoặc account actor không ACTIVE                                               | 403  | Theo auth/role contract.                                                              |
+| CSRF thiếu, sai hoặc hết hạn                                                                   | 419  | Theo auth contract.                                                                   |
+| Pet không tồn tại, xóa mềm hoặc thuộc owner khác                                               | 404  | Không tiết lộ tài nguyên riêng.                                                       |
+| Pet thuộc owner nhưng ARCHIVED                                                                 | 409  | `INVALID_STATE`.                                                                      |
+| Listing không tồn tại, xóa mềm hoặc actor không được phép xem                                  | 404  | Không tiết lộ listing ngoài quyền xem.                                                |
+| Listing actor được phép xem nhưng không ACTIVE                                                 | 409  | `INVALID_STATE`.                                                                      |
+| Listing thấy được nhưng điều kiện JSON sai/không hỗ trợ, hoặc caregiver không còn đủ điều kiện | 409  | `INVALID_STATE`; thông báo chung về listing, không lộ trạng thái tài khoản caregiver. |
+| Pet không khớp điều kiện loài/kích cỡ                                                          | 422  | `VALIDATION_ERROR`, tại `pet_id`.                                                     |
+| Owner tự đặt listing của mình                                                                  | 422  | `VALIDATION_ERROR`, tại `listing_id`.                                                 |
+| Sai định dạng/thời lượng hoặc bắt đầu trong quá khứ/bằng hiện tại                              | 422  | `VALIDATION_ERROR`, tại trường thời gian tương ứng.                                   |
+| Không có slot bao trọn hoặc giao booking đang khóa lịch                                        | 409  | `AVAILABILITY_CONFLICT`; không tính các REQUESTED khác là khóa lịch.                  |
+| Thiếu/sai định dạng idempotency key                                                            | 422  | `VALIDATION_ERROR`, chi tiết tại header `Idempotency-Key`.                            |
+| Cùng owner/key nhưng khác payload chuẩn hóa                                                    | 409  | `IDEMPOTENCY_CONFLICT`.                                                               |
 
 404 về quyền nhìn thấy tài nguyên được xét trước khi trả chi tiết trạng thái/điều kiện của tài nguyên đó. Bảng này bổ sung tình huống cho envelope `error: { code, message, details?, request_id }` chung; không thay các mã lỗi auth đã bàn giao.
 
@@ -91,3 +91,106 @@ Dùng Scramble sinh OpenAPI từ routes/FormRequest/Resource phục vụ Vue; re
 # Contract P0 bổ sung
 
 [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>) định nghĩa mã trạng thái và giá. `POST /api/bookings/quote` nhận pet_id, listing_id, start_at, end_at; trả price_total_vnd, price_unit, quantity, pricing_version và cancellation_policy_version, không tạo booking. POST booking tính lại cùng công thức trong transaction; không tin amount client. `POST /api/bookings/{id}/cancel` kiểm tra actor/state, chỉ trả CANCELLED sau void/refund sandbox tương ứng. `POST /api/bookings/{id}/messages` chỉ cho hai bên gửi khi booking từ REQUESTED đến AWAITING_CONFIRMATION. Care update chỉ caregiver trong IN_PROGRESS. Endpoint bật role CAREGIVER yêu cầu user đăng nhập, ghi audit; admin role không có route tự cấp. Các lỗi hết hạn dùng HTTP 409 với mã `REQUEST_EXPIRED` hoặc `PAYMENT_EXPIRED`; conflict, invalid state và idempotency conflict cũng trả 409.
+
+## BE-H02 — Ví dụ request/response triển khai
+
+Các ID dưới đây là minh họa; thay bằng ID của fixture thực tế. Timestamp mẫu thuộc tương lai tại thời điểm viết; khi chạy thủ công phải chọn thời gian tương lai nằm trong slot. Phiên đăng nhập là owner ACTIVE có role OWNER, dùng cookie Sanctum và CSRF theo auth contract.
+
+### Quote
+
+```http
+POST /api/bookings/quote
+Accept: application/json
+Content-Type: application/json
+```
+
+```json
+{
+    "pet_id": "101",
+    "listing_id": "201",
+    "start_at": "2030-01-01T08:00:00+07:00",
+    "end_at": "2030-01-01T10:10:00+07:00"
+}
+```
+
+Listing DAYCARE/HOUR có đơn giá 50.000 VND; thời lượng 130 phút làm tròn thành 3 giờ. Response HTTP 200:
+
+```json
+{
+    "price_total_vnd": 150000,
+    "price_unit": "HOUR",
+    "quantity": 3,
+    "pricing_version": 1,
+    "cancellation_policy_version": 1
+}
+```
+
+### Create và replay
+
+```http
+POST /api/bookings
+Accept: application/json
+Content-Type: application/json
+Idempotency-Key: be-h02-example-001
+```
+
+```json
+{
+    "pet_id": "101",
+    "listing_id": "201",
+    "start_at": "2030-01-01T08:00:00+07:00",
+    "end_at": "2030-01-01T10:10:00+07:00",
+    "instructions": "Feed at 09:00 Vietnam time"
+}
+```
+
+Response HTTP 201 khi tạo mới, object ở gốc, không bọc `data`:
+
+```json
+{
+    "id": "301",
+    "status": "REQUESTED",
+    "pet_id": "101",
+    "listing_id": "201",
+    "start_at": "2030-01-01T01:00:00.000000Z",
+    "end_at": "2030-01-01T03:10:00.000000Z",
+    "price_snapshot_vnd": 150000,
+    "payment_due_at": null
+}
+```
+
+Gửi lại cùng owner/key/payload chuẩn hóa trả HTTP 200 với cùng ID, trạng thái hiện tại và dữ liệu đã lưu. Không tính lại giá, thay snapshot hoặc thêm event; thay đổi dữ liệu nguồn và thời gian đã qua không biến replay thành lần tạo mới.
+
+### Conflict và validation
+
+Giữ nguyên key nhưng đổi instructions hoặc bất kỳ trường nghiệp vụ nào trong payload chuẩn hóa: HTTP 409.
+
+```json
+{
+    "error": {
+        "code": "IDEMPOTENCY_CONFLICT",
+        "message": "This booking request key was used with a different payload.",
+        "details": [],
+        "request_id": "f39e3629-d503-49d7-93c7-81d74004e495"
+    }
+}
+```
+
+Với key mới, nếu bắt đầu trong quá khứ: HTTP 422.
+
+```json
+{
+    "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Start must be in the future.",
+        "details": {
+            "start_at": ["Choose a future start time."]
+        },
+        "request_id": "f39e3629-d503-49d7-93c7-81d74004e495"
+    }
+}
+```
+
+`request_id` trong ví dụ là giá trị minh họa. Các trường hợp 401/403/419/404/409/422 khác theo bảng lỗi M05 ở trên. Auth/CSRF sử dụng response của lớp auth hiện hành, không giả định mọi lỗi auth có cùng envelope với lỗi booking.
+
+Fixture dùng lại, kết quả kiểm tra và xác nhận reviewer: [BE-H02 — Review và bàn giao](<../05 — Implementation Plan/BE-H02 — Review và bàn giao.md>).
