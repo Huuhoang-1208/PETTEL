@@ -117,6 +117,18 @@ Dùng bảng tình huống/HTTP/mã lỗi tại [API Contract — M05](<../08 �
 
 ## Decision log
 
+### Bổ sung contract BE-H03 task 1 (02/11/2026)
+
+Người dùng đã đồng ý các đề xuất chốt API và quy tắc truy vấn. Contract chi tiết và ma trận validation ở [API Contract — M04](<../08 — Architecture & Technical Design/04 — API Contracts & Error Conventions.md>); đây không phải bằng chứng triển khai hoặc reviewer sign-off.
+
+| ID | Quyết định | Issue nhận ảnh hưởng |
+| --- | --- | --- |
+| H03-D01 | Từ khóa tối đa 100 ký tự sau trim/NFC, tìm title OR description; các bộ lọc kết hợp AND, mã P0 giữ theo §7. H03 có species/size thủ công; pet_id thuộc BE-H04. | BE-H03, BE-H04, frontend discovery. |
+| H03-D02 | Hai mốc thời gian đi cùng, có múi giờ, start trong tương lai; slot bao trọn và giao nhau theo khoảng nửa mở. Thời lượng/giá dùng cùng P0 và booking. Không tự coi hold hết hạn là đã thả khi booking vẫn khóa lịch. | BE-H03, BE-H02, BE-T03, BE-HA03, BE-T04. |
+| H03-D03 | Lọc giá theo tổng VND, yêu cầu ngày; cho phép một cận, hai cận thì min <= max. Có ngày sắp tổng giá/ID tăng dần, không ngày sắp ID tăng dần. Phân trang sau lọc/sắp xếp, mặc định 20, tối đa 50. | BE-H03, frontend discovery. |
+| H03-D04 | Danh sách/chi tiết công khai dùng chung điều kiện ACTIVE + profile/user/role hợp lệ; DRAFT không có ngoại lệ owner/admin trên route công khai, dùng luồng quản lý riêng. Response allowlist không chứa dữ liệu pet/booking riêng. | BE-H03, BE-HA02, BE-T03. |
+| H03-D05 | Query không hợp lệ trả 422 theo trường; chi tiết không công khai trả 404; không có kết quả/trang vượt trả 200 với data rỗng. Mỗi listing không phù hợp lịch/dịch vụ bị loại, không gây 409 toàn bộ search. | BE-H03, frontend discovery, kiểm thử. |
+
 ### Bổ sung contract BE-H02 (02/11/2026)
 
 Người dùng đã đồng ý sáu đề xuất trong phiên làm việc ngày 02/11/2026. Đây là cập nhật contract, không phải bằng chứng triển khai hoặc reviewer sign-off.

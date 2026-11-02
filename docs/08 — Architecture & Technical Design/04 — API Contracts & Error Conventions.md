@@ -6,7 +6,98 @@ PETTEL — Architecture & Technical Design \| Hợp đồng JSON cho Vue SPA; Fi
 
 Breeze API scaffold cung cấp route đăng ký/đăng nhập/đăng xuất/khôi phục mật khẩu; Vue lấy `/sanctum/csrf-cookie` trước thao tác auth. Route riêng tư dùng `auth:sanctum`; không phát hành bearer token cho SPA.
 
-GET /api/listings?service_type=\&area_code=\&start_at=\&end_at=\&pet_id= — public filters; pet_id chỉ khi owner đăng nhập. GET /api/listings/{id} — chỉ ACTIVE hoặc owner/admin có quyền. POST /api/bookings — pet_id, listing_id, start_at, end_at, instructions, Idempotency-Key. POST /api/bookings/{id}/accept — caregiver; POST /api/bookings/{id}/cancel — actor được phép; POST /api/bookings/{id}/sandbox-payments — owner. POST /api/sandbox/callback — chỉ adapter sandbox. POST /api/bookings/{id}/updates và /confirm-completion; POST /api/reports.
+GET /api/listings — bộ lọc công khai theo contract M04 bên dưới; `pet_id` thuộc phần mở rộng Smart Match BE-H04. GET /api/listings/{id} — chỉ listing được phép công khai, không có ngoại lệ owner/admin trên route công khai. POST /api/bookings — pet_id, listing_id, start_at, end_at, instructions, Idempotency-Key. POST /api/bookings/{id}/accept — caregiver; POST /api/bookings/{id}/cancel — actor được phép; POST /api/bookings/{id}/sandbox-payments — owner. POST /api/sandbox/callback — chỉ adapter sandbox. POST /api/bookings/{id}/updates và /confirm-completion; POST /api/reports.
+
+## M04 — Public listing search — chốt 02/11/2026
+
+**Trạng thái triển khai BE-H03 — cập nhật 02/11/2026:** Đã có `GET /api/listings` và `GET /api/listings/{id}`. Bộ lọc hiện hỗ trợ `q`, `service_type`, `area_code`, `species`, `size`, `start_at`, `end_at`, `min_price_vnd`, `max_price_vnd`, `page` và `per_page`.
+
+Danh sách và chi tiết dùng chung quy tắc công khai. Search và create/quote dùng chung `ApplyListingAvailability`. Số đơn vị tính tiền lấy từ `CalculateBookingPrice`; tổng giá được tính bằng số chính xác, lọc và sắp xếp trong database trước phân trang. Có ngày sắp tổng giá/ID tăng dần; không có ngày sắp ID tăng dần và tổng giá `null`. Mặc định 20, tối đa 50 kết quả/trang; `page` gây tràn số vị trí phân trang bị từ chối.
+
+Kiểm tra local trên working tree `be-h03` ngày 02/11/2026: Pint PASS (95 file), PHPStan PASS, migration/seed lặp PASS, toàn bộ 199 tests đạt với 2.351 assertions trên database `pettel_test` riêng. Các thay đổi H03 chưa commit tại thời điểm kiểm tra; SHA bàn giao và CI phải được ghi sau khi commit/push.
+
+BE-HA02 đã được đối chiếu qua model/schema/fixture hiện có. BE-T03 và BE-HA03 chưa triển khai; các test hiện kiểm tra cách search đọc slot/trạng thái từ fixture, chưa xác nhận tích hợp API lifecycle, CRUD lịch, accept/reject hoặc luồng expiry thực tế. Giữ BE-H03 ở trạng thái chờ tích hợp và review; chưa đủ điều kiện đóng issue.
+
+### Endpoint và quyền công khai
+
+- `GET /api/listings`: danh sách công khai, không yêu cầu đăng nhập, dùng query bên dưới.
+- `GET /api/listings/{id}`: chi tiết công khai, không yêu cầu đăng nhập. Không áp dụng bộ lọc tìm kiếm/tính giá theo ngày trên endpoint này; dùng API quote booking cho báo giá trước khi đặt.
+- Cả hai chỉ trả listing `ACTIVE`, chưa xóa mềm, profile chưa xóa mềm, user caregiver `ACTIVE` và còn role `CAREGIVER`. Không nhận `status` do client gửi để mở rộng quyền xem.
+- Listing không tồn tại hoặc không đủ điều kiện công khai trả `404 NOT_FOUND` trên route chi tiết, kể cả người gọi là caregiver sở hữu hoặc admin. Caregiver xem DRAFT của mình qua API quản lý `/api/caregiver/listings/{id}` có kiểm tra quyền; quyền quản trị thuộc luồng quản lý riêng.
+- Listing bận trong khoảng tìm kiếm chỉ bị loại khỏi kết quả cho khoảng đó, không tự mất quyền công khai ở trang chi tiết. Kết quả tìm kiếm không giữ chỗ; booking vẫn phải kiểm tra lại khi tạo/accept.
+
+### Query của GET /api/listings
+
+Mỗi tham số là một giá trị đơn; không nhận mảng. Các tham số đều tùy chọn trừ các ràng buộc đi kèm ghi dưới đây. Query là chuỗi URL: trường số nhận biểu diễn số nguyên thập phân, không nhận số thực hoặc ký hiệu khoa học.
+
+| Tham số | Kiểu / giá trị | Quy tắc |
+| --- | --- | --- |
+| `q` | Chuỗi Unicode | Trim, chuẩn hóa NFC; tối đa 100 ký tự sau chuẩn hóa. Rỗng sau trim tương đương không truyền. |
+| `service_type` | `DAYCARE`, `BOARDING` | Mã P0, phân biệt hoa/thường khi validation. |
+| `area_code` | `DN_CENTER`, `DN_NORTH`, `DN_SOUTH`, `DN_WEST`, `DN_EAST` | Mã vùng nội bộ do caregiver chọn, không nhận tên quận hoặc địa chỉ tự do. |
+| `start_at` | Timestamp ISO 8601 | Phải đi cùng `end_at`, có `Z` hoặc offset; lớn hơn server now lúc kiểm tra. |
+| `end_at` | Timestamp ISO 8601 | Phải đi cùng `start_at`; lớn hơn `start_at`. |
+| `min_price_vnd` | Số nguyên từ 0 đến giới hạn số nguyên backend hỗ trợ | Cận dưới bao gồm của tổng giá; yêu cầu đủ `start_at`/`end_at`. |
+| `max_price_vnd` | Số nguyên từ 0 đến giới hạn số nguyên backend hỗ trợ | Cận trên bao gồm của tổng giá; yêu cầu đủ `start_at`/`end_at`. |
+| `species` | `DOG`, `CAT`, `OTHER` | Phải có trong `acceptance_rules_json.species` v1 hợp lệ; `OTHER` phải được khai báo rõ. |
+| `size` | `SMALL`, `MEDIUM`, `LARGE` | Giữ trong H03 theo M04; phải có trong `acceptance_rules_json.sizes` v1 hợp lệ. |
+| `page` | Số nguyên từ 1 | Mặc định `1` khi không truyền. |
+| `per_page` | Số nguyên từ 1 đến 50 | Mặc định `20` khi không truyền; vượt giới hạn trả lỗi, không tự cắt về 50. |
+
+Ngoài `q`, giá trị rỗng của tham số đã gửi là không hợp lệ. Tham số ngoài danh sách, gồm `pet_id`/`status`/`sort`, trả `422 VALIDATION_ERROR` theo trường để tránh âm thầm bỏ qua bộ lọc. `pet_id` được bàn giao BE-H04 mở rộng contract với auth/owner policy; H03 chỉ lọc thủ công và không đọc pet profile.
+
+### Kết hợp, thời gian, lịch và giá
+
+1. Các bộ lọc kết hợp bằng AND. Riêng `q` tìm chuỗi xuất hiện trong `title` OR `description`, không tìm tên chủ nuôi, hồ sơ pet hoặc nội dung booking. Dùng quy tắc so sánh của collation MySQL dự án, không tự bỏ dấu; `%` và `_` trong từ khóa là ký tự thường, không phải wildcard do người dùng điều khiển.
+2. Thiếu cả hai mốc thời gian thì không kiểm tra lịch cho một khoảng cụ thể, không tính tổng giá và không tuyên bố listing còn trống. Nếu gửi một trong hai cận giá thì phải gửi đủ hai mốc thời gian. Cho phép chỉ có giá tối thiểu hoặc chỉ có giá tối đa; nếu có cả hai thì `min_price_vnd <= max_price_vnd`.
+3. Timestamp dùng cùng định dạng với booking: `YYYY-MM-DDTHH:mm:ss[.ffffff]Z` hoặc offset như `+07:00`, tối đa 6 chữ số phần lẻ. Chuẩn hóa UTC trước khi so sánh, giữ phần lẻ. Trong query URL, dấu `+` của offset phải được encode thành `%2B`; có thể dùng `Z` để tránh nhầm.
+4. Có khoảng thời gian thì phải nằm trọn trong một slot chưa xóa mềm: `slot.start_at <= start_at` và `slot.end_at >= end_at`. Không tự ghép các slot rời thành một slot. Khoảng là `[start_at, end_at)`; giao nhau khi `booking.start_at < end_at` AND `booking.end_at > start_at`. Hai khoảng chỉ chạm đầu/cuối không xung đột.
+5. Các trạng thái khóa lịch hiện dùng trong tạo booking: `AWAITING_PAYMENT`, `CONFIRMED`, `IN_PROGRESS`, `AWAITING_CONFIRMATION`. `REQUESTED`, `COMPLETED`, `CANCELLED` không khóa lịch. Hạn thanh toán 15 phút không tự làm search bỏ qua booking vẫn khóa lịch: chỉ thả theo cùng quy tắc chuyển trạng thái/void/refund của booking. BE-HA03/BE-T04 phải tích hợp quy tắc hết hạn nhất quán trước nghiệm thu; nếu đổi cách xét hạn thì cập nhật cả create/accept/search và test hồi quy.
+6. Tính tổng giá cùng quy tắc `CalculateBookingPrice`: DAYCARE/HOUR từ 1–12 giờ và cùng ngày `Asia/Ho_Chi_Minh`; BOARDING/NIGHT từ 12 giờ đến 30 ngày. Làm tròn lên theo đơn vị, giữ phần lẻ và kiểm tra tràn số theo P0. Không đặt thêm giới hạn số ngày đặt trước.
+7. Nếu đã chọn `service_type` nhưng thời lượng không phù hợp loại đó, trả `422` tại `end_at`. Nếu không chọn loại dịch vụ, xét thời lượng theo từng listing và loại listing không phù hợp; không làm hỏng cả truy vấn vì một loại không phù hợp. Khoảng thời gian không phù hợp bất kỳ loại P0 nào trả `422`. Listing có cấu hình điều kiện/giá sai hoặc tổng giá không thể biểu diễn an toàn không được coi là phù hợp; không trả lỗi toàn bộ truy vấn vì một bản ghi sai.
+8. Lọc và sắp xếp phải hoàn tất trước phân trang. Có ngày: tổng giá tăng dần, sau đó ID tăng dần. Không có ngày: ID tăng dần, không so đơn giá HOUR với NIGHT. Thông tin phân trang và các link phải giữ các bộ lọc đã chuẩn hóa.
+
+### Response công khai
+
+- Danh sách: HTTP `200`, cấu trúc phân trang `data`, `links`, `meta` theo chuẩn dự án. `meta` có tối thiểu `current_page`, `last_page`, `per_page`, `total`; `links` có `first`, `last`, `prev`, `next`.
+- Chi tiết: HTTP `200`, cấu trúc `{ "data": { ... } }`.
+- Allowlist cho mỗi listing ở cả danh sách và chi tiết: `id` (chuỗi), `title`, `description`, `service_type`, `area_code`, `price_vnd` (đơn giá nguyên VND), `price_unit`, `acceptance_rules_json` v1 và `price_total_vnd`.
+- `price_total_vnd` là số nguyên server tính khi tìm có ngày; là `null` khi tìm không có ngày và trên endpoint chi tiết không có ngữ cảnh báo giá.
+- Không trả pet profile/notes, booking snapshot, thông tin liên hệ riêng, địa chỉ chi tiết, object key hoặc dữ liệu nội bộ bằng cách dump model. Ảnh và aggregate review là phần mở rộng cần contract riêng trước khi thêm vào allowlist.
+- Không có kết quả hoặc trang vượt kết quả: vẫn `200`, `data: []`, giữ metadata phân trang đúng. Frontend có thể giải thích kết quả rỗng và gợi ý nới lọc dựa trên các bộ lọc đã chọn; không bịa listing.
+
+Ví dụ request hợp lệ (09:00–12:00 giờ Việt Nam, tổng giá tối đa 200.000 VND):
+
+```http
+GET /api/listings?service_type=DAYCARE&area_code=DN_EAST&species=DOG&start_at=2026-11-10T02:00:00Z&end_at=2026-11-10T05:00:00Z&max_price_vnd=200000&page=1&per_page=20
+```
+
+### Validation và ca kiểm thử bắt buộc
+
+Lỗi dùng envelope chung `error: { code, message, details, request_id }`; `details` ánh xạ tên trường sang mảng thông báo, không chứa dữ liệu riêng.
+
+| Tình huống | Kết quả |
+| --- | --- |
+| Không truyền bộ lọc | `200`, danh sách công khai, trang 1, 20 kết quả/trang, ID tăng dần. |
+| Kết hợp từ khóa + loại + vùng + loài/kích cỡ | Chỉ listing thỏa tất cả điều kiện; `q` vẫn áp dụng title OR description. |
+| Sai mã, sai kiểu/mảng, số âm/số thực, query ngoài danh sách | `422 VALIDATION_ERROR`, chỉ rõ trường. |
+| Chỉ có một mốc, thiếu múi giờ, start không ở tương lai, end <= start | `422 VALIDATION_ERROR`, chỉ rõ trường thời gian. |
+| Lọc giá thiếu ngày hoặc min > max | `422 VALIDATION_ERROR`, chỉ rõ trường cần sửa. |
+| Chỉ có min hoặc max với đủ ngày | Hợp lệ; lọc cận bao gồm theo tổng giá. |
+| Thời lượng không hợp loại đã chọn | `422` tại `end_at`; chưa chọn loại thì loại từng listing không phù hợp. |
+| Không có slot bao trọn hoặc giao booking khóa lịch | Loại listing khỏi danh sách; không trả `409` cho toàn bộ search. |
+| REQUESTED giao nhau hoặc booking chỉ chạm đầu/cuối | Không loại vì xung đột lịch. |
+| DRAFT, trạng thái ẩn, soft delete, profile/user/role caregiver không hợp lệ | Không có trong danh sách và chi tiết trả `404 NOT_FOUND`. |
+| Không kết quả hoặc page vượt kết quả | `200`, `data: []`, metadata đúng. |
+| page < 1, per_page < 1 hoặc > 50 | `422 VALIDATION_ERROR`. |
+| So response public với dữ liệu pet/booking riêng | Không có trường ngoài allowlist; quyền công khai danh sách/chi tiết thống nhất. |
+
+### Bàn giao và giới hạn task 1
+
+- BE-HA02: đã đối chiếu các field/model/fixture listing và mã validation hiện có; không cần schema mới để chốt contract.
+- BE-T03: tái sử dụng slot UTC có microsecond, `[start_at,end_at)`, xóa mềm và một slot bao trọn từ tài liệu bàn giao. Lifecycle và API lịch vẫn phải tích hợp/kiểm thử khi triển khai.
+- BE-H02/BE-HA03/BE-T04: tái sử dụng công thức giá và trạng thái khóa lịch; thống nhất xử lý hết hạn trước nghiệm thu.
+- Task 1 hoàn tất phần quyết định/tài liệu. Chưa đánh dấu API, kiểm thử hoặc toàn bộ BE-H03 hoàn thành; reviewer sign-off ghi riêng khi có bằng chứng.
 
 ## M02 — Pet Profiles
 
@@ -31,7 +122,7 @@ Mã `species`: `DOG`, `CAT`, `OTHER`; `size`: `SMALL`, `MEDIUM`, `LARGE`; `sex`:
 
 Code tại commit `6eb0e3a` đã được kiểm tra local: định dạng và phân tích kiểu đạt; migration/seed đạt; toàn bộ 119 tests đạt với 1.922 assertions. Kết quả này không thay thế CI hoặc xác nhận reviewer trên commit cuối của PR.
 
-API công khai `/api/listings` chưa được triển khai. Kiểm thử tích hợp loại DRAFT khỏi danh sách/chi tiết công khai được bàn giao BE-H03.
+API công khai `/api/listings` và `/api/listings/{id}` đã được triển khai trong BE-H03 task 2; kiểm thử HTTP loại DRAFT và các điều kiện công khai đạt theo cập nhật M04 bên trên. Bộ lọc/lịch/giá đầy đủ và nghiệm thu tích hợp toàn BE-H03 vẫn thuộc các task tiếp theo.
 
 ### Schema tái sử dụng và kết quả kiểm tra
 
