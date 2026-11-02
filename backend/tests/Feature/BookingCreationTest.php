@@ -598,6 +598,57 @@ class BookingCreationTest extends TestCase
         $this->assertDatabaseCount('booking_status_events', 1);
     }
 
+    public function test_pet_edits_and_soft_deletion_preserve_booking_snapshots_and_history(): void
+    {
+        $fixture = $this->bookingFixture();
+        $petId = $fixture['pet']->id;
+        $response = $this->actingAs($fixture['owner'])
+            ->withHeader('Idempotency-Key', $fixture['idempotency_key'])
+            ->postJson('/api/bookings', $fixture['payload'])->assertCreated();
+        $bookingId = $response->json('id');
+        $booking = Booking::query()->findOrFail($bookingId);
+        $savedBooking = $booking->getAttributes();
+        $savedHistory = DB::table('booking_status_events')->where('booking_id', $bookingId)
+            ->orderBy('id')->get()->map(fn ($event) => (array) $event)->all();
+        $this->assertCount(1, $savedHistory);
+
+        // Edit the real pet through its API, then change the listing source price.
+        $this->patchJson("/api/pets/{$petId}", [
+            'name' => 'Mochi updated',
+            'diet_notes' => 'No fish',
+            'special_needs' => 'New care notes',
+        ])->assertOk()->assertJsonPath('data.diet_notes', 'No fish');
+        DB::table('listings')->where('id', $fixture['active_listing_id'])
+            ->update(['price_vnd' => 70000, 'version' => 2]);
+        $this->assertDatabaseHas('pets', ['id' => $petId, 'diet_notes' => 'No fish']);
+        $this->assertDatabaseHas('listings', ['id' => $fixture['active_listing_id'], 'price_vnd' => 70000]);
+        $this->assertSame($savedBooking, $booking->refresh()->getAttributes());
+
+        // Soft deletion keeps the pet row and all existing booking references.
+        $this->deleteJson("/api/pets/{$petId}")->assertNoContent();
+        $this->assertSoftDeleted('pets', ['id' => $petId]);
+        $this->assertDatabaseHas('pets', ['id' => $petId, 'user_id' => $fixture['owner']->id]);
+        $this->assertDatabaseHas('bookings', [
+            'id' => $bookingId,
+            'pet_id' => $petId,
+            'status' => 'REQUESTED',
+        ]);
+        $this->getJson("/api/pets/{$petId}")->assertNotFound();
+        $this->assertSame($savedBooking, $booking->refresh()->getAttributes());
+        $this->assertSame($savedHistory, DB::table('booking_status_events')
+            ->where('booking_id', $bookingId)->orderBy('id')->get()
+            ->map(fn ($event) => (array) $event)->all());
+
+        // Retrying the old operation succeeds; a new booking for this pet fails.
+        $this->postJson('/api/bookings', $fixture['payload'])->assertOk()->assertExactJson($response->json());
+        $this->withHeader('Idempotency-Key', 'new-booking-after-pet-deletion')
+            ->postJson('/api/bookings', $fixture['payload'])->assertNotFound()
+            ->assertJsonPath('error.code', 'NOT_FOUND');
+        $this->assertSame($savedBooking, $booking->refresh()->getAttributes());
+        $this->assertDatabaseCount('bookings', 1);
+        $this->assertDatabaseCount('booking_status_events', 1);
+    }
+
     /** @return array<string, mixed> */
     private function bookingFixture(): array
     {
