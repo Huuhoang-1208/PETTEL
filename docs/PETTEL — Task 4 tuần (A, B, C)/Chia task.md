@@ -259,6 +259,16 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Acceptance criteria:** Kết quả đúng bộ lọc và quyền công khai; không lộ dữ liệu pet; danh sách và chi tiết áp dụng cùng quy tắc hiển thị.
 
+**Phân rã BE-H03 — tổng 8 giờ:**
+
+- [x] **1. Chốt API và quy tắc truy vấn — 30 phút.** Người dùng đồng ý ngày 02/11/2026; đã đối chiếu schema/validation BE-HA02 và tài liệu slot BE-T03, ghi [API Contract M04](<../08 — Architecture & Technical Design/04 — API Contracts & Error Conventions.md>) cùng decision log H03. Hoàn tất tài liệu thiết kế; chưa xác nhận reviewer sign-off hoặc tích hợp.
+- [x] **2. API danh sách/chi tiết công khai — 1,5 giờ.** Đã triển khai hai route với cùng truy vấn quyền công khai, allowlist response và 404 cho listing bị ẩn. Kiểm tra local 02/11/2026: format và kiểu đạt, 13 test public đạt; toàn bộ 132 tests / 1.996 assertions đạt trên `pettel_test`. Chưa thay thế reviewer sign-off hoặc nghiệm thu các task 3–7.
+- [x] **3. Bộ lọc cơ bản — 1 giờ.** Đã lọc từ khóa title/description, loại dịch vụ, khu vực, loài/kích cỡ theo AND, chuẩn hóa NFC, escape ký tự LIKE và validation query. Kiểm tra local 02/11/2026: format/kiểu đạt, 34 ca bộ lọc đạt; toàn bộ 166 tests / 2.110 assertions đạt. Ngày/giá/per_page chờ task 4–5 và hiện trả lỗi rõ nếu được gửi; chưa thay thế reviewer sign-off.
+- [ ] **4. Khoảng thời gian và booking — 1,5 giờ.** Slot bao trọn, giao nhau, trạng thái giữ lịch và quy tắc hết hạn nhất quán.
+- [ ] **5. Giá, sắp xếp và phân trang — 1 giờ.** Tổng tiền cùng booking, thứ tự ổn định và phân trang sau lọc.
+- [ ] **6. Kiểm thử chức năng — 1,5 giờ.** Tổ hợp bộ lọc, thời gian, quyền công khai, dữ liệu riêng, phân trang và kết quả rỗng.
+- [ ] **7. Tích hợp và bàn giao review — 1 giờ.** BE-HA02/BE-T03/BE-HA03, đối chiếu hết hạn với BE-T04, chạy kiểm thử và chuẩn bị PR cho Hào.
+
 ### BE-HA03 — Nhận/từ chối booking và chống trùng lịch
 
 **Owner:** Hào \| **Reviewer:** Hoàng

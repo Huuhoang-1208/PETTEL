@@ -5,8 +5,12 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CaregiverListingController;
 use App\Http\Controllers\CaregiverProfileController;
 use App\Http\Controllers\PetController;
+use App\Http\Controllers\PublicListingController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/listings', [PublicListingController::class, 'index']);
+Route::get('/listings/{id}', [PublicListingController::class, 'show'])->whereNumber('id');
 
 Route::middleware(['auth:sanctum', 'account.active'])->get('/user', function (Request $request) {
     return $request->user();

@@ -12,7 +12,7 @@ Quy tắc có thể giải thích: loài và kích cỡ được nhận theo `ac
 
 # Phụ thuộc và dữ liệu
 
-Đọc bản công khai của Listing, Availability và aggregate review đủ điều kiện; pet profile chỉ khi owner cho phép qua phiên đăng nhập. Kết quả không chứa ghi chú riêng tư của pet. Thứ tự mặc định P0: listing đạt điều kiện cứng trước, sau đó giá tổng tăng dần và ID tăng dần để ổn định phân trang.
+Đọc bản công khai của Listing, Availability và aggregate review đủ điều kiện; pet profile chỉ khi owner cho phép qua phiên đăng nhập. Kết quả không chứa ghi chú riêng tư của pet. Có khoảng thời gian: lọc đủ điều kiện trước, sau đó giá tổng tăng dần và ID tăng dần để ổn định phân trang. Không có khoảng thời gian: ID tăng dần, tổng giá chưa xác định; không so trực tiếp đơn giá HOUR với NIGHT.
 
 # Tiêu chí chấp nhận
 
@@ -21,3 +21,7 @@ Listing không ACTIVE không hiện; listing nhận booking còn cần profile c
 # Danh mục P0
 
 Filter `service_type` nhận DAYCARE/BOARDING, `species` nhận DOG/CAT/OTHER, `size` nhận SMALL/MEDIUM/LARGE và `area_code` nhận mã vùng nội bộ. Giá so sánh theo tổng tiền server tính cho khoảng chọn, không so đơn giá khác đơn vị. Vùng là lựa chọn do caregiver khai báo, không suy ra từ địa chỉ chi tiết. Xem [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>).
+
+# Contract BE-H03 — chốt 02/11/2026
+
+Task 1 đã được người dùng chấp thuận và ghi tại [API Contract — M04](<../08 — Architecture & Technical Design/04 — API Contracts & Error Conventions.md>). H03 giữ bộ lọc thủ công gồm `size`; `pet_id` và việc đọc pet có quyền được bàn giao BE-H04. Query giá bắt buộc có đủ ngày; mặc định 20 kết quả/trang, tối đa 50. Route danh sách và chi tiết công khai chỉ trả listing đủ điều kiện ACTIVE, không có ngoại lệ xem DRAFT cho owner/admin trên route công khai. Ảnh và aggregate review chưa nằm trong allowlist response cơ sở H03, bổ sung khi có contract tương ứng. Đây là quyết định thiết kế, chưa xác nhận triển khai hoặc nghiệm thu tích hợp.

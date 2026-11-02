@@ -39,6 +39,8 @@ Trước khi gửi PR, chạy lại trên code thực tế, ghi commit đã ki�
 
 ## 3. Kiểm thử công khai còn chờ BE-H03
 
+**Cập nhật BE-H03 task 2 ngày 02/11/2026:** Hai route công khai đã tồn tại; `PublicListingTest` kiểm tra ACTIVE, các trạng thái ẩn, soft delete listing/profile, caregiver không ACTIVE/mất role, không có ngoại lệ DRAFT cho owner/admin và allowlist dữ liệu. 13 trường hợp public đạt; toàn bộ 132 tests / 1.996 assertions đạt, format/kiểu đạt trên môi trường test riêng. Các mô tả "chưa có" bên dưới là trạng thái lúc BE-HA02 bàn giao; kiểm thử bộ lọc/lịch/giá và nghiệm thu BE-H03 đầy đủ vẫn chờ task 3–7. Không suy diễn kết quả này thành xác nhận reviewer.
+
 Tại thời điểm đối chiếu, chưa có API công khai:
 
 - `GET /api/listings`

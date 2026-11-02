@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Domain\Booking\Actions\ApplyListingAvailability;
 use App\Domain\Booking\Actions\CalculateBookingPrice;
+use App\Models\Listing;
 use App\Models\Pet;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -167,18 +169,13 @@ class StoreBookingRequest extends FormRequest
             $start,
             $end,
         );
-        $startSql = $start->format('Y-m-d H:i:s.u');
-        $endSql = $end->format('Y-m-d H:i:s.u');
+        $available = app(ApplyListingAvailability::class)->apply(
+            Listing::query()->whereKey($listing->id),
+            $start,
+            $end,
+        )->exists();
 
-        $covered = DB::table('availability_slots')->where('listing_id', $listing->id)
-            ->whereNull('deleted_at')->where('start_at', '<=', $startSql)
-            ->where('end_at', '>=', $endSql)->exists();
-
-        $conflict = DB::table('bookings')->where('listing_id', $listing->id)
-            ->whereIn('status', ['AWAITING_PAYMENT', 'CONFIRMED', 'IN_PROGRESS', 'AWAITING_CONFIRMATION'])
-            ->where('start_at', '<', $endSql)->where('end_at', '>', $startSql)->exists();
-
-        if (! $covered || $conflict) {
+        if (! $available) {
             $this->reject(409, 'AVAILABILITY_CONFLICT', 'Time range is unavailable.');
         }
 
