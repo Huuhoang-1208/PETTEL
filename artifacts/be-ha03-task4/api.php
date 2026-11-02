@@ -1,0 +1,60 @@
+<?php
+
+use App\Http\Controllers\AcceptBookingController;
+use App\Http\Controllers\Auth\EnableCaregiverRoleController;
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\CaregiverListingController;
+use App\Http\Controllers\CaregiverProfileController;
+use App\Http\Controllers\PetController;
+use App\Http\Controllers\PublicListingController;
+use App\Http\Controllers\RejectBookingController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/listings', [PublicListingController::class, 'index']);
+Route::get('/listings/{id}', [PublicListingController::class, 'show'])->whereNumber('id');
+
+Route::middleware(['auth:sanctum', 'account.active'])->get('/user', function (Request $request) {
+    return $request->user();
+});
+
+Route::post('/user/roles/caregiver', EnableCaregiverRoleController::class)
+    ->middleware(['auth:sanctum', 'account.active', 'throttle:10,1'])
+    ->name('user.roles.caregiver');
+
+Route::middleware(['auth:sanctum', 'account.active', 'role:OWNER'])->group(function () {
+    Route::post('/bookings/quote', [BookingController::class, 'quote'])->name('bookings.quote');
+    Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
+
+    Route::get('/pets', [PetController::class, 'index'])->name('pets.index');
+    Route::post('/pets', [PetController::class, 'store'])->name('pets.store');
+    Route::get('/pets/{pet}', [PetController::class, 'show'])->name('pets.show');
+    Route::patch('/pets/{pet}', [PetController::class, 'update'])->name('pets.update');
+    Route::patch('/pets/{pet}/archive', [PetController::class, 'archive'])->name('pets.archive');
+    Route::patch('/pets/{pet}/activate', [PetController::class, 'activate'])->name('pets.activate');
+    Route::delete('/pets/{pet}', [PetController::class, 'destroy'])->name('pets.destroy');
+});
+
+Route::middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
+    ->prefix('caregiver')
+    ->group(function () {
+        Route::post('/profile', [CaregiverProfileController::class, 'store']);
+        Route::get('/profile', [CaregiverProfileController::class, 'show']);
+        Route::patch('/profile', [CaregiverProfileController::class, 'update']);
+
+        Route::post('/listings', [CaregiverListingController::class, 'store']);
+        Route::get('/listings', [CaregiverListingController::class, 'index']);
+        Route::get('/listings/{id}', [CaregiverListingController::class, 'show'])->whereNumber('id');
+        Route::patch('/listings/{id}', [CaregiverListingController::class, 'update'])->whereNumber('id');
+        Route::delete('/listings/{id}', [CaregiverListingController::class, 'destroy'])->whereNumber('id');
+    });
+
+Route::post('/bookings/{id}/reject', RejectBookingController::class)
+    ->middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
+    ->whereNumber('id')
+    ->name('bookings.reject');
+
+Route::post('/bookings/{id}/accept', AcceptBookingController::class)
+    ->middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
+    ->whereNumber('id')
+    ->name('bookings.accept');
