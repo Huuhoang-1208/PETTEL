@@ -2,6 +2,8 @@
 
 **Trạng thái:** schema P0 được triển khai qua migration Laravel ngày 28/10/2026; hành vi API/nghiệp vụ vẫn được triển khai theo các issue module. Phạm vi: bản mẫu dịch vụ chăm sóc thú cưng tại Đà Nẵng, MySQL 8.4, Laravel 13, một pet và một listing cho mỗi booking, công suất mặc định một booking đồng thời trên một listing, payment **sandbox**. Kết quả migration MySQL được ghi ở lộ trình BE-T01.
 
+**Cập nhật contract 02/11/2026:** áp dụng sáu quyết định BE-H02 người dùng đã đồng ý tại P0 Contract §8–11; không tạo migration mới hoặc xác nhận code nghiệp vụ đã triển khai trong lần cập nhật tài liệu này.
+
 ## 1. Cách đọc và nguồn quyết định
 
 Tài liệu này là bản thiết kế database tổng thể, chi tiết hóa [Data Model, Indexes & Data Integrity](<03 — Data Model, Indexes & Data Integrity.md>). Các quy tắc nghiệp vụ lấy từ [Domain Model](<../02 — Domain Documentation/03 — Domain Model.md>), [Business Rules](<../02 — Domain Documentation/02 — Business Rules.md>), [State Lifecycles](<../02 — Domain Documentation/04 — State Lifecycles — Listing, Order, Payment.md>) và [Module Map](<../03 — Modules Documentation/00 — Module Map & Dependencies.md>). Những quyết định về quyền, file và payment đối chiếu [Authentication Design](<05 — Authentication & Authorization Design.md>), [File Storage Design](<08 — File Storage Design.md>) và [Payment Sandbox Integration](<07 — Payment Sandbox Integration.md>). [Performance & Capacity](<../06 — Non-functional Requirements/02 — Performance & Capacity.md>) và [Reliability & Recovery](<../06 — Non-functional Requirements/03 — Reliability & Recovery.md>) là mục tiêu đề xuất, chưa được đo.
@@ -15,7 +17,7 @@ Tài liệu này là bản thiết kế database tổng thể, chi tiết hóa [
 | Quy ước | Thiết kế |
 | --- | --- |
 | Primary key | `BIGINT UNSIGNED` auto increment (`$table->id()`), API serialize ID thành chuỗi. Dùng cùng kiểu cho mọi FK. |
-| Thời gian | Timestamps DB lưu UTC; API ISO 8601, giao diện hiển thị `Asia/Ho_Chi_Minh`. Khoảng lịch `[start_at,end_at)`; `start_at < end_at`. `DATETIME(6)` cho thời gian nghiệp vụ và event nếu cần thứ tự chính xác; `created_at, id` là thứ tự ổn định. |
+| Thời gian | Timestamps DB lưu UTC; API ISO 8601 bắt buộc `Z`/offset, giao diện hiển thị `Asia/Ho_Chi_Minh`. Tạo booking mới có `start_at > now` và `start_at < end_at`; khoảng `[start_at,end_at)`. Giữ giây lẻ khi tính thời lượng/giá. `DATETIME(6)` cho thời gian nghiệp vụ và event; `created_at, id` là thứ tự ổn định. |
 | Tiền | `BIGINT UNSIGNED` VND nguyên, không dùng float; `CHECK(amount_vnd >= 0)` nếu cột signed, và giới hạn nghiệp vụ trước ghi. Không có tiền hoặc thông tin thẻ thật. |
 | Chuỗi trạng thái | `VARCHAR` + `CHECK`/validation tập giá trị trong service, thay vì MySQL `ENUM` để migration trạng thái dễ kiểm soát. DB check hỗ trợ trên MySQL 8.4; test migration trên DB thật. |
 | Charset | `utf8mb4`, collation nhất quán. Email chuẩn hóa chữ thường trước ghi; `UNIQUE(email)` và quy tắc so sánh theo collation phải được test. |
@@ -82,7 +84,11 @@ Giữ nguyên bảng Laravel `password_reset_tokens` và `sessions`; không tạ
 | `availability_slots` | `id`, `listing_id!`, `start_at!`, `end_at!`, `created_by_user_id!`, `deleted_at?` | FK listing/creator; `start_at < end_at`; các slot khai báo phải được chuẩn hóa không chồng nhau trên cùng listing trong service, dưới lock listing. Theo quyết định P0, slot là khoảng mở và booking phải nằm trọn trong một slot liên tục; listing chưa có slot thì không nhận booking. |
 | `listing_media` | `listing_id!`, `media_object_id!`, `sort_order!` | PK `(listing_id,media_object_id)`, `UQ(listing_id,sort_order)`; ảnh chỉ công khai khi listing ACTIVE và được duyệt. |
 
-`acceptance_rules_json` chứa danh sách loài/kích cỡ/tuổi và hỗ trợ nhu cầu đặc biệt ở dạng có schema/version; chỉ lưu các điều kiện thực sự dùng trong Smart Match. Nếu lọc loài bằng SQL thường xuyên, tách `listing_accepted_species(listing_id,species_code)` với PK kép và index đảo `(species_code,listing_id)` trước khi thực hiện search; không dùng `LIKE` trên JSON. `area_code` dùng năm vùng nội bộ Đà Nẵng trong P0 Decision Contract; user chọn vùng, không suy ra địa giới hành chính từ mã.
+`acceptance_rules_json` version 1 đã chốt 02/11/2026 là object `{"schema_version":1,"species":["DOG","CAT"],"sizes":["SMALL","MEDIUM"]}`. `schema_version` là integer 1; hai mảng không rỗng chỉ chứa mã P0. Nhận mọi kích cỡ phải liệt kê cả ba mã; nhận OTHER phải khai báo rõ; pet thiếu size không match. Thiếu key, sai kiểu/mã hoặc version không hỗ trợ làm listing chưa đủ điều kiện nhận booking. Version 1 chỉ lọc tự động loài/kích cỡ; tuổi và nhu cầu đặc biệt vẫn là thông tin trong pet snapshot, chưa là điều kiện tự động. Xem P0 Contract §8; không tự dùng thêm key điều kiện chưa có contract. `area_code` dùng năm vùng nội bộ Đà Nẵng; không suy ra địa giới hành chính từ mã.
+
+Trước khi tạo booking, ngoài listing ACTIVE/chưa xóa mềm, phải kiểm tra profile chưa xóa mềm và user của profile ACTIVE/còn CAREGIVER. Owner không được đặt listing của chính mình. `caregiver_user_id` lấy qua listing/profile/user, không nhận từ client. Điều kiện này do service thực thi trên schema sẵn có; fixture test có thể ghi trực tiếp listing ACTIVE và slot hợp lệ.
+
+Nếu lọc loài bằng SQL thường xuyên, tách `listing_accepted_species(listing_id,species_code)` với PK kép và index đảo `(species_code,listing_id)` trước khi thực hiện search; không dùng `LIKE` trên JSON. Đây là hướng mở rộng schema khi cần, không phải migration bổ sung trong cập nhật contract này.
 
 `listing_change_requests` lưu `proposed_data_json`, `base_listing_version`, người gửi/người duyệt, lý do và thời điểm. Status là `PENDING_REVIEW`, `APPROVED`, `REJECTED`, `WITHDRAWN`; một listing chỉ có tối đa một request chờ. Service khóa listing khi tạo/duyệt/rút để bảo vệ điều kiện này; duyệt cập nhật payload và tăng listing version trong cùng transaction.
 
@@ -92,10 +98,21 @@ Giữ nguyên bảng Laravel `password_reset_tokens` và `sessions`; không tạ
 
 | Bảng | Cột cốt lõi | Khóa / quy tắc |
 | --- | --- | --- |
-| `bookings` | `id`, `owner_id!`, `pet_id!`, `listing_id!`, `caregiver_user_id!`, `start_at!`, `end_at!`, `status!`, `price_snapshot_vnd!`, `pet_snapshot_json!`, `listing_snapshot_json!`, `policy_snapshot_json!`, `instructions_snapshot?`, `privacy_redacted_at?`, `payment_due_at?`, `current_payment_attempt_id?`, `request_idempotency_key!`, `request_payload_hash!`, `version!`, timestamps | FK owner/pet/listing/caregiver `RESTRICT`; FK current attempt thêm sau khi tạo `payment_attempts`; `UQ(owner_id,request_idempotency_key)`; `start_at < end_at`. Service xác nhận pet thuộc owner và caregiver khớp listing. |
+| `bookings` | `id`, `owner_id!`, `pet_id!`, `listing_id!`, `caregiver_user_id!`, `start_at!`, `end_at!`, `status!`, `price_snapshot_vnd!`, `price_unit!`, `price_quantity!`, `pricing_version!`, `cancellation_policy_version!`, `pet_snapshot_json!`, `listing_snapshot_json!`, `policy_snapshot_json!`, `instructions_snapshot?`, `privacy_redacted_at?`, `payment_due_at?`, `current_payment_attempt_id?`, `request_idempotency_key!`, `request_payload_hash!`, `version!`, timestamps | FK owner/pet/listing/caregiver `RESTRICT`; FK current attempt thêm sau khi tạo `payment_attempts`; `UQ(owner_id,request_idempotency_key)`; `start_at < end_at`. Service xác nhận pet thuộc owner, caregiver hợp lệ/khớp listing và khác owner. |
 | `booking_status_events` | `id`, `booking_id!`, `from_status?`, `to_status!`, `actor_user_id?`, `source!` (`USER`,`SYSTEM`,`SANDBOX`,`ADMIN`), `reason_code?`, `reason_text?`, `created_at!` | FK booking `RESTRICT`, actor `SET NULL` chỉ khi chính sách xóa user cho phép. Append only; ghi cùng transaction với trạng thái. |
 
 `REQUESTED` không khóa lịch. Các trạng thái khóa lịch: `AWAITING_PAYMENT`, `CONFIRMED`, `IN_PROGRESS`, `AWAITING_CONFIRMATION`. `CANCELLED` thả lịch. **Quyết định P0:** `payment_due_at` được set bằng thời điểm accept + 15 phút; retry không gia hạn. Callback authorize sau hạn bị từ chối kể cả job hết hạn chưa chạy. Snapshot giá tạo tại REQUESTED được giữ nguyên nếu listing vẫn `ACTIVE` và các điều kiện nhận pet/dịch vụ trong snapshot không đổi; nếu điều kiện trọng yếu đổi hoặc listing ngừng `ACTIVE`, caregiver phải yêu cầu owner tạo booking mới. Booking `REQUESTED` hết hạn sau 24 giờ hoặc tại `start_at`, tùy mốc nào trước; job chuyển `CANCELLED` với `REQUEST_EXPIRED`. Caregiver phải accept trước mốc này.
+
+**Allowlist snapshot đã chốt 02/11/2026:**
+
+| Cột | Cấu trúc / nguồn dữ liệu |
+| --- | --- |
+| `pet_snapshot_json` | Nguyên kết quả `Pet::snapshotForBooking()` version 1; không có owner ID/media ID. |
+| `listing_snapshot_json` | `schema_version` integer 1; `listing_id` chuỗi; `listing_version` integer từ `listings.version`; `title`, `service_type`, `area_code`; `unit_price_vnd` integer từ `price_vnd`; `price_unit`; `acceptance_rules` object từ JSON điều kiện đã kiểm tra. |
+| `policy_snapshot_json` | `schema_version=1`, `cancellation_policy_version=1` (integer), `cancellation_fee_vnd=0` (integer), `payment_mode="SANDBOX"`. |
+| `instructions_snapshot` | Instructions từ request sau NFC + trim, tối đa 2.000 ký tự; thiếu/null/rỗng quy về NULL; không trộn với pet notes. |
+
+Giá tổng nằm ở `price_snapshot_vnd`; đơn vị, số lượng, `pricing_version=1` và `cancellation_policy_version=1` nằm ở các cột cùng tên của booking. Tất cả giá/phiên bản/snapshot và event tạo REQUESTED ghi từ cùng lần tính trong transaction. Không dump model/user vào JSON; không sửa snapshot theo nguồn mới. Redaction nội dung riêng vẫn theo retention. Đối chiếu P0 Contract §9 và API Contract M05; không có cột `snapshot_pet_instructions`.
 
 ### M06 — Payment Sandbox
 
@@ -186,7 +203,7 @@ Các FK của MySQL cần index bên con; tránh tạo index trùng với unique
 
 ## 8. Idempotency, dữ liệu lặp và lỗi cạnh tranh
 
-- **POST booking:** key theo `(owner_id,request_idempotency_key)`, hash payload chuẩn hóa (pet/listing/time/instructions). Cùng key + hash trả booking cũ; cùng key + hash khác trả `IDEMPOTENCY_CONFLICT`. Hash không chứa secret, nội dung riêng tư không đưa vào log.
+- **POST booking:** key theo `(owner_id,request_idempotency_key)`, dài 1–128 ký tự ASCII chữ thường/số và `-_.:`, không tự trim/đổi key. SHA-256 của JSON năm trường cố định `pet_id`, `listing_id`, `start_at`, `end_at`, `instructions`: ID chuỗi thập phân chuẩn, timestamp UTC cố định có microsecond, instructions NFC + trim và null khi thiếu/rỗng; không hash giá/snapshot/owner/status client. Tạo mới trả 201; cùng key/hash trả 200 với booking/status hiện tại, giữ dữ liệu đã lưu; khác hash trả 409 `IDEMPOTENCY_CONFLICT`. Tra replay sau auth/quyền và chuẩn hóa payload, trước kiểm tra nguồn/thời gian dành cho tạo mới. Unique constraint bảo vệ cạnh tranh, replay không thêm status event. Chi tiết encoding tại API Contract M05; không ghi nội dung riêng tư vào log.
 - **POST payment:** key theo `(booking_id,idempotency_key)`, hash amount/booking/action; mỗi attempt có `attempt_no`. Cùng key cùng payload trả attempt cũ; key mới chỉ tạo retry khi trạng thái cho phép.
 - **Callback:** unique `(provider,external_event_id)` được insert trước transition trong transaction; duplicate trả kết quả đã xử lý. Event khác ID nhưng cùng transition phải kiểm tra current attempt/state để không release hoặc confirm hai lần. Sự kiện không có chữ ký hợp lệ không được tính là payment event đã chấp nhận.
 - **Admin và scheduler:** command/retry phải kiểm tra state hiện tại. Job sau commit; lỗi vào failed jobs với request/event ID, không ghi PII. Không tạo event trạng thái thứ hai khi thao tác lặp.
@@ -235,6 +252,7 @@ Chi tiết công thức, quyền theo trạng thái, thời hạn và ví dụ n
 | Retention/xóa | Yêu cầu xóa đặt DELETION_PENDING, hạn chế truy cập; sau khi booking/report mở đóng thì ẩn danh và DEACTIVATED trong tối đa 30 ngày. Dữ liệu riêng booking giữ 90 ngày, dữ liệu cốt lõi 12 tháng, backup 30 ngày; report mở tạm giữ đến 90 ngày sau đóng. |
 | Công suất | Một booking khóa lịch trên một listing. Không có giới hạn chéo nhiều listing cùng caregiver trong P0. |
 | Danh mục | `DAYCARE`, `BOARDING`; species `DOG`, `CAT`, `OTHER`; size `SMALL`, `MEDIUM`, `LARGE`; area là năm vùng nội bộ Đà Nẵng. Giới hạn text và địa chỉ công khai ở contract. |
+| Bổ sung BE-H02 ngày 02/11/2026 | Điều kiện JSON v1 chỉ loài/kích cỡ; allowlist snapshot tại §4 M05; timestamp có offset, giữ giây lẻ; bảng lỗi và canonical idempotency tại API Contract M05; caregiver hợp lệ và chặn self-booking. Decision log H02-D01–D06 tại P0 Contract. |
 
 **Ngoài P0:** phí/hoàn tiền thật, xác minh lý lịch thật, phân xử tài chính thật, nhiều nguồn lực/công suất, rà soát tuân thủ pháp lý trước vận hành thật. Đây là phạm vi sản phẩm khác, không còn là quyết định chặn migration P0.
 

@@ -8,7 +8,7 @@ Tìm listing ACTIVE theo từ khóa, khu vực Đà Nẵng, loại dịch vụ, 
 
 # Logic P0
 
-Quy tắc có thể giải thích: loài được chấp nhận, khoảng tuổi/kích cỡ nếu người chăm khai, lịch có thể nhận, mức giá và yêu cầu đặc biệt được đánh dấu hỗ trợ. Không tính “điểm tin cậy” tổng hợp hoặc khẳng định AI. Nếu không có pet, dùng lọc thủ công.
+Quy tắc có thể giải thích: loài và kích cỡ được nhận theo `acceptance_rules_json` v1 (`schema_version=1`, `species`, `sizes`), lịch có thể nhận và tổng giá cho khoảng chọn. Theo quyết định 02/11/2026, phiên bản đầu chưa tự lọc theo tuổi/nhu cầu đặc biệt hoặc tuyên bố đã kiểm tra hỗ trợ; thông tin này vẫn được chia sẻ trong snapshot booking theo quyền. Pet thiếu size không tự match listing giới hạn size; JSON điều kiện sai/không hỗ trợ không được coi là nhận tất cả. Không tính “điểm tin cậy” tổng hợp hoặc khẳng định AI. Nếu không có pet, dùng lọc thủ công. Xem P0 Contract §8.
 
 # Phụ thuộc và dữ liệu
 
@@ -16,7 +16,7 @@ Quy tắc có thể giải thích: loài được chấp nhận, khoảng tuổi
 
 # Tiêu chí chấp nhận
 
-Listing không ACTIVE không hiện. Bộ lọc ngày loại bỏ lịch bị khóa. Kết quả cho biết vì sao phù hợp hoặc thiếu điều kiện; không gắn nhãn Verified cho seed. Tìm trống có lời giải thích và gợi ý nới lọc, không tự bịa listing.
+Listing không ACTIVE không hiện; listing nhận booking còn cần profile chưa xóa mềm và user caregiver ACTIVE/còn CAREGIVER. Bộ lọc ngày loại bỏ lịch bị khóa. Kết quả cho biết vì sao phù hợp hoặc thiếu điều kiện theo loài/kích cỡ/lịch/giá, không suy diễn tuổi/nhu cầu đặc biệt là đã phù hợp; không gắn nhãn Verified cho seed. Tìm trống có lời giải thích và gợi ý nới lọc, không tự bịa listing.
 
 # Danh mục P0
 
