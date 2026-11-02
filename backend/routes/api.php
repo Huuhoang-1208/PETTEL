@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\EnableCaregiverRoleController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\CaregiverListingController;
 use App\Http\Controllers\CaregiverProfileController;
 use App\Http\Controllers\PetController;
 use Illuminate\Http\Request;
@@ -34,4 +35,10 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
         Route::post('/profile', [CaregiverProfileController::class, 'store']);
         Route::get('/profile', [CaregiverProfileController::class, 'show']);
         Route::patch('/profile', [CaregiverProfileController::class, 'update']);
+
+        Route::post('/listings', [CaregiverListingController::class, 'store']);
+        Route::get('/listings', [CaregiverListingController::class, 'index']);
+        Route::get('/listings/{id}', [CaregiverListingController::class, 'show'])->whereNumber('id');
+        Route::patch('/listings/{id}', [CaregiverListingController::class, 'update'])->whereNumber('id');
+        Route::delete('/listings/{id}', [CaregiverListingController::class, 'destroy'])->whereNumber('id');
     });
