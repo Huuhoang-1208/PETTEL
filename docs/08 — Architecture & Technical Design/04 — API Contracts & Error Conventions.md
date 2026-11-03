@@ -120,13 +120,15 @@ Mã `species`: `DOG`, `CAT`, `OTHER`; `size`: `SMALL`, `MEDIUM`, `LARGE`; `sex`:
 
 **Trạng thái triển khai BE-HA02:** đã có tám API quản lý caregiver profile và listing nháp trong `backend/routes/api.php`. Các API yêu cầu đăng nhập, account ACTIVE và role CAREGIVER; tài nguyên được giới hạn theo chủ sở hữu. Listing mới là DRAFT; chỉ DRAFT được sửa/xóa qua API nháp.
 
+**Cập nhật BE-T03 issue #16, 03/11/2026:** lifecycle, change request, slot CRUD và media API đã được triển khai trong working tree. Các mục này bổ sung vào tám API HA02; chúng không đổi semantics PATCH/DELETE listing DRAFT. Chi tiết nghiệm thu và trạng thái CI/reviewer ở [báo cáo issue #16](<../05 — Implementation Plan/BE-T03 — Báo cáo thực hiện issue #16.md>).
+
 Code tại commit `6eb0e3a` đã được kiểm tra local: định dạng và phân tích kiểu đạt; migration/seed đạt; toàn bộ 119 tests đạt với 1.922 assertions. Kết quả này không thay thế CI hoặc xác nhận reviewer trên commit cuối của PR.
 
 API công khai `/api/listings` và `/api/listings/{id}` đã được triển khai trong BE-H03 task 2; kiểm thử HTTP loại DRAFT và các điều kiện công khai đạt theo cập nhật M04 bên trên. Bộ lọc/lịch/giá đầy đủ và nghiệm thu tích hợp toàn BE-H03 vẫn thuộc các task tiếp theo.
 
 ### Schema tái sử dụng và kết quả kiểm tra
 
-Tái sử dụng migration `2026_10_28_000002_create_profiles_and_listing_schema` từ BE-T01; không cần migration mới cho contract này.
+HA02 dùng migration `2026_10_28_000002_create_profiles_and_listing_schema` từ BE-T01. BE-T03 tái sử dụng các bảng hiện có và thêm duy nhất cột `listings.suspension_source` cùng CHECK qua migration `2026_11_02_000001_add_listing_suspension_source`.
 
 | Bảng                 | Cột / quan hệ chính                                                                                                                                                                                                              | Ràng buộc đã đối chiếu                                                                                                                                              |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -309,6 +311,32 @@ Lỗi JSON: `error: { code, message, details?, request_id }`. 400 request lỗi 
 # Ví dụ hợp đồng booking
 
 POST body: `{pet_id, listing_id, start_at, end_at, instructions}` + header `Idempotency-Key`. Response: `{id, status:"REQUESTED", pet_id, listing_id, start_at, end_at, price_snapshot_vnd, payment_due_at:null}`. Server tự lấy owner từ session Sanctum stateful, giá từ listing; bỏ qua mọi owner_id, status hoặc amount do client gửi. Key unique theo owner, hash payload chuẩn hóa; cùng key/payload trả kết quả cũ, khác payload trả 409 `IDEMPOTENCY_CONFLICT`.
+
+### Addendum BE-T03 issue #16 — API quản lý listing, ảnh và lịch
+
+Các route dưới đây dùng `auth:sanctum`, `account.active`, role `CAREGIVER` hoặc `ADMIN` theo prefix. CSRF giữ contract BE-H01. Listing và child resource được scope trước khi validation payload; caregiver không sở hữu listing/child nhận 404. Admin không review listing của mình; caregiver không restore suspension nguồn ADMIN; hai trường hợp trả 403.
+
+| Method / route | Ý nghĩa / contract |
+| --- | --- |
+| `GET /api/caregiver/listings?status&page&per_page` | Mặc định status `DRAFT`; `ALL` lấy mọi listing chưa xóa mềm. Mặc định 20, tối đa 50; collection `data/links/meta`. |
+| `GET /api/caregiver/listings/{id}`; `GET /api/admin/listings/{id}` | Management resource có `status`, `version`, `suspension_source`, ảnh READY, `latest_decision` và `pending_change_request_id`. |
+| `POST /api/caregiver/listings/{id}/submit` | `{}`; DRAFT → PENDING_REVIEW. |
+| `POST /api/caregiver/listings/{id}/suspend`; `POST /api/admin/listings/{id}/suspend` | `{reason}`; ghi source đình chỉ và audit. |
+| `POST /api/caregiver/listings/{id}/archive`; `POST /api/admin/listings/{id}/archive` | `{reason}`; archive bị chặn khi còn booking giữ lịch. |
+| `POST /api/caregiver/listings/{id}/restore`; `POST /api/admin/listings/{id}/restore` | Caregiver gửi `{}` và chỉ restore nguồn CAREGIVER; admin gửi `{reason}`. |
+| `GET/POST /api/caregiver/listings/{id}/change-requests` | History có page/per_page; create nhận `{base_listing_version,changes}`. Chỉ một pending/listing. |
+| `GET /api/caregiver/listings/{id}/change-requests/{requestId}`; `POST .../{requestId}/withdraw` | Request phải thuộc listing; withdraw chỉ với PENDING_REVIEW, không tăng listing version. |
+| `GET /api/admin/listing-change-requests?status&page&per_page` | Queue mặc định PENDING_REVIEW, cho phép ALL và các status đã chốt; pagination 20/50. |
+| `POST /api/admin/listings/{id}/change-requests/{requestId}/{approve,reject}` | Approve nhận reason tùy chọn; reject bắt buộc reason. Review chỉ một lần, khóa listing. |
+| `GET/POST/PATCH/DELETE /api/caregiver/listings/{id}/availability-slots[/{slotId}]` | Slot UTC, có microsecond, overlap 409; delete soft. Update/delete phải giữ coverage cho booking giữ lịch. Không tăng listing version. |
+| `POST /api/caregiver/media`; `PUT /api/caregiver/listings/{id}/media` | Upload file trả ID/MIME/size; gắn/sắp xếp/tháo ảnh trực tiếp chỉ khi listing DRAFT. Listing đã duyệt dùng change request. |
+| `GET /api/caregiver/listings/{id}/media/{mediaId}/content`; `GET /api/admin/listings/{id}/media/{mediaId}/content`; `GET /api/listings/{id}/media/{mediaId}/content` | Stream ảnh/thumbnail qua quyền mỗi request; public route chỉ dùng media thuộc pivot đã duyệt. |
+
+Collections trả `data`, `links`, `meta`; single resource bọc `data`; ID trong response là chuỗi. Slot và thời điểm change request trả ISO 8601 UTC có sáu chữ số microsecond. Change request rút có `reviewed_by_user_id`, `reviewed_at`, `decision_reason` bằng null; audit ghi actor/thời điểm. `latest_decision` là object `{action,reason,decided_at}` hoặc null; pending request trả ID chuỗi hoặc null.
+
+Tất cả query/body key lạ trên các route BE-T03 trả `422 VALIDATION_ERROR` theo field. Lỗi nghiệp vụ dùng `error:{code,message,details,request_id}`; child/owner sai scope 404, self-review/quyền restore 403, sai state/version 409 và overlap/coverage 409 `AVAILABILITY_CONFLICT`. Public listing resource chỉ thêm `media:[{media_object_id,sort_order,image_url,thumbnail_url}]`; không trả slot, booking, snapshot, object key hoặc hash. Public image stream dùng `no-store`.
+
+**Trạng thái:** contract này đã được cài trong working tree và các test API/MySQL tương ứng đạt; commit cuối, CI từ commit đó và nghiệm thu reviewer chưa được ghi nhận trong tài liệu này.
 
 ## M05 — Chi tiết create booking đã chốt 02/11/2026
 

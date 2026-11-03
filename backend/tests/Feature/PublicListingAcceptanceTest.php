@@ -188,7 +188,9 @@ class PublicListingAcceptanceTest extends TestCase
                 'price_unit',
                 'acceptance_rules_json',
                 'price_total_vnd',
+                'media',
             ], array_keys($item));
+            $this->assertSame([], $item['media']);
 
             $this->assertEquals([
                 'schema_version' => 1,

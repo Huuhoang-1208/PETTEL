@@ -28,7 +28,7 @@ class PublicListingTest extends TestCase
         $this->assertSame($list->json('data.0'), $detail->json('data'));
         $this->assertEqualsCanonicalizing([
             'id', 'title', 'description', 'service_type', 'area_code',
-            'price_vnd', 'price_unit', 'acceptance_rules_json', 'price_total_vnd',
+            'price_vnd', 'price_unit', 'acceptance_rules_json', 'price_total_vnd', 'media',
         ], array_keys($detail->json('data')));
         $detail->assertJsonPath('data.price_vnd', 50000)
             ->assertJsonPath('data.price_total_vnd', null)
@@ -59,7 +59,10 @@ class PublicListingTest extends TestCase
         if ($state === 'SOFT_DELETED') {
             $listing->delete();
         } else {
-            $listing->forceFill(['status' => $state])->save();
+            $listing->forceFill([
+                'status' => $state,
+                'suspension_source' => $state === 'SUSPENDED' ? 'ADMIN' : null,
+            ])->save();
         }
 
         $this->assertNotPublic((string) $listing->id);

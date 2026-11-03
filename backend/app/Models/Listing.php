@@ -8,6 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property-read string|null $latest_decision_action
+ * @property-read string|null $latest_decision_reason
+ * @property-read string|null $latest_decision_at
+ * @property-read int|string|null $pending_change_request_id
+ */
 class Listing extends Model
 {
     use SoftDeletes;
@@ -20,6 +26,7 @@ class Listing extends Model
         'price_vnd',
         'price_unit',
         'acceptance_rules_json',
+        'suspension_source',
     ];
 
     protected $attributes = [
@@ -34,10 +41,11 @@ class Listing extends Model
         return $this->belongsTo(CaregiverProfile::class);
     }
 
-    /** @return BelongsToMany<MediaObject, $this> */
+    /** @return BelongsToMany<MediaObject, $this, ListingMedia, 'pivot'> */
     public function media(): BelongsToMany
     {
         return $this->belongsToMany(MediaObject::class, 'listing_media')
+            ->using(ListingMedia::class)
             ->withPivot('sort_order')
             ->orderByPivot('sort_order');
     }

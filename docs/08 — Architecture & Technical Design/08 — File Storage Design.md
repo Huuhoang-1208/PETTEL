@@ -4,15 +4,19 @@ PETTEL — Architecture & Technical Design \| Bản thảo 26/10/2026
 
 # Phân loại tệp
 
-Ảnh listing có thể công khai khi listing ACTIVE và được duyệt; ảnh pet và care update là private. DB lưu media ID, owner/booking/listing relation, object key ngẫu nhiên, MIME đã xác định, kích thước, hash, thời điểm; không lưu đường dẫn máy hoặc public URL vĩnh viễn.
+Ảnh listing chỉ công khai khi listing ACTIVE, media `READY`/`PUBLIC_ELIGIBLE` và nằm trong pivot listing đã duyệt. Ảnh pet và care update vẫn private. DB lưu media ID, owner/booking/listing relation, object key ngẫu nhiên, MIME đã xác định, kích thước, hash, thời điểm; API không trả object key/hash hoặc URL lưu trữ vĩnh viễn.
 
 # Upload an toàn
 
-Giới hạn JPEG/PNG/WebP và 10 MB/ảnh đề xuất; kiểm tra MIME thực, kích thước pixel, đổi tên ngẫu nhiên, loại metadata EXIF nếu không cần. Chặn executable/SVG nếu chưa có sanitizer. Upload tạm → validate → lưu private → DB commit; nếu DB lỗi, dọn object mồ côi bằng job. Tạo thumbnail trong queue; không dùng ảnh gốc làm thumbnail danh sách.
+BE-T03 chốt JPEG/PNG/WebP, đầu vào tối đa 10.485.760 byte (10 MiB), 20 megapixel và 10 ảnh/listing. MIME được xác định từ nội dung, ảnh decode/chuẩn hóa để bỏ metadata không cần thiết, tên object là ngẫu nhiên; SVG/executable bị từ chối. Thumbnail WebP được tạo đồng bộ với cạnh dài tối đa 640 px. Record chỉ ở `READY` sau khi ảnh và thumbnail đã lưu trên private local disk.
+
+File I/O diễn ra ngoài DB transaction. Khi lưu file hoặc ghi row DB lỗi, ứng dụng xóa các object vừa tạo; lỗi cleanup được log nội bộ kèm key để retry thủ công. Không có READY giả, queue media hoặc cleanup scheduler trong phạm vi BE-T03. Upload giới hạn theo tầng web server/PHP có thể trả HTTP 413 trước khi chạy validation ứng dụng.
 
 # Truy cập và xóa
 
-Ảnh riêng cấp URL ký ngắn hạn hoặc stream qua controller sau policy; chỉ owner/caregiver booking và admin có lý do xem. Không để bucket/disk private ở chế độ public. Xóa mềm entity không xóa tệp lập tức nếu còn booking/audit; thời hạn lưu và purge theo P0 Decision Contract: nội dung booking riêng 90 ngày, media mồ côi dọn trong 30 ngày, backup 30 ngày; report mở tạm giữ đến 90 ngày sau khi đóng. Seed/demo dùng ảnh có quyền sử dụng.
+Ảnh riêng được stream qua route có xác thực lại mỗi request; caregiver/admin phải đúng phạm vi listing, admin không tự duyệt ảnh listing của mình. Public stream kiểm tra listing, pivot, `READY` và `PUBLIC_ELIGIBLE`; suspend/detach làm request tiếp theo trả 404. Response đặt `Cache-Control: no-store` và `X-Content-Type-Options: nosniff`. Việc này không thu hồi byte người dùng đã tải.
+
+Detach, reject hoặc withdraw không xóa object. Pending proposal là một tham chiếu cần giữ; chỉ cleanup khi không còn tham chiếu hay nghĩa vụ lưu hợp lệ theo P0. Seed/demo dùng ảnh có quyền sử dụng.
 
 # Môi trường
 

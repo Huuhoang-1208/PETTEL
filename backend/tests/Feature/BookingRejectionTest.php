@@ -121,7 +121,7 @@ class BookingRejectionTest extends TestCase
     {
         $fixture = BookingFixture::requested($this);
         DB::table('listings')->where('id', $fixture['active_listing_id'])
-            ->update(['status' => 'SUSPENDED']);
+            ->update(['status' => 'SUSPENDED', 'suspension_source' => 'ADMIN']);
 
         $this->actingAs($fixture['caregiver'])
             ->postJson("/api/bookings/{$fixture['booking']->id}/reject")

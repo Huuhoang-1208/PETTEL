@@ -163,6 +163,7 @@ class PublicListingController extends Controller
 
         return Listing::query()
             ->fromSub($priced, 'listings')
+            ->with('media')
             ->whereNotNull('listings.price_total_vnd');
     }
 
@@ -170,6 +171,7 @@ class PublicListingController extends Controller
     private function publicListings(): Builder
     {
         return Listing::query()
+            ->with('media')
             ->where('status', 'ACTIVE')
             ->whereRelation('caregiverProfile.user', 'status', 'ACTIVE')
             ->whereRelation('caregiverProfile.user.roles', 'role', 'CAREGIVER');
