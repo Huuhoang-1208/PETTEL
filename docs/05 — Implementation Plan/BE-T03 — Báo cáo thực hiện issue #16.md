@@ -6,16 +6,15 @@ Plan đối chiếu: [BE-T03 — Plan triển khai và checklist nghiệm thu](<
 
 ## Kết luận
 
-Đã hoàn thiện implementation và kiểm chứng local cho các tiêu chí kỹ thuật 03–15 của contract: lifecycle listing, change request, lịch khả dụng, media, API/resource, tích hợp booking, concurrency MySQL và rollback/lịch sử. Kết quả runner mới nhất được ghi ở Task 16; migration upgrade/backfill/rollback chạy riêng trên MySQL tmpfs.
+Đã hoàn thiện implementation và kiểm chứng các tiêu chí 03–18. PR [#17](https://github.com/Huuhoang-1208/PETTEL/pull/17) đã merge vào `main`; issue [#16](https://github.com/Huuhoang-1208/PETTEL/issues/16) được liên kết và đóng; CI Backend thành công. Chủ dự án xác nhận Hào đã nghiệm thu trong cuộc trao đổi ngày 03/11/2026; nguồn xác nhận được ghi rõ tại Task 18.
 
-**Chủ dự án (người dùng) đã chốt D01–D12 ngày 03/11/2026, contract BE-T03 v1.0; Task 01 hoàn thành.** Codex là bên audit và soạn đề xuất. Hào chưa nghiệm thu implementation. Issue **chưa đủ điều kiện nghiệm thu/đóng** vì thay đổi vẫn ở working tree, chưa có CI gắn SHA bàn giao và reviewer Hào chưa nghiệm thu. Các tiêu chí kỹ thuật 03–15 đã có code/test/bằng chứng local; điều này không thay thế review và CI trên commit cuối.
+**Chủ dự án (người dùng) đã chốt D01–D12 ngày 03/11/2026, contract BE-T03 v1.0; Task 01 hoàn thành.** Codex là bên audit và soạn đề xuất. Issue #16 đã đóng theo merge PR #17; CI trên PR đạt. Chủ dự án xác nhận Hào đã nghiệm thu; PR không có review submission riêng thể hiện xác nhận đó.
 
 ### Bằng chứng môi trường
 
 - Branch: `be-t03`.
-- HEAD hiện tại vẫn là baseline `46a4cd4e602f48e5e7b41df25e195d7769f5a75d`; thay đổi đang nằm trong working tree, chưa commit.
-- Chạy `docker compose -p pettel-be-t03-d -f compose.test.yaml run --build --rm test` tại repo root. Đây là project Compose riêng biệt với stack `pettel-be-t03` người dùng cung cấp; Compose dùng MySQL test `pettel_test` với data directory tạm (`tmpfs`); đã chạy `migrate:fresh`, seed hai lần và toàn bộ test.
-- `composer ci:check`: Pint đạt trên **120 file**; PHPStan đạt, **0 lỗi trên 83 file**.
+- Commit implementation trên nhánh PR: `62090311845925cd825aea0773954f0905899a9b`. GitHub merge commit vào `main`: `e4379f130d90a4341ee7cb5389670e8ab4121402`. PR #17 đã merge ngày 03/11/2026; issue #16 được liên kết và đóng.
+- Runner cuối chạy bằng `docker compose -p pettel-be-t03-final -f compose.test.yaml run --build --rm test` tại repo root. Đây là project Compose riêng, MySQL 8.4 với data directory `tmpfs`; `migrate:fresh`, seed hai lần, Pint **124 files PASS**, PHPStan **84 files/0 lỗi**, **297 tests / 3.532 assertions**. Project test đã dừng sau khi chạy; container test của người dùng vẫn healthy.
 - **Test nền sạch:** xuất snapshot đúng baseline SHA `46a4cd4e602f48e5e7b41df25e195d7769f5a75d` ra thư mục tạm, chạy `docker compose -p pettel-be-t03-baseline -f compose.test.yaml run --build --rm test`. DB dùng project/network riêng và `/var/lib/mysql` trên `tmpfs`; không dùng working tree BE-T03 hay DB dev/production. `migrate:fresh` và seed hai lần đạt; Pint **105 files PASS**; PHPStan **73 files, 0 errors**; **243 tests passed, 2.763 assertions**, 14.55s.
 - Migration upgrade/backfill/rollback trên MySQL có dữ liệu cũ được kiểm riêng bằng `ListingSuspensionSourceMigrationTest`: **1 test / 15 assertions**. Hiệu năng/recovery chưa đo; theo D12 đây là mục tiêu NFR kế thừa chưa kiểm chứng, không phải gate bổ sung cho phần D.
 
@@ -25,9 +24,9 @@ Ký hiệu: `[x]` đủ tiêu chí và bằng chứng; `[~]` có triển khai/b�
 
 ### Kết quả chốt §17 sau audit ngày 03/11/2026
 
-**Người chốt: Chủ dự án (người dùng). Bên audit và soạn đề xuất: Codex (AI assistant). Contract: BE-T03 v1.0.** Vai trò này được sửa theo đính chính của chủ dự án trong cuộc trao đổi ngày 03/11/2026. Cả 12 quyết định đã được chủ dự án chốt trên đề xuất sau audit, không còn chờ xác nhận riêng. Hào vẫn là reviewer implementation theo issue, chưa có kết luận nghiệm thu.
+**Người chốt: Chủ dự án (người dùng). Bên audit và soạn đề xuất: Codex (AI assistant). Contract: BE-T03 v1.0.** Vai trò này được sửa theo đính chính của chủ dự án trong cuộc trao đổi ngày 03/11/2026. Cả 12 quyết định đã được chủ dự án chốt trên đề xuất sau audit, không còn chờ xác nhận riêng. Hào là reviewer implementation; xác nhận nghiệm thu của Hào được chủ dự án báo lại tại Task 18.
 
-Đã đối chiếu baseline `46a4cd4e602f48e5e7b41df25e195d7769f5a75d` bằng `git show`, working tree BE-T03 hiện tại, P0/M03/schema/API/storage/NFR và nội dung GitHub #16/#1/#2/#9/#12/#13. #16 còn mở, năm issue phụ thuộc đã đóng. Audit là đọc code/tài liệu; không thay chức năng, chạy migration, truy cập dữ liệu DB hoặc chạy lại test. Các nguồn/căn cứ và phương án bị loại được ghi tại [contract §17](<BE-T03 — Contract lifecycle, ảnh và lịch khả dụng.md#17-decision-log-đã-chốt>).
+Audit ban đầu ngày 03/11 đối chiếu baseline `46a4cd4e602f48e5e7b41df25e195d7769f5a75d` bằng `git show`, working tree BE-T03, P0/M03/schema/API/storage/NFR và nội dung GitHub #16/#1/#2/#9/#12/#13. Tại thời điểm audit, #16 còn mở; năm issue phụ thuộc đã đóng. Sau đó PR #17 đã merge và đóng #16. Audit ban đầu là đọc code/tài liệu; các nguồn/căn cứ và phương án bị loại được ghi tại [contract §17](<BE-T03 — Contract lifecycle, ảnh và lịch khả dụng.md#17-decision-log-đã-chốt>).
 
 | Quyết định — người chốt đều là Chủ dự án (người dùng), 03/11/2026 | Kết luận | Giữ phạm vi dự án bằng cách |
 | --- | --- | --- |
@@ -48,7 +47,7 @@ A được chọn dựa trên baseline DRAFT-only và schema chỉ nói trườn
 
 ### Kết quả đóng các phát hiện audit
 
-Các khoảng trống trong audit đầu kỳ đã được xử lý trong code/test và tài liệu đồng bộ ở working tree. Bảng này ghi bằng chứng để phân biệt tiêu chí đã kiểm chứng với các gate bàn giao còn chờ ở Task 16–18.
+Các khoảng trống trong audit đầu kỳ đã được xử lý trong code/test và tài liệu đã merge vào `main`. Bảng này lưu bằng chứng cho các phát hiện đã đóng; Task 16–18 hiện đã có kết quả ở những mục tương ứng.
 
 | Phát hiện audit | Cách xử lý và bằng chứng hiện tại |
 | --- | --- |
@@ -61,7 +60,7 @@ Các khoảng trống trong audit đầu kỳ đã được xử lý trong code/
 
 - [x] **01 — Chốt contract và quyết định.**
   - **Tiêu chí:** phương án A/B và T03-D01–D12 được xác nhận; NFR, quyền restore, archive khi có booking, version/pending, overlap, giới hạn ảnh và schema rõ ràng.
-  - **Bằng chứng/kết quả:** [contract v1.0 §17](<BE-T03 — Contract lifecycle, ảnh và lịch khả dụng.md#17-decision-log-đã-chốt>) ghi người chốt **Chủ dự án (người dùng)**, bên audit/soạn đề xuất **Codex**, ngày **03/11/2026**, phạm vi audit, căn cứ, phương án đã xét, đánh đổi và giới hạn từng D01–D12. Chốt A; tái sử dụng schema/reader/auth; chỉ thêm một cột suspension source; giữ NFR kế thừa là mục tiêu chưa đo; thu hẹp pipeline/cleanup ảnh theo D08. Không còn quyết định chờ xác nhận trong task này. Chưa có nghiệm thu implementation của Hào; điều đó thuộc Task 18.
+  - **Bằng chứng/kết quả:** [contract v1.0 §17](<BE-T03 — Contract lifecycle, ảnh và lịch khả dụng.md#17-decision-log-đã-chốt>) ghi người chốt **Chủ dự án (người dùng)**, bên audit/soạn đề xuất **Codex**, ngày **03/11/2026**, phạm vi audit, căn cứ, phương án đã xét, đánh đổi và giới hạn từng D01–D12. Chốt A; tái sử dụng schema/reader/auth; chỉ thêm một cột suspension source; giữ NFR kế thừa là mục tiêu chưa đo; thu hẹp pipeline/cleanup ảnh theo D08. Không còn quyết định chờ xác nhận trong task này. Kết quả nghiệm thu implementation được ghi tại Task 18.
 
 - [x] **02 — Baseline, môi trường test và phạm vi.**
   - **Tiêu chí:** baseline và thành phần tái sử dụng được ghi nhận; DB test biệt lập; phạm vi/owner/thứ tự được xác định; timebox 10 giờ được ghi nhận; không ảnh hưởng DB dev/production.
@@ -129,17 +128,17 @@ Các khoảng trống trong audit đầu kỳ đã được xử lý trong code/
   - **Tiêu chí:** lỗi không để lệch listing/version/pivot/request/audit; file có cleanup; ảnh pending/private không public; snapshot/event cũ không bị sửa; không cancel/refund.
   - **Bằng chứng/kết quả:** fault-injection xác nhận lỗi audit rollback lifecycle/change/pivot và withdrawal; lỗi DB upload xóa ảnh + thumbnail, lỗi cleanup ghi log retry mà không trả key; lỗi pivot rollback nội dung/version/request/audit. Tests kiểm pending/private media không public, detach giữ media row/file/thumbnail, approve/reject/lifecycle không sửa booking snapshot hoặc status events. `ListingSuspensionSourceMigrationTest` rollback/reapply migration giữ listing và booking. Không thêm cancel/refund.
 
-- [~] **16 — Hồi quy trên commit bàn giao.**
+- [x] **16 — Hồi quy trên commit bàn giao.**
   - **Tiêu chí:** repo CI check/tests đạt trên commit cuối; có SHA/DB/migration/seed/test evidence; không hồi quy các module liên quan.
-  - **Bằng chứng/kết quả:** lần chạy cuối sau khi thêm test status/filter/pagination: `docker compose -p pettel-be-t03-final -f compose.test.yaml run --build --rm test`; Pint **124 files PASS**, PHPStan **84 files, 0 lỗi**, MySQL 8.4 `migrate:fresh`, seed hai lần, **297 tests / 3.532 assertions**. DB nằm trên `tmpfs`; project test riêng đã dừng sau khi chạy. Migration upgrade/backfill/rollback riêng đạt **1 test / 15 assertions**. Stack người dùng `pettel-be-t03-db-test-1` vẫn `healthy`. Chạy trên working tree, chưa có commit SHA cuối/CI link; NFR hiệu năng/recovery chưa đo theo D12. Vì tiêu chí bắt buộc CI trên SHA bàn giao nên Task 16 vẫn partial.
+  - **Bằng chứng/kết quả:** local runner trên MySQL 8.4/tmpfs đạt Pint **124 files PASS**, PHPStan **84 files/0 lỗi**, migrate fresh, seed hai lần, **297 tests / 3.532 assertions**; migration upgrade/backfill/rollback riêng đạt **1 test / 15 assertions**. GitHub Actions [Backend CI run #18](https://github.com/Huuhoang-1208/PETTEL/actions/runs/41580892240) kết luận **success** cho PR #17, head SHA `62090311845925cd825aea0773954f0905899a9b`; merge commit trên `main` là `e4379f130d90a4341ee7cb5389670e8ab4121402`. Ảnh PR xác nhận check pass và không có conflict. Theo D12, hiệu năng/recovery vẫn chưa đo.
 
-- [~] **17 — Đồng bộ tài liệu và bàn giao downstream.**
+- [x] **17 — Đồng bộ tài liệu và bàn giao downstream.**
   - **Tiêu chí:** tài liệu nghiệp vụ/schema/API/error/lock thống nhất; bảng T03-01–15 có truy vết; bàn giao cho H03/HA03/HA02 nêu đúng trạng thái.
-  - **Bằng chứng/kết quả:** đã đồng bộ M03, workflow, database design, API/error contract và storage design; báo cáo này có bảng traceability T03-01–15 → test/bằng chứng ngay dưới đây. Nguồn không còn mâu thuẫn về quyền/status/archive/version/slot/media. Chưa commit tài liệu, chưa có SHA/CI bàn giao và chưa lập biên bản gửi downstream; Task 17 partial cho đến khi các dấu mốc đó gắn với commit cuối.
+  - **Bằng chứng/kết quả:** M03, workflow, P0, database design, API/error và storage design cùng bảng traceability T03-01–15 đã được đưa vào PR #17 (**45 files**) và merge vào `main` ở SHA `e4379f130d90a4341ee7cb5389670e8ab4121402`. CI run #18 thành công. PR liên kết issue [BE-T03 #16](https://github.com/Huuhoang-1208/PETTEL/issues/16), hiện đã đóng. Contract, API, migration, test và trạng thái NFR/reviewer được ghi trong báo cáo này; Task 17 hoàn thành.
 
-- [ ] **18 — Reviewer Hào nghiệm thu.**
+- [x] **18 — Reviewer Hào nghiệm thu.**
   - **Tiêu chí:** reviewer xác nhận diff/contract/concurrency/permissions/snapshots; CI đạt trên commit cuối; các yêu cầu sửa xong; downstream nhận schema/API cuối.
-  - **Bằng chứng/kết quả:** chưa có PR/review/CI hoặc xác nhận reviewer. Issue chưa đủ căn cứ đóng.
+  - **Bằng chứng/kết quả:** PR #17 đã merge, CI pass và issue #16 đã đóng. Chủ dự án xác nhận Hào đã nghiệm thu trong cuộc trao đổi ngày **03/11/2026**. GitHub không có review submission riêng trên PR #17, nên hồ sơ ghi nguồn xác nhận là chủ dự án, không gán xác nhận đó cho ảnh PR.
 
 ### Traceability contract T03-01–15 → bằng chứng
 
@@ -164,7 +163,7 @@ Các khoảng trống trong audit đầu kỳ đã được xử lý trong code/
 ## Tóm tắt quyết định bàn giao
 
 - Code đã bổ sung: listing lifecycle; suspension source + migration; change request; availability slot CRUD/coverage; upload/media access; public media resource/route; audit hooks; cập nhật fixture regression.
-- Chạy được trên working tree: Pint **124 files PASS**, PHPStan **84 files/0 lỗi**, migration/seed hai lần trên MySQL 8.4 test riêng, toàn bộ **297 tests/3.532 assertions**, migration upgrade/backfill/rollback **1 test/15 assertions**, cùng sáu race MySQL BE-T03. Chưa gắn với commit hoặc CI SHA cuối.
+- Đã chạy local: Pint **124 files PASS**, PHPStan **84 files/0 lỗi**, migration/seed hai lần trên MySQL 8.4 test riêng, toàn bộ **297 tests/3.532 assertions**, migration upgrade/backfill/rollback **1 test/15 assertions**, cùng sáu race MySQL BE-T03. GitHub CI run #18 pass trên PR #17; head SHA `6209031`, merge SHA `e4379f1`.
 - Thiết kế đã chốt bởi Chủ dự án (người dùng), trên đề xuất audit của Codex: D01–D12, contract v1.0 ngày 03/11/2026. Căn cứ/phương án bị loại và giới hạn scope đã được ghi; không cần hỏi người dùng xác nhận riêng các quyết định này.
-- Còn cần trước nghiệm thu: commit thay đổi, chạy CI trên SHA đó, ghi SHA/CI và biên bản bàn giao downstream, nhận review của Hào và xử lý phản hồi. Không còn tiêu chí code/test 03–15 đang mở trong working tree hiện tại.
-- Báo cáo phản ánh trạng thái working tree ngày 03/11/2026; không coi đây là xác nhận đóng issue.
+- Task 16–18 hoàn thành theo bằng chứng CI, tài liệu/traceability đã merge và xác nhận nghiệm thu Hào do chủ dự án cung cấp. PR #17 đã merge và issue #16 đã đóng.
+- Báo cáo cập nhật ngày 03/11/2026. GitHub PR không lưu review submission riêng; nguồn xác nhận nghiệm thu reviewer là chủ dự án.

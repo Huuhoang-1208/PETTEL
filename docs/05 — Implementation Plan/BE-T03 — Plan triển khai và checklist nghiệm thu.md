@@ -4,7 +4,7 @@ Issue: [#16](https://github.com/Huuhoang-1208/PETTEL/issues/16). Owner triển k
 
 Nguồn: [contract lifecycle, ảnh và lịch](<BE-T03 — Contract lifecycle, ảnh và lịch khả dụng.md>), [bản rà soát baseline](<BE-T03 — Rà soát phạm vi và đầu vào contract.md>). Kế hoạch được lập ngày 02/11/2026 và cập nhật theo contract v1.0 ngày 03/11/2026. Trạng thái triển khai và bằng chứng từng checkbox được cập nhật trong [báo cáo thực hiện issue #16](<BE-T03 — Báo cáo thực hiện issue %2316.md>); Task 01 đã chốt, các task khác dưới đây giữ làm checklist tiêu chí và đối chiếu trạng thái chi tiết ở báo cáo.
 
-**Chủ dự án (người dùng) đã chốt phương án A cùng T03-D01–D12 tại contract §17 ngày 03/11/2026. Codex là bên audit và soạn đề xuất; Hào chưa nghiệm thu implementation.** Nếu contract đổi, cập nhật decision log/task và tiêu chí tương ứng trước khi code. Plan không mở rộng sang frontend, payment/expiry/refund, media pipeline/cleanup scheduler hoặc purge toàn hệ thống.
+**Chủ dự án (người dùng) đã chốt phương án A cùng T03-D01–D12 tại contract §17 ngày 03/11/2026. Codex là bên audit và soạn đề xuất; chủ dự án xác nhận Hào đã nghiệm thu implementation ngày 03/11/2026.** Nếu contract đổi, cập nhật decision log/task và tiêu chí tương ứng trước khi code. Plan không mở rộng sang frontend, payment/expiry/refund, media pipeline/cleanup scheduler hoặc purge toàn hệ thống.
 
 ## Cách đánh dấu hoàn thành
 
@@ -22,7 +22,7 @@ Timebox issue gốc là 10 giờ; kế hoạch ghi nhận đã sử dụng 10 gi
 
   **Tiêu chí hoàn thành:** contract ghi rõ quyết định được chấp nhận hoặc điều chỉnh, ngày xác nhận, giả định NFR và nội dung không làm. Quyền restore, archive có booking, version/pending, overlap slot, giới hạn ảnh và schema bổ sung không còn mơ hồ. Không còn dùng một quyết định “chờ duyệt” như yêu cầu bắt buộc đã chốt.
 
-  **Bằng chứng:** contract v1.0 §17: Codex audit baseline/working tree/tài liệu/sáu issue và soạn đề xuất kèm căn cứ/phương án/giới hạn; Chủ dự án (người dùng) chốt D01–D12 ngày 03/11/2026. Vai trò người chốt được sửa theo đính chính của chủ dự án; Hào chưa nghiệm thu code. **Đối chiếu:** contract §2–3, §17 và báo cáo audit. **Phụ thuộc:** không.
+  **Bằng chứng:** contract v1.0 §17: Codex audit baseline/working tree/tài liệu/sáu issue và soạn đề xuất kèm căn cứ/phương án/giới hạn; Chủ dự án (người dùng) chốt D01–D12 ngày 03/11/2026. Vai trò người chốt được sửa theo đính chính của chủ dự án; tại thời điểm chốt contract, Hào chưa nghiệm thu implementation, sign-off sau triển khai được ghi tại Task 18. **Đối chiếu:** contract §2–3, §17 và báo cáo audit. **Phụ thuộc:** không.
 
 - [x] **02 — Xác nhận baseline, môi trường test và phạm vi thay đổi.**
 
@@ -146,29 +146,29 @@ Timebox issue gốc là 10 giờ; kế hoạch ghi nhận đã sử dụng 10 gi
 
   **Bằng chứng:** test lỗi cưỡng bức, DB assertions và storage assertions. **Đối chiếu:** T03-03, T03-08–09, T03-13–14. **Phụ thuộc:** 12–14.
 
-- [~] **16 — Chạy hồi quy và ghi bằng chứng trên commit bàn giao.**
+- [x] **16 — Chạy hồi quy và ghi bằng chứng trên commit bàn giao.**
 
   **Việc làm:** chạy runner kiểm tra của dự án trên DB MySQL test riêng; kiểm tra định dạng, phân tích kiểu, migration/seed lặp, toàn bộ test liên quan và CI. Chỉ chạy thêm đo tải nếu NFR được chốt là điều kiện nghiệm thu của đợt này.
 
   **Tiêu chí hoàn thành:** kiểm tra bắt buộc của repo/CI đạt trên commit cuối; auth, HA02, search, create/idempotency, HA03 và BE-T03 không hồi quy. Có số test/assertions, SHA, cấu hình DB/môi trường và kết quả migration/seed. Không dùng báo cáo 243 tests lịch sử để thay lần chạy mới. Theo D12, hiệu năng/recovery kế thừa chưa đo ghi “chưa kiểm chứng”; không bổ sung load-test/SLA mới làm gate #16. Concurrency MySQL, quyền, rollback và snapshot vẫn phải kiểm chứng đủ.
 
-  **Bằng chứng:** lần chạy local cuối trên working tree: Pint 124 files, PHPStan 84 files/0 lỗi, migrate fresh + seed hai lần, 297 tests/3.532 assertions trên project `pettel-be-t03-final` dùng MySQL 8.4/tmpfs; migration upgrade/backfill/rollback thêm 1 test/15 assertions. Cần commit và CI để đạt tiêu chí SHA cuối. **Đối chiếu:** T03-15 và contract §3, §16; kết quả cụ thể ở báo cáo thực hiện. **Phụ thuộc:** 13–15.
+  **Bằng chứng:** local runner: Pint 124 files, PHPStan 84 files/0 lỗi, migrate fresh + seed hai lần, 297 tests/3.532 assertions trên MySQL 8.4/tmpfs; migration upgrade/backfill/rollback thêm 1 test/15 assertions. GitHub Actions [Backend CI run #18](https://github.com/Huuhoang-1208/PETTEL/actions/runs/41580892240) pass trên PR #17, head SHA `62090311845925cd825aea0773954f0905899a9b`; merge SHA `e4379f130d90a4341ee7cb5389670e8ab4121402`. **Đối chiếu:** T03-15 và contract §3, §16; kết quả cụ thể ở báo cáo thực hiện. **Phụ thuộc:** 13–15.
 
-- [~] **17 — Đồng bộ tài liệu và bàn giao các module phụ thuộc.**
+- [x] **17 — Đồng bộ tài liệu và bàn giao các module phụ thuộc.**
 
   **Việc làm:** cập nhật P0/decision log, M03/lifecycle/business rules/workflow, database design/BE-T01, API chung và storage design theo contract đã duyệt. Ghi bàn giao cho H03/HA03/HA02.
 
   **Tiêu chí hoàn thành:** các nguồn không mâu thuẫn về 404/403, suspension source, archive, version/pending, slot và media. Có ví dụ API chạy được, schema/migration mới, thứ tự khóa, lỗi, giới hạn ảnh và phần ngoài phạm vi. Bảng T03-01–15 được ánh xạ tới test/bằng chứng. Tài liệu ghi đúng phần đã triển khai/chưa đo/chờ review, không ghi reviewer đồng ý nếu chưa có xác nhận.
 
-  **Bằng chứng:** đã đồng bộ M03, workflow, database design, API/error và storage; bảng traceability T03-01–15 có trong báo cáo thực hiện. Còn commit docs, SHA/CI và biên bản bàn giao downstream. **Đối chiếu:** contract §18. **Phụ thuộc:** 16.
+  **Bằng chứng:** P0, M03, workflow, database design, API/error, storage và bảng traceability T03-01–15 được gộp trong PR [#17](https://github.com/Huuhoang-1208/PETTEL/pull/17), merge vào `main` tại SHA `e4379f130d90a4341ee7cb5389670e8ab4121402`; CI run #18 pass. PR liên kết issue [#16](https://github.com/Huuhoang-1208/PETTEL/issues/16), hiện đã đóng. Báo cáo thực hiện là biên bản bàn giao kèm SHA/CI và tình trạng NFR/reviewer. **Đối chiếu:** contract §18. **Phụ thuộc:** 16.
 
-- [ ] **18 — Hào review và nghiệm thu issue #16.**
+- [x] **18 — Hào review và nghiệm thu issue #16.**
 
   **Việc làm:** reviewer kiểm tra diff, contract, test concurrency, quyền, snapshot và hành trình listing → booking; xử lý các yêu cầu sửa. Chuẩn bị PR/issue checklist phản ánh kết quả thật.
 
   **Tiêu chí hoàn thành:** reviewer xác nhận trên commit cuối; CI của commit đó đạt; mọi yêu cầu sửa trong scope đã giải quyết; T03-01–15 đủ bằng chứng; downstream nhận được contract/schema/API cuối. Chỉ khi các điều kiện này đạt mới đủ căn cứ đóng #16. Việc đăng comment, gửi thông báo hoặc đóng issue trên GitHub thực hiện khi có chỉ dẫn phù hợp, không phải tác vụ tự động của bản plan này.
 
-  **Bằng chứng:** link PR/review/CI, SHA nghiệm thu và kết luận reviewer. **Phụ thuộc:** 01–17.
+  **Bằng chứng:** PR #17 đã merge, CI pass, issue #16 đã đóng. Chủ dự án xác nhận Hào nghiệm thu trong cuộc trao đổi ngày 03/11/2026. PR không có review submission riêng; nguồn xác nhận được ghi là chủ dự án. **Phụ thuộc:** 01–17.
 
 ## Bảng đối chiếu ba checkbox gốc của issue
 
@@ -178,7 +178,7 @@ Timebox issue gốc là 10 giờ; kế hoạch ghi nhận đã sử dụng 10 gi
 | Quản lý lịch/ảnh; ACTIVE đổi trường trọng yếu phải duyệt lại | 05–06, 09–15 | Media/slot API đạt; bản đã duyệt còn công khai khi pending; coverage và concurrency đạt; đủ T03-06–14. |
 | Test suspend chặn booking mới, đổi hiển thị, giữ lịch sử | 08, 12, 14–16 | Hành trình API thật chứng minh list/detail/media bị ẩn, tạo mới/accept bị chặn và snapshot/history giữ nguyên; hồi quy đạt. |
 
-Issue chỉ nghiệm thu khi thêm task 17–18 về tài liệu, bàn giao và review. “Đã viết test” không thay thế “test đã chạy đạt trên commit bàn giao”.
+Task 17–18 bổ sung các mốc tài liệu/bàn giao và review vào tiêu chí nghiệm thu. “Đã viết test” không thay thế “test đã chạy đạt trên commit bàn giao”. **Cập nhật 03/11/2026:** PR #17 đã merge vào `main`, issue #16 đã đóng; chủ dự án xác nhận Hào nghiệm thu. Task 16–18 đã hoàn thành; nguồn xác nhận Hào được ghi tại báo cáo thực hiện.
 
 ## Nhật ký bằng chứng
 
