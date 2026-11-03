@@ -43,7 +43,10 @@ class BookingAcceptanceBusinessTest extends TestCase
     {
         $fixture = BookingFixture::requested($this);
         $booking = $fixture['booking'];
-        DB::table('listings')->where('id', $booking->listing_id)->update(['status' => $status]);
+        DB::table('listings')->where('id', $booking->listing_id)->update([
+            'status' => $status,
+            'suspension_source' => $status === 'SUSPENDED' ? 'ADMIN' : null,
+        ]);
         $before = $booking->getAttributes();
         $events = $this->eventsFor($booking);
 

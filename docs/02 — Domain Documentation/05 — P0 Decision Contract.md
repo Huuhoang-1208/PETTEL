@@ -172,6 +172,10 @@ Người dùng đã đồng ý sáu đề xuất trong phiên làm việc ngày 
 
 Mã trạng thái/danh mục lưu trong schema dùng `VARCHAR` và CHECK trên MySQL 8.4, kèm validation tại service. Migration mới chuyển `users.status` và `user_roles.role` khỏi ENUM hiện có, không sửa migration cũ. Pet có status `ACTIVE`/`ARCHIVED`; chỉ ACTIVE được dùng cho booking mới. `caregiver_profiles` không lưu status riêng: account status/role và listing status quyết định khả năng hoạt động/công khai. `listing_change_requests.status` là `PENDING_REVIEW`, `APPROVED`, `REJECTED`, `WITHDRAWN`; tối đa một request chờ/listing, duyệt payload và tăng version trong một transaction khóa listing. Report dùng bốn FK nullable thật (listing/review/message/booking), CHECK đúng một đích.
 
+### Bổ sung BE-T03 issue #16 (03/11/2026)
+
+Các quyết định cụ thể cho listing lifecycle, moderation source, change request, media và slot được chốt tại [BE-T03 contract v1.0 §17](<../05 — Implementation Plan/BE-T03 — Contract lifecycle, ảnh và lịch khả dụng.md#17-decision-log-đã-chốt>). Bổ sung schema chỉ là `listings.suspension_source` với backfill SUSPENDED cũ thành `ADMIN`; các bảng, snapshot booking, quy tắc HA03 về giữ lịch/accept/reject và expiry BE-T04 tiếp tục được tái sử dụng. Kết quả code/test cùng các tiêu chí còn chờ CI trên SHA và reviewer được ghi tại [báo cáo thực hiện #16](<../05 — Implementation Plan/BE-T03 — Báo cáo thực hiện issue #16.md>).
+
 | Quyết định | Phương án đã xét | Lý do chọn |
 | --- | --- | --- |
 | `DAYCARE` theo giờ, `BOARDING` theo block 24 giờ | Theo ngày lịch, theo giờ mở cửa | Một công thức có thể tính và giải thích bằng khoảng thời gian UTC; không cần lịch check-in riêng cho P0. |

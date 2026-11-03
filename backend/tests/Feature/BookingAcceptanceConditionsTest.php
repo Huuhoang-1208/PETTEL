@@ -89,7 +89,10 @@ class BookingAcceptanceConditionsTest extends TestCase
         $listing = DB::table('listings')->where('id', $fixture['active_listing_id']);
 
         foreach (['DRAFT', 'PENDING_REVIEW', 'SUSPENDED', 'ARCHIVED'] as $status) {
-            $listing->update(['status' => $status]);
+            $listing->update([
+                'status' => $status,
+                'suspension_source' => $status === 'SUSPENDED' ? 'ADMIN' : null,
+            ]);
             $this->assertRejected($fixture['caregiver'], (string) $fixture['booking']->id, 'INVALID_STATE');
         }
 

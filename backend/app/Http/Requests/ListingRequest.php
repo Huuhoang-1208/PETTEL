@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Domain\Listing\Actions\ListingError;
+use App\Models\Listing;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -13,7 +15,19 @@ class ListingRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        $id = $this->route('id');
+        if ($id !== null && ! Listing::query()->whereKey($id)
+            ->whereRelation('caregiverProfile', 'user_id', $this->user()?->id)->exists()) {
+            ListingError::fail(404, 'NOT_FOUND', 'Listing not found.');
+        }
+
         return true;
+    }
+
+    /** @return array<string, mixed> */
+    public function validationData(): array
+    {
+        return $this->getInputSource()->all();
     }
 
     protected function prepareForValidation(): void
@@ -66,6 +80,7 @@ class ListingRequest extends FormRequest
             'status' => ['missing'],
             'capacity' => ['missing'],
             'version' => ['missing'],
+            'suspension_source' => ['missing'],
             'published_at' => ['missing'],
             'created_at' => ['missing'],
             'updated_at' => ['missing'],
@@ -73,6 +88,19 @@ class ListingRequest extends FormRequest
             'listing_media' => ['missing'],
             'availability_slots' => ['missing'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $allowed = array_filter(array_keys($this->rules()), fn (string $key): bool => ! str_contains($key, '.'));
+            foreach (array_diff(array_keys($this->validationData()), $allowed) as $key) {
+                $validator->errors()->add($key, 'This field is not supported.');
+            }
+            foreach (array_keys($this->query()) as $key) {
+                $validator->errors()->add($key, 'This query parameter is not supported.');
+            }
+        });
     }
 
     protected function failedValidation(Validator $validator): void

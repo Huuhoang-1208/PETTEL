@@ -1,11 +1,14 @@
 FROM php:8.3-fpm-bookworm AS backend
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends unzip \
-    && docker-php-ext-install pdo_mysql pcntl opcache \
+    && apt-get install -y --no-install-recommends unzip libjpeg62-turbo-dev libpng-dev libwebp-dev \
+    && docker-php-ext-configure gd --with-jpeg --with-webp \
+    && docker-php-ext-install pdo_mysql pcntl opcache gd \
     && pecl install redis-6.2.0 \
     && docker-php-ext-enable redis \
     && rm -rf /var/lib/apt/lists/*
+
+RUN printf 'upload_max_filesize=12M\npost_max_size=13M\nmemory_limit=192M\n' > /usr/local/etc/php/conf.d/uploads.ini
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 

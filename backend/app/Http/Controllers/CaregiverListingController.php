@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\Listing\Actions\ListingWorkflow;
 use App\Http\Requests\ListingRequest;
 use App\Http\Resources\ListingResource;
 use App\Models\Listing;
@@ -48,9 +49,15 @@ class CaregiverListingController extends Controller
         $listing = DB::transaction(function () use ($request, $id): Listing {
             $listing = $this->ownedListing($request, $id, true);
             $this->ensureDraft($listing);
+            $before = app(ListingWorkflow::class)->snapshot($listing);
             $listing->fill($request->validated());
             $this->ensureServicePair($listing);
-            $listing->save();
+            if ($listing->isDirty()) {
+                $listing->version++;
+                $listing->save();
+                app(ListingWorkflow::class)
+                    ->audit($request, $request->user(), $listing, 'LISTING_DRAFT_UPDATED', null, $before);
+            }
 
             return $listing;
         });

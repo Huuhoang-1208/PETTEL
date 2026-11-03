@@ -60,6 +60,7 @@ class CaregiverListingTest extends TestCase
             $url = "/api/caregiver/listings/{$foreign->id}";
             $this->getJson($url)->assertNotFound();
             $this->patchJson($url, ['title' => 'Stolen'])->assertNotFound();
+            $this->patchJson($url, ['unknown_field' => 'invalid'])->assertNotFound();
             $this->deleteJson($url)->assertNotFound();
             $this->assertDatabaseHas('listings', [
                 'id' => $foreign->id,
@@ -77,6 +78,7 @@ class CaregiverListingTest extends TestCase
         foreach (['PENDING_REVIEW', 'ACTIVE', 'SUSPENDED', 'ARCHIVED'] as $status) {
             $listing = $this->draft($user);
             $listing->status = $status;
+            $listing->suspension_source = $status === 'SUSPENDED' ? 'ADMIN' : null;
             $listing->save();
             $url = "/api/caregiver/listings/{$listing->id}";
 
@@ -102,7 +104,7 @@ class CaregiverListingTest extends TestCase
         $this->actingAs($user);
         $url = "/api/caregiver/listings/{$listing->id}";
 
-        foreach (['id', 'user_id', 'caregiver_profile_id', 'status', 'capacity', 'version', 'published_at', 'created_at', 'updated_at', 'deleted_at'] as $field) {
+        foreach (['id', 'user_id', 'caregiver_profile_id', 'status', 'capacity', 'version', 'suspension_source', 'published_at', 'created_at', 'updated_at', 'deleted_at'] as $field) {
             $this->postJson('/api/caregiver/listings', $this->payload() + [$field => null])
                 ->assertUnprocessable()->assertJsonStructure(['error' => ['details' => [$field]]]);
             $this->patchJson($url, [$field => null])->assertUnprocessable();
@@ -116,6 +118,17 @@ class CaregiverListingTest extends TestCase
             'status' => 'DRAFT',
             'caregiver_profile_id' => $user->caregiverProfile->id,
         ]);
+    }
+
+    public function test_listing_requests_reject_unknown_body_and_query_fields(): void
+    {
+        $user = $this->caregiver();
+        $listing = $this->draft($user);
+        $this->actingAs($user)->patchJson("/api/caregiver/listings/{$listing->id}", ['unexpected' => 'value'])
+            ->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
+        $this->patchJson("/api/caregiver/listings/{$listing->id}?unexpected=1", ['title' => 'Valid title'])
+            ->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
+        $this->assertDatabaseHas('listings', ['id' => $listing->id, 'title' => 'Cat boarding', 'version' => 1]);
     }
 
     public function test_routes_require_role_active_account_and_an_existing_profile(): void
