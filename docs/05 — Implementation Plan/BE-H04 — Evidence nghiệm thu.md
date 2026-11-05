@@ -2,7 +2,7 @@
 
 Ngày chạy: **2026-11-06** (Asia/Ho_Chi_Minh)
 Phạm vi: **A–B, tasks 01–07** của Smart Match backend.
-Trạng thái bàn giao: commit local trên nhánh `be-t03`; không push theo yêu cầu. SHA commit được cung cấp trong thông báo bàn giao.
+Trạng thái bàn giao: commit triển khai local **`807785ebf2560aff6362133eb71af74be75b963a`** trên nhánh `be-t03`; không push theo yêu cầu.
 
 ## Kết quả có thể kiểm tra
 
