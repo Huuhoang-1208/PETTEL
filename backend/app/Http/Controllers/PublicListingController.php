@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Domain\Booking\Actions\ApplyListingAvailability;
 use App\Domain\Booking\Actions\CalculateBookingPrice;
+use App\Domain\Discovery\Actions\ResolveSmartMatchPet;
+use App\Domain\Listing\AcceptanceRules;
 use App\Http\Requests\SearchListingRequest;
 use App\Http\Resources\PublicListingResource;
+use App\Http\Resources\SearchListingResource;
 use App\Models\Listing;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,31 +18,28 @@ use Illuminate\Support\Str;
 
 class PublicListingController extends Controller
 {
-    private const ACCEPTANCE_SCHEMA = [
-        'type' => 'object',
-        'required' => ['schema_version', 'species', 'sizes'],
-        'properties' => [
-            'schema_version' => ['type' => 'integer', 'enum' => [1]],
-            'species' => [
-                'type' => 'array',
-                'minItems' => 1,
-                'items' => ['type' => 'string', 'enum' => ['DOG', 'CAT', 'OTHER']],
-            ],
-            'sizes' => [
-                'type' => 'array',
-                'minItems' => 1,
-                'items' => ['type' => 'string', 'enum' => ['SMALL', 'MEDIUM', 'LARGE']],
-            ],
-        ],
-    ];
-
     public function index(
         SearchListingRequest $request,
         ApplyListingAvailability $availability,
+        ResolveSmartMatchPet $resolveSmartMatchPet,
     ): AnonymousResourceCollection {
-        $filters = $request->validated();
+        $filters = $request->filters();
+        $pet = isset($filters['pet_id'])
+            ? $resolveSmartMatchPet->handle($request->user(), (string) $filters['pet_id'], $filters)
+            : null;
+
+        if ($pet !== null) {
+            $filters['species'] = $pet->species;
+            $filters['size'] = $pet->size;
+        }
+
         $range = $request->timeRange();
         $query = $this->publicListings();
+
+        if ($pet !== null) {
+            $query->whereRelation('caregiverProfile', 'user_id', '!=', $pet->user_id);
+        }
+
         $keyword = $filters['q'] ?? null;
 
         if (is_string($keyword) && $keyword !== '') {
@@ -59,7 +59,7 @@ class PublicListingController extends Controller
 
         if (isset($filters['species']) || isset($filters['size']) || $range !== null) {
             $query->whereRaw('JSON_SCHEMA_VALID(?, acceptance_rules_json)', [
-                json_encode(self::ACCEPTANCE_SCHEMA, JSON_THROW_ON_ERROR),
+                json_encode(AcceptanceRules::jsonSchema(), JSON_THROW_ON_ERROR),
             ])->whereRaw("JSON_TYPE(JSON_EXTRACT(acceptance_rules_json, '$.schema_version')) = 'INTEGER'");
         }
 
@@ -93,9 +93,43 @@ class PublicListingController extends Controller
         $page = (int) ($filters['page'] ?? 1);
         $perPage = (int) ($filters['per_page'] ?? 20);
 
-        return PublicListingResource::collection(
-            $query->paginate($perPage, ['*'], 'page', $page)->appends($filters),
+        $results = $query->paginate($perPage, ['*'], 'page', $page)->appends($filters);
+        $reasons = [];
+
+        if (isset($filters['species'])) {
+            $reasons[] = 'SPECIES_ACCEPTED';
+        }
+
+        if (isset($filters['size'])) {
+            $reasons[] = 'SIZE_ACCEPTED';
+        }
+
+        if ($range !== null) {
+            $reasons[] = 'AVAILABLE_FOR_REQUESTED_RANGE';
+            $reasons[] = 'TOTAL_PRICE_CALCULATED';
+        }
+
+        if (isset($filters['min_price_vnd']) || isset($filters['max_price_vnd'])) {
+            $reasons[] = 'WITHIN_REQUESTED_BUDGET';
+        }
+
+        $results->getCollection()->each(
+            fn (Listing $listing) => $listing->setAttribute('search_match_reasons', $reasons),
         );
+
+        $response = SearchListingResource::collection($results);
+
+        if ($results->isEmpty()) {
+            $response->additional([
+                'match_summary' => [
+                    'code' => 'NO_MATCHING_LISTINGS',
+                    'message' => 'No listings match the selected criteria.',
+                    'suggestions' => ['Try adjusting your dates, area, or price range.'],
+                ],
+            ]);
+        }
+
+        return $response;
     }
 
     public function show(string $id): PublicListingResource

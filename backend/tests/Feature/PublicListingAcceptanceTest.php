@@ -173,11 +173,16 @@ class PublicListingAcceptanceTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.id', $id);
 
+        $detailItem = $detail->json('data');
+        $detail->assertJsonMissingPath('data.match_reasons');
+
         foreach ([
-            $list->json('data.0'),
-            $datedList->json('data.0'),
-            $detail->json('data'),
-        ] as $item) {
+            [$list->json('data.0'), []],
+            [$datedList->json('data.0'), [
+                'AVAILABLE_FOR_REQUESTED_RANGE',
+                'TOTAL_PRICE_CALCULATED',
+            ]],
+        ] as [$item, $expectedReasons]) {
             $this->assertEqualsCanonicalizing([
                 'id',
                 'title',
@@ -189,7 +194,9 @@ class PublicListingAcceptanceTest extends TestCase
                 'acceptance_rules_json',
                 'price_total_vnd',
                 'media',
+                'match_reasons',
             ], array_keys($item));
+            $this->assertSame($expectedReasons, $item['match_reasons']);
             $this->assertSame([], $item['media']);
 
             $this->assertEquals([
@@ -198,6 +205,19 @@ class PublicListingAcceptanceTest extends TestCase
                 'sizes' => ['SMALL'],
             ], $item['acceptance_rules_json']);
         }
+
+        $this->assertEqualsCanonicalizing([
+            'id',
+            'title',
+            'description',
+            'service_type',
+            'area_code',
+            'price_vnd',
+            'price_unit',
+            'acceptance_rules_json',
+            'price_total_vnd',
+            'media',
+        ], array_keys($detailItem));
 
         foreach ([$list, $datedList, $detail] as $response) {
             $this->assertStringNotContainsString(

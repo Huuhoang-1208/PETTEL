@@ -12,6 +12,56 @@ GET /api/listings — bộ lọc công khai theo contract M04 bên dưới; `pet
 
 **Trạng thái triển khai BE-H03 — cập nhật 02/11/2026:** Đã có `GET /api/listings` và `GET /api/listings/{id}`. Bộ lọc hiện hỗ trợ `q`, `service_type`, `area_code`, `species`, `size`, `start_at`, `end_at`, `min_price_vnd`, `max_price_vnd`, `page` và `per_page`.
 
+**Mở rộng BE-H04 — Smart Match:** `GET /api/listings` nhận thêm `pet_id` tùy chọn. Khi không truyền `pet_id`, endpoint vẫn public và hỗ trợ lọc thủ công như H03. Khi có `pet_id`, caller phải đăng nhập với account `ACTIVE` và role `OWNER`; pet phải thuộc owner, chưa soft-delete và ở trạng thái `ACTIVE`. Pet không tồn tại/không thuộc caller trả cùng `404 NOT_FOUND`; pet ARCHIVED trả `409 INVALID_STATE`; thiếu species/size trả `422 VALIDATION_ERROR`. Không có caregiver route đọc pet live.
+
+Khi đã chọn pet, backend lấy `species`/`size` từ pet. Bộ lọc thủ công cùng tên được chấp nhận nếu trùng giá trị pet; nếu mâu thuẫn trả `422 VALIDATION_ERROR` tại trường tương ứng. Listing do chính owner quản lý bị loại khỏi kết quả Smart Match vì không thể đặt booking cho listing của mình. Điều kiện listing dùng `acceptance_rules_json` v1 và phải nhận đồng thời species và size; cấu hình không hợp lệ/version không hỗ trợ không được xem là nhận tất cả. Pet thiếu size không tự match và request trả 422 để owner cập nhật hồ sơ.
+
+Mỗi item của danh sách search có `match_reasons`, là mảng reason code chỉ cho điều kiện đã kiểm: `SPECIES_ACCEPTED`, `SIZE_ACCEPTED`, `AVAILABLE_FOR_REQUESTED_RANGE`, `TOTAL_PRICE_CALCULATED`, `WITHIN_REQUESTED_BUDGET`. Không có ngày thì không trả hai reason về lịch/tổng giá; không có cận giá thì không trả `WITHIN_REQUESTED_BUDGET`. Detail endpoint không có ngữ cảnh search nên không trả `match_reasons`. Nếu kết quả search rỗng, response vẫn 200 với `data: []`, links/meta phân trang như H03 và thêm `match_summary: {code: "NO_MATCHING_LISTINGS", message, suggestions}`. Summary chỉ đưa gợi ý chung; không khẳng định nguyên nhân loại từng listing khi chưa truy vấn xác nhận.
+
+Response Smart Match không trả dữ liệu pet, tên pet, pet notes hoặc booking snapshot. P0 v1 không tự lọc tuổi/nhu cầu đặc biệt, không tuyên bố đã kiểm tra hỗ trợ, không khẳng định AI và không cấp badge Verified. Các hành vi H04 này được kiểm thử ở feature level; không đổi contract booking hoặc quyền snapshot của caregiver.
+
+Ví dụ gọi Smart Match (ID pet là chuỗi số nguyên dương; ngày theo ISO 8601). Khi có kết quả, từng item có thêm `match_reasons`; các trường listing khác tuân theo allowlist H03:
+
+```http
+GET /api/listings?pet_id=101&start_at=2026-11-10T02:00:00Z&end_at=2026-11-10T05:00:00Z&max_price_vnd=200000
+```
+
+```json
+{
+  "data": [
+    {
+      "id": "501",
+      "title": "Chăm sóc thú cưng ban ngày",
+      "price_total_vnd": 150000,
+      "match_reasons": [
+        "SPECIES_ACCEPTED",
+        "SIZE_ACCEPTED",
+        "AVAILABLE_FOR_REQUESTED_RANGE",
+        "TOTAL_PRICE_CALCULATED",
+        "WITHIN_REQUESTED_BUDGET"
+      ]
+    }
+  ],
+  "links": {"first": "…", "last": "…", "prev": null, "next": null},
+  "meta": {"current_page": 1, "last_page": 1, "per_page": 20, "total": 1}
+}
+```
+
+Nếu không khớp, collection vẫn là `200`; `match_summary` chỉ chứa lời giải thích/gợi ý chung, không tiết lộ listing bị loại:
+
+```json
+{
+  "data": [],
+  "links": {"first": "…", "last": "…", "prev": null, "next": null},
+  "meta": {"current_page": 1, "last_page": 1, "per_page": 20, "total": 0},
+  "match_summary": {
+    "code": "NO_MATCHING_LISTINGS",
+    "message": "No listings match the selected criteria.",
+    "suggestions": ["Try adjusting your dates, area, or price range."]
+  }
+}
+```
+
 Danh sách và chi tiết dùng chung quy tắc công khai. Search và create/quote dùng chung `ApplyListingAvailability`. Số đơn vị tính tiền lấy từ `CalculateBookingPrice`; tổng giá được tính bằng số chính xác, lọc và sắp xếp trong database trước phân trang. Có ngày sắp tổng giá/ID tăng dần; không có ngày sắp ID tăng dần và tổng giá `null`. Mặc định 20, tối đa 50 kết quả/trang; `page` gây tràn số vị trí phân trang bị từ chối.
 
 Kiểm tra local trên working tree `be-h03` ngày 02/11/2026: Pint PASS (95 file), PHPStan PASS, migration/seed lặp PASS, toàn bộ 199 tests đạt với 2.351 assertions trên database `pettel_test` riêng. Các thay đổi H03 chưa commit tại thời điểm kiểm tra; SHA bàn giao và CI phải được ghi sau khi commit/push.
