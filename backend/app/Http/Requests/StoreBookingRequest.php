@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Domain\Booking\Actions\ApplyListingAvailability;
 use App\Domain\Booking\Actions\CalculateBookingPrice;
+use App\Domain\Listing\AcceptanceRules;
 use App\Models\Listing;
 use App\Models\Pet;
 use App\Models\User;
@@ -13,7 +14,6 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Normalizer;
 
 class StoreBookingRequest extends FormRequest
@@ -131,23 +131,12 @@ class StoreBookingRequest extends FormRequest
             ]);
         }
 
-        $rules = json_decode($listing->acceptance_rules_json, true);
-        if (! is_array($rules) || ($rules['schema_version'] ?? null) !== 1) {
+        $rules = AcceptanceRules::normalize(json_decode($listing->acceptance_rules_json, true));
+        if ($rules === null) {
             $this->reject(409, 'INVALID_STATE', 'Listing conditions are invalid.');
         }
 
-        $conditions = validator($rules, [
-            'species' => ['required', 'array', 'list', 'min:1'],
-            'species.*' => ['required', 'string', Rule::in(['DOG', 'CAT', 'OTHER'])],
-            'sizes' => ['required', 'array', 'list', 'min:1'],
-            'sizes.*' => ['required', 'string', Rule::in(['SMALL', 'MEDIUM', 'LARGE'])],
-        ]);
-
-        if ($conditions->fails()) {
-            $this->reject(409, 'INVALID_STATE', 'Listing conditions are invalid.');
-        }
-
-        if (! in_array($pet->species, $rules['species'], true) || ! in_array($pet->size, $rules['sizes'], true)) {
+        if (! AcceptanceRules::accepts($rules, $pet->species, $pet->size)) {
             $this->reject(422, 'VALIDATION_ERROR', 'Pet does not match listing conditions.', [
                 'pet_id' => ['Pet species or size is not accepted.'],
             ]);

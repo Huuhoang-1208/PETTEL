@@ -88,6 +88,7 @@ class SearchListingRequest extends FormRequest
                 'string',
                 Rule::in(['SMALL', 'MEDIUM', 'LARGE']),
             ],
+            'pet_id' => ['bail', 'sometimes', 'required', 'string', 'regex:/\A[1-9][0-9]{0,19}\z/'],
             'page' => [...$integerQuery, 'min:1'],
             'per_page' => [...$integerQuery, 'between:1,50'],
             'min_price_vnd' => [...$integerQuery, 'min:0'],
@@ -199,6 +200,12 @@ class SearchListingRequest extends FormRequest
                 'service_types' => $serviceTypes,
             ];
         });
+    }
+
+    /** @return array<string, mixed> */
+    public function filters(): array
+    {
+        return $this->validated();
     }
 
     /**

@@ -91,7 +91,6 @@ class PublicListingFilterTest extends TestCase
             'decimal page' => [['page' => '1.5'], 'page'],
             'scientific page' => [['page' => '1e2'], 'page'],
             'forged status' => [['status' => 'DRAFT'], 'status'],
-            'private pet' => [['pet_id' => '1'], 'pet_id'],
             'unknown query' => [['unexpected' => 'value'], 'unexpected'],
             'missing end date' => [['start_at' => '2030-01-01T00:00:00Z'], 'end_at'],
             'price requires dates' => [['max_price_vnd' => '200000'], 'max_price_vnd'],

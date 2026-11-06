@@ -1,0 +1,507 @@
+ Network pettel-be-h04-evidence_default Creating
+ Network pettel-be-h04-evidence_default Creating
+ Network pettel-be-h04-evidence_default Created
+ Network pettel-be-h04-evidence_default Created
+ Container pettel-be-h04-evidence-db-test-1 Creating
+ Container pettel-be-h04-evidence-db-test-1 Created
+ Container pettel-be-h04-evidence-db-test-1 Starting
+ Container pettel-be-h04-evidence-db-test-1 Started
+ Image pettel-be-h04-evidence-test Building
+#1 [internal] load local bake definitions
+#1 reading from stdin 593B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.16kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/composer:2
+#3 ...
+
+#4 [internal] load metadata for docker.io/library/php:8.3-fpm-bookworm
+#4 DONE 1.4s
+
+#3 [internal] load metadata for docker.io/library/composer:2
+#3 DONE 1.4s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 359B done
+#5 DONE 0.0s
+
+#6 FROM docker.io/library/composer:2@sha256:f9d168f53e738474b41c77672c61b1d543fca096d827b80e6c7c2b7626933825
+#6 resolve docker.io/library/composer:2@sha256:f9d168f53e738474b41c77672c61b1d543fca096d827b80e6c7c2b7626933825 0.0s done
+#6 DONE 0.0s
+
+#7 [backend 1/9] FROM docker.io/library/php:8.3-fpm-bookworm@sha256:d7677e2a3c1579fbe52848cc446bc24860187c876c383a43b7d4b8e06dce537e
+#7 resolve docker.io/library/php:8.3-fpm-bookworm@sha256:d7677e2a3c1579fbe52848cc446bc24860187c876c383a43b7d4b8e06dce537e 0.0s done
+#7 DONE 0.0s
+
+#8 [internal] load build context
+#8 transferring context: 12.01kB done
+#8 DONE 0.0s
+
+#9 [backend 6/9] COPY backend/composer.json backend/composer.lock ./
+#9 CACHED
+
+#10 [backend 2/9] RUN apt-get update     && apt-get install -y --no-install-recommends unzip libjpeg62-turbo-dev libpng-dev libwebp-dev     && docker-php-ext-configure gd --with-jpeg --with-webp     && docker-php-ext-install pdo_mysql pcntl opcache gd     && pecl install redis-6.2.0     && docker-php-ext-enable redis     && rm -rf /var/lib/apt/lists/*
+#10 CACHED
+
+#11 [backend 5/9] WORKDIR /var/www/html
+#11 CACHED
+
+#12 [backend 8/9] COPY backend/ ./
+#12 CACHED
+
+#13 [backend 7/9] RUN composer install --no-interaction --prefer-dist --no-progress --no-scripts
+#13 CACHED
+
+#14 [backend 4/9] COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+#14 CACHED
+
+#15 [backend 3/9] RUN printf 'upload_max_filesize=12M\npost_max_size=13M\nmemory_limit=192M\n' > /usr/local/etc/php/conf.d/uploads.ini
+#15 CACHED
+
+#16 [backend 9/9] RUN composer dump-autoload --optimize     && mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache     && chown -R www-data:www-data storage bootstrap/cache
+#16 CACHED
+
+#17 exporting to image
+#17 exporting layers done
+#17 exporting manifest sha256:095703fe421f69a1ac530d05748f9340ee6ade926670e973c75a9df0a1e93da5 done
+#17 exporting config sha256:fa0efe3d35428aa5c8a3ab2270826e0799e5a382d349158d2e70e7daf77fe378 done
+#17 exporting attestation manifest sha256:8d5ba29a7027a263689c991507c5d63f09a16336b5a2c704e82747cca66445e5 done
+#17 exporting manifest list sha256:4e2c490f0673ea0c5caba626f311f99476f0afb4501b237a0bbbc4a1d2a09408 done
+#17 naming to docker.io/library/pettel-be-h04-evidence-test:latest done
+#17 unpacking to docker.io/library/pettel-be-h04-evidence-test:latest done
+#17 DONE 0.0s
+
+#18 resolving provenance for metadata file
+#18 DONE 0.0s
+ Image pettel-be-h04-evidence-test Built
+ Container pettel-be-h04-evidence-db-test-1 Waiting
+ Container pettel-be-h04-evidence-db-test-1 Healthy
+ Container pettel-be-h04-evidence-test-run-8f10dbf6d0d6 Creating
+ Container pettel-be-h04-evidence-test-run-8f10dbf6d0d6 Created
+
+   INFO  Configuration cache cleared successfully.
+
+
+  ............................................................................
+  ....................................................
+
+  ──────────────────────────────────────────────────────────────────── Laravel
+    PASS   ......................................................... 128 files
+
+Note: Using configuration file /var/www/html/phpstan.neon.
+  0/87 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0% 18/87 [▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░]  20% 36/87 [▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░]  41% 53/87 [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░]  60% 87/87 [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓] 100%
+
+
+ [OK] No errors
+
+
+   INFO  Preparing database.
+
+  Creating migration table ....................................... 4.09ms DONE
+
+   INFO  Running migrations.
+
+  0001_01_01_000000_create_users_table .......................... 11.17ms DONE
+  0001_01_01_000001_create_cache_table ........................... 5.72ms DONE
+  0001_01_01_000002_create_jobs_table ........................... 11.14ms DONE
+  2026_10_27_000001_create_identity_schema ...................... 26.04ms DONE
+  2026_10_28_000001_convert_identity_enums_to_varchar ........... 21.35ms DONE
+  2026_10_28_000002_create_profiles_and_listing_schema ......... 200.13ms DONE
+  2026_10_28_000003_create_booking_and_payment_schema .......... 169.93ms DONE
+  2026_10_28_000004_create_booking_content_and_moderation_schema  144.33ms DONE
+  2026_11_02_000001_add_listing_suspension_source ............... 22.92ms DONE
+
+
+   INFO  Seeding database.
+
+  Database\Seeders\DemoSeeder ........................................ RUNNING
+  Database\Seeders\DemoSeeder ..................................... 11 ms DONE
+
+
+   INFO  Seeding database.
+
+  Database\Seeders\DemoSeeder ........................................ RUNNING
+  Database\Seeders\DemoSeeder ..................................... 12 ms DONE
+
+
+   PASS  Tests\Unit\BookingPriceTest
+  ✓ rounding preserves microseconds                                      0.05s
+  ✓ daycare uses vietnam day even when utc dates differ                  0.01s
+  ✓ duration bounds are exact
+  ✓ price and unit must be valid
+  ✓ total overflow is checked before multiplication
+
+   PASS  Tests\Feature\Auth\AdminRoleCommandTest
+  ✓ admin role is granted and revoked only through audited command       0.74s
+  ✓ command cannot revoke the last active admin                          0.01s
+
+   PASS  Tests\Feature\Auth\AuthenticationTest
+  ✓ users can authenticate using the login screen                        0.02s
+  ✓ users can not authenticate with invalid password                     0.21s
+  ✓ suspended and deactivated users cannot authenticate                  0.01s
+  ✓ expired session cannot access private api                            0.01s
+  ✓ users can logout                                                     0.01s
+
+   PASS  Tests\Feature\Auth\CaregiverRoleTest
+  ✓ authenticated active user can enable caregiver once                  0.01s
+  ✓ guest cannot enable caregiver
+  ✓ owner without admin role gets forbidden on admin route               0.01s
+  ✓ non active user cannot enable caregiver                              0.01s
+
+   PASS  Tests\Feature\Auth\DemoSeederTest
+  ✓ demo seed is repeatable and preserves passwords                      0.02s
+
+   PASS  Tests\Feature\Auth\PasswordResetTest
+  ✓ reset password link can be requested                                 0.21s
+  ✓ reset link response does not reveal if email exists                  0.41s
+  ✓ password can be reset with valid token                               0.21s
+
+   PASS  Tests\Feature\Auth\RegistrationTest
+  ✓ new users can register                                               0.01s
+
+   PASS  Tests\Feature\BookingAcceptanceBusinessTest
+  ✓ wrong caregiver cannot change booking or history with data set "acc… 0.03s
+  ✓ wrong caregiver cannot change booking or history with data set "rej… 0.02s
+  ✓ stopped listing cannot accept booking with data set #0               0.02s
+  ✓ stopped listing cannot accept booking with data set #1               0.02s
+  ✓ stopped listing cannot accept booking with data set #2               0.02s
+  ✓ stopped listing cannot accept booking with data set #3               0.02s
+  ✓ accept from processed state changes nothing with data set #0         0.02s
+  ✓ accept from processed state changes nothing with data set #1         0.02s
+  ✓ accept from processed state changes nothing with data set #2         0.02s
+  ✓ accept from processed state changes nothing with data set #3         0.02s
+  ✓ accept from processed state changes nothing with data set #4         0.02s
+  ✓ accept from processed state changes nothing with data set #5         0.02s
+  ✓ two overlapping requests exist until one is accepted                 0.03s
+  ✓ separate or adjacent bookings can both be accepted with data set "e… 0.03s
+  ✓ separate or adjacent bookings can both be accepted with data set "s… 0.03s
+  ✓ separate or adjacent bookings can both be accepted with data set "o… 0.03s
+  ✓ different listings of one caregiver have separate capacity           0.03s
+
+   PASS  Tests\Feature\BookingAcceptanceConcurrencyTest
+  ✓ concurrent accepts follow calendar rules with data set "overlap"     1.00s
+  ✓ concurrent accepts follow calendar rules with data set "adjacent"    1.03s
+  ✓ concurrent accepts follow calendar rules with data set "separate"    1.03s
+  ✓ concurrent accepts follow calendar rules with data set "same bookin… 0.97s
+  ✓ concurrent accepts follow calendar rules with data set "different l… 0.99s
+
+   PASS  Tests\Feature\BookingAcceptanceConditionsTest
+  ✓ valid request passes without changing booking or events              0.66s
+  ✓ wrong caregiver and missing booking return not found                 0.02s
+  ✓ inactive caregiver cannot pass validation                            0.02s
+  ✓ only requested bookings can pass validation                          0.03s
+  ✓ request expiry is enforced at both boundaries                        0.02s
+  ✓ listing must be active and not soft deleted                          0.02s
+  ✓ deleted profile prevents acceptance                                  0.03s
+  ✓ overlapping requests pass but blocking statuses fail                 0.07s
+  ✓ no slot or partial slot is not enough                                0.03s
+  ✓ price change keeps the original snapshot                             0.02s
+  ✓ service or acceptance rules change requires a new booking            0.02s
+
+   PASS  Tests\Feature\BookingAcceptanceTest
+  ✓ accept sets one hold and event without changing snapshots            0.02s
+  ✓ route checks auth ownership and listing state                        0.02s
+  ✓ event failure rolls back booking and payment deadline                0.02s
+  ✓ expiry is checked again after calendar reads                         0.02s
+
+   PASS  Tests\Feature\BookingCreationTest
+  ✓ booking fixture is ready                                             0.01s
+  ✓ valid input uses session owner and creates requested booking         0.02s
+  ✓ booking route requires an active owner                               0.01s
+  ✓ invalid input fields are rejected before source checks               0.02s
+  ✓ invalid sources and ranges are rejected                              0.18s
+  ✓ only blocking bookings conflict and adjacent ranges are allowed      0.06s
+  ✓ boarding duration bounds                                             0.03s
+  ✓ quote needs no key and ignores client price                          0.01s
+  ✓ quote and create call the same calculator                            0.02s
+  ✓ quote reflects current listing price                                 0.01s
+  ✓ quote uses the same auth ownership and availability checks           0.01s
+  ✓ quote rounds up an extra microsecond                                 0.01s
+  ✓ boarding quote uses blocks of 24 hours                               0.01s
+  ✓ quote and create both reject price overflow                          0.01s
+  ✓ created booking has versioned snapshots and utc precision            0.01s
+  ✓ booking rolls back when status event write fails                     0.01s
+  ✓ replay returns current booking without revalidating sources          0.02s
+  ✓ reusing a key with any changed business field returns conflict       0.02s
+  ✓ equivalent ids offsets and unicode replay the same booking           0.02s
+  ✓ missing null and empty instructions have the same hash               0.02s
+  ✓ the same key is independent for different owners                     0.02s
+  ✓ replay still requires an active owner                                0.02s
+  ✓ pet edits and soft deletion preserve booking snapshots and history   0.04s
+
+   PASS  Tests\Feature\BookingHandoffFixtureTest
+  ✓ requested fixture is ready for accept booking tests                  0.02s
+
+   PASS  Tests\Feature\BookingIdempotencyConcurrencyTest
+  ✓ simultaneous replay and conflict create only one booking each        1.29s
+
+   PASS  Tests\Feature\BookingRejectionTest
+  ✓ caregiver can reject and replay without duplicate events             0.68s
+  ✓ wrong caregiver and missing booking return not found                 0.02s
+  ✓ reject requires login role and active account                        0.02s
+  ✓ processed bookings cannot be rejected                                0.02s
+  ✓ cancellation for another reason is not a reject replay               0.02s
+  ✓ suspended listing does not prevent rejection                         0.02s
+  ✓ event failure rolls back the booking change                          0.02s
+
+   PASS  Tests\Feature\CaregiverAccessTest
+  ✓ all private routes block ineligible accounts with data set "guest"   0.02s
+  ✓ all private routes block ineligible accounts with data set "owner w… 0.02s
+  ✓ all private routes block ineligible accounts with data set "admin w… 0.02s
+  ✓ all private routes block ineligible accounts with data set "suspend… 0.02s
+  ✓ all private routes block ineligible accounts with data set "deactiv… 0.02s
+  ✓ all private routes block ineligible accounts with data set "deletio… 0.02s
+  ✓ valid foreign profile id and active status cannot be injected        0.02s
+
+   PASS  Tests\Feature\CaregiverListingTest
+  ✓ caregiver can manage and soft delete their draft                     0.03s
+  ✓ other caregivers cannot read update or delete a listing              0.02s
+  ✓ non draft listings are readable by owner but cannot be changed       0.03s
+  ✓ client cannot write system fields even with null values              0.04s
+  ✓ listing requests reject unknown body and query fields                0.01s
+  ✓ routes require role active account and an existing profile           0.03s
+  ✓ partial updates validate the resulting service pair and json         0.03s
+
+   PASS  Tests\Feature\CaregiverProfileTest
+  ✓ caregiver can create read and update their profile                   0.02s
+  ✓ caregiver cannot access or update another profile                    0.01s
+  ✓ routes require an active caregiver                                   0.01s
+  ✓ duplicate profile is rejected even after soft delete                 0.01s
+  ✓ invalid data and system fields are rejected                          0.03s
+
+   PASS  Tests\Feature\ListingAvailabilityContractTest
+  ✓ slot api preserves offset microseconds and half open boundaries      0.03s
+  ✓ slot update and delete preserve all four held booking states but no… 0.05s
+  ✓ archived listing rejects slot create update and delete               0.02s
+
+   PASS  Tests\Feature\ListingChangeRequestContractTest
+  ✓ change request enforces allowlist noop stale base and single pendin… 0.04s
+  ✓ owner can withdraw pending request without changing listing or dele… 0.03s
+  ✓ approved request applies content and media once without changing bo… 0.03s
+  ✓ rejected request requires reason and leaves public listing and medi… 0.02s
+  ✓ suspended listing change approval does not restore it and ineligibl… 0.03s
+  ✓ stale change request cannot be applied                               0.02s
+  ✓ admin cannot review their own change request                         0.02s
+  ✓ change approval rolls back all writes on audit or pivot failure      0.05s
+  ✓ management resources and change history follow summary pagination a… 0.04s
+
+   PASS  Tests\Feature\ListingFixtureTest
+  ✓ fixture has two eligible caregivers and a bookable active listing    0.02s
+  ✓ both caregivers only manage their own drafts                         0.02s
+  ✓ each fixture call creates independent data                           0.01s
+  ✓ active fixture does not allow client to bypass review                0.01s
+
+   PASS  Tests\Feature\ListingLifecycleContractTest
+  ✓ api created listing without media or slots can be reviewed once      0.04s
+  ✓ initial approval revalidates listing content and media state         0.02s
+  ✓ initial approval rechecks caregiver and rolls back if audit fails    0.03s
+  ✓ rejection requires reason returns to draft and cannot be replayed    0.03s
+  ✓ restore keeps first published at and rechecks caregiver eligibility  0.03s
+  ✓ admin can escalate caregiver suspension and caregiver cannot restor… 0.02s
+  ✓ suspend withdraws pending request atomically without touching booki… 0.02s
+  ✓ suspend rollback restores pending request and audit when final audi… 0.02s
+  ✓ expired awaiting payment still blocks archive and archived is termi… 0.04s
+  ✓ archive with requested booking withdraws pending request and preser… 0.02s
+
+   PASS  Tests\Feature\ListingLifecycleTest
+  ✓ draft submission requires a separate admin and admin can reject wit… 0.02s
+  ✓ admin approval and suspension restore control public visibility      0.03s
+  ✓ change request keeps old public content until admin approves         0.03s
+  ✓ slot overlap and held booking coverage are protected                 0.02s
+  ✓ uploaded image is private until approved and hidden after suspend    0.04s
+  ✓ suspension source check rejects invalid state source pairs           0.01s
+  ✓ caregiver cannot access foreign listing or mismatched child resourc… 0.02s
+  ✓ admin cannot review their own listing                                0.02s
+  ✓ audit records before after version and request correlation           0.01s
+  ✓ lifecycle withdrawal audit shares request id and records listing ve… 0.02s
+  ✓ audit failure rolls back listing mutation                            0.01s
+  ✓ noop draft update preserves version and slot writes do not change l… 0.02s
+
+   PASS  Tests\Feature\ListingMediaTest
+  ✓ jpeg png and webp uploads are private normalized and do not expose…  0.04s
+  ✓ upload enforces exact byte limit pixel limit and content mime        0.03s
+  ✓ media endpoints reject unknown request fields and query parameters   0.03s
+  ✓ database failure cleans both upload files and returns a generic err… 0.01s
+  ✓ cleanup failure logs retryable keys without exposing them in the re… 0.01s
+  ✓ draft media can swap order and detach without deleting retained fil… 0.03s
+  ✓ draft media rejects duplicates foreign or referenced media and nonc… 0.04s
+  ✓ only draft listing media pivot can be changed and audit failure rol… 0.02s
+  ✓ private preview is scoped authenticated and change request media st… 0.06s
+
+   PASS  Tests\Feature\ListingPublicBookingIntegrationTest
+  ✓ slot api controls public search quote create and accept              0.03s
+  ✓ suspension hides public data blocks new and accept but allows rejec… 0.03s
+  ✓ approved price changes keep request snapshot acceptable but service… 0.06s
+  ✓ approved detach hides public media without deleting retained files   0.02s
+
+   PASS  Tests\Feature\ListingRelationsTest
+  ✓ listing media is ordered and has reverse relations                   0.01s
+  ✓ slots keep utc microseconds and exclude soft deleted rows            0.01s
+  ✓ relations are scoped to each listing and preserve rows on soft dele… 0.01s
+
+   PASS  Tests\Feature\ListingValidationTest
+  ✓ invalid input is rejected without writing with data set "title null… 0.01s
+  ✓ invalid input is rejected without writing with data set "title empt… 0.01s
+  ✓ invalid input is rejected without writing with data set "title whit… 0.01s
+  ✓ invalid input is rejected without writing with data set "title too…  0.01s
+  ✓ invalid input is rejected without writing with data set "title wron… 0.01s
+  ✓ invalid input is rejected without writing with data set "descriptio… 0.01s
+  ✓ invalid input is rejected without writing with data set "descriptio… 0.01s
+  ✓ invalid input is rejected without writing with data set "descriptio… 0.01s
+  ✓ invalid input is rejected without writing with data set "area unkno… 0.01s
+  ✓ invalid input is rejected without writing with data set "area wrong… 0.01s
+  ✓ invalid input is rejected without writing with data set "service un… 0.01s
+  ✓ invalid input is rejected without writing with data set "service wr… 0.01s
+  ✓ invalid input is rejected without writing with data set "unit unkno… 0.01s
+  ✓ invalid input is rejected without writing with data set "unit wrong… 0.01s
+  ✓ invalid input is rejected without writing with data set "daycare wi… 0.01s
+  ✓ invalid input is rejected without writing with data set "boarding w… 0.01s
+  ✓ invalid input is rejected without writing with data set "price zero… 0.01s
+  ✓ invalid input is rejected without writing with data set "price nega… 0.01s
+  ✓ invalid input is rejected without writing with data set "price deci… 0.01s
+  ✓ invalid input is rejected without writing with data set "price stri… 0.01s
+  ✓ invalid input is rejected without writing with data set "price bool… 0.01s
+  ✓ invalid input is rejected without writing with data set "price null… 0.01s
+  ✓ invalid input is rejected without writing with data set "price over… 0.01s
+  ✓ invalid input is rejected without writing with data set "rules null… 0.01s
+  ✓ invalid input is rejected without writing with data set "rules empt… 0.01s
+  ✓ invalid input is rejected without writing with data set "rules j s…  0.01s
+  ✓ invalid input is rejected without writing with data set "version mi… 0.01s
+  ✓ invalid input is rejected without writing with data set "version un… 0.01s
+  ✓ invalid input is rejected without writing with data set "version st… 0.01s
+  ✓ invalid input is rejected without writing with data set "species em… 0.01s
+  ✓ invalid input is rejected without writing with data set "species st… 0.01s
+  ✓ invalid input is rejected without writing with data set "species no… 0.01s
+  ✓ invalid input is rejected without writing with data set "species un… 0.01s
+  ✓ invalid input is rejected without writing with data set "species nu… 0.01s
+  ✓ invalid input is rejected without writing with data set "sizes miss… 0.01s
+  ✓ invalid input is rejected without writing with data set "sizes empt… 0.01s
+  ✓ invalid input is rejected without writing with data set "sizes stri… 0.01s
+  ✓ invalid input is rejected without writing with data set "sizes unkn… 0.01s
+  ✓ invalid input is rejected without writing with data set "unknown ru… 0.01s
+  ✓ create requires all seven content fields                             0.02s
+  ✓ unicode limits and both service pairs are accepted                   0.03s
+  ✓ capacity is fixed and cannot be supplied by client                   0.02s
+  ✓ patch replaces rules and keeps omitted fields                        0.01s
+
+   PASS  Tests\Feature\ListingWorkflowConcurrencyTest
+  ✓ only one concurrent change request can become pending                1.01s
+  ✓ only one concurrent review can apply a change request                1.03s
+  ✓ only one concurrent overlapping slot write succeeds                  0.96s
+  ✓ accept winning slot race keeps booking covered and rejects slot cha… 0.99s
+  ✓ slot winning accept race makes accept read new calendar              0.97s
+  ✓ accept and suspend follow listing lock order in both winner orders   1.20s
+
+   PASS  Tests\Feature\PetProfileTest
+  ✓ owner can manage archive and soft delete pets                        0.67s
+  ✓ pet routes require an active owner and hide other owners pets        0.01s
+  ✓ pet input is normalized and validated                                0.01s
+  ✓ photo must be ready and owned by the pet owner                       0.01s
+  ✓ booking snapshot is a versioned allowlist of pet care data           0.01s
+
+   PASS  Tests\Feature\PublicListingAcceptanceTest
+  ✓ all filters are applied before pagination                            0.04s
+  ✓ public responses do not expose existing pet or booking secrets       0.04s
+  ✓ slot can match both search boundaries exactly                        0.02s
+  ✓ booking of another listing does not block this listing               0.02s
+
+   PASS  Tests\Feature\PublicListingAvailabilityTest
+  ✓ open slot covers the search range in both timezones                  0.02s
+  ✓ a single live slot must cover the whole range with data set "no slo… 0.01s
+  ✓ a single live slot must cover the whole range with data set "delete… 0.02s
+  ✓ a single live slot must cover the whole range with data set "starts… 0.01s
+  ✓ a single live slot must cover the whole range with data set "ends t… 0.01s
+  ✓ a single live slot must cover the whole range with data set "two ad… 0.01s
+  ✓ search and quote use the same blocking states with data set "reques… 0.02s
+  ✓ search and quote use the same blocking states with data set "awaiti… 0.02s
+  ✓ search and quote use the same blocking states with data set "confir… 0.02s
+  ✓ search and quote use the same blocking states with data set "in pro… 0.02s
+  ✓ search and quote use the same blocking states with data set "awaiti… 0.02s
+  ✓ search and quote use the same blocking states with data set "comple… 0.02s
+  ✓ search and quote use the same blocking states with data set "cancel… 0.02s
+  ✓ overdue hold still blocks until booking is cancelled                 0.02s
+  ✓ intervals use half open boundaries with data set "ends at search st… 0.02s
+  ✓ intervals use half open boundaries with data set "starts at search…  0.02s
+  ✓ intervals use half open boundaries with data set "one microsecond o… 0.02s
+  ✓ invalid time ranges return field errors                              0.02s
+  ✓ busy listing stays public when no dates are selected                 0.02s
+  ✓ daycare cannot accept a two day search                               0.01s
+
+   PASS  Tests\Feature\PublicListingFilterTest
+  ✓ filters return only matching public listings with data set "keyword… 0.02s
+  ✓ filters return only matching public listings with data set "normali… 0.02s
+  ✓ filters return only matching public listings with data set "empty k… 0.02s
+  ✓ filters return only matching public listings with data set "service… 0.01s
+  ✓ filters return only matching public listings with data set "area"    0.02s
+  ✓ filters return only matching public listings with data set "species… 0.01s
+  ✓ filters return only matching public listings with data set "explici… 0.02s
+  ✓ filters return only matching public listings with data set "size"    0.01s
+  ✓ filters return only matching public listings with data set "all fil… 0.02s
+  ✓ filters return only matching public listings with data set "contrad… 0.02s
+  ✓ keyword symbols are literal and zero is not ignored                  0.03s
+  ✓ keyword cannot bypass public visibility or other filters             0.01s
+  ✓ invalid filters return field errors with data set "unknown service"  0.01s
+  ✓ invalid filters return field errors with data set "lowercase servic… 0.01s
+  ✓ invalid filters return field errors with data set "empty service"    0.01s
+  ✓ invalid filters return field errors with data set "unknown area"     0.01s
+  ✓ invalid filters return field errors with data set "empty area"       0.01s
+  ✓ invalid filters return field errors with data set "unknown species"  0.01s
+  ✓ invalid filters return field errors with data set "empty species"    0.01s
+  ✓ invalid filters return field errors with data set "unknown size"     0.01s
+  ✓ invalid filters return field errors with data set "array filter"     0.01s
+  ✓ invalid filters return field errors with data set "array keyword"    0.01s
+  ✓ invalid filters return field errors with data set "long keyword"     0.01s
+  ✓ invalid filters return field errors with data set "page zero"        0.01s
+  ✓ invalid filters return field errors with data set "decimal page"     0.01s
+  ✓ invalid filters return field errors with data set "scientific page"  0.01s
+  ✓ invalid filters return field errors with data set "forged status"    0.01s
+  ✓ invalid filters return field errors with data set "unknown query"    0.01s
+  ✓ invalid filters return field errors with data set "missing end date… 0.01s
+  ✓ invalid filters return field errors with data set "price requires dates"
+  ✓ invalid filters return field errors with data set "page size exceed… 0.01s
+  ✓ invalid acceptance rules do not match species filter                 0.02s
+  ✓ pagination links keep normalized filters                             0.02s
+
+   PASS  Tests\Feature\PublicListingPricingTest
+  ✓ totals match booking quotes and sort by total then id                0.03s
+  ✓ price bounds are inclusive and allow one sided filters               0.03s
+  ✓ pages have stable ties and out of range page is empty                0.02s
+  ✓ without dates results sort by id and total is null                   0.02s
+  ✓ fractional seconds use booking rounding                              0.02s
+  ✓ overflow is excluded but maximum single unit total is supported      0.02s
+  ✓ hourly and nightly services compare total prices                     0.02s
+  ✓ invalid price and pagination inputs return field errors              0.02s
+  ✓ pagination links preserve price filters                              0.03s
+
+   PASS  Tests\Feature\PublicListingTest
+  ✓ guest sees the same public fields in list and detail                 0.02s
+  ✓ hidden listing is absent from list and detail with data set "draft"  0.01s
+  ✓ hidden listing is absent from list and detail with data set "pendin… 0.02s
+  ✓ hidden listing is absent from list and detail with data set "suspen… 0.01s
+  ✓ hidden listing is absent from list and detail with data set "archiv… 0.01s
+  ✓ hidden listing is absent from list and detail with data set "soft d… 0.01s
+  ✓ soft deleted profile hides its active listing                        0.01s
+  ✓ inactive caregiver hides the active listing with data set "suspende… 0.01s
+  ✓ inactive caregiver hides the active listing with data set "deletion… 0.01s
+  ✓ inactive caregiver hides the active listing with data set "deactiva… 0.01s
+  ✓ removing caregiver role hides the active listing                     0.02s
+  ✓ owner and admin cannot view draft via public detail                  0.01s
+  ✓ unknown id returns the same not found error                          0.01s
+
+   PASS  Tests\Feature\SmartMatchTest
+  ✓ owner pet filters search and reports each checked match reason       0.02s
+  ✓ guest can keep using manual filters without a pet                    0.01s
+  ✓ pet search requires an authenticated owner                           0.01s
+  ✓ pet search hides foreign and soft deleted pets                       0.01s
+  ✓ pet search rejects inactive accounts archived pets and missing size  0.01s
+  ✓ pet search rejects conflicting manual species or size filters        0.01s
+  ✓ smart match returns no match summary without inventing listings      0.01s
+  ✓ pet match excludes listings with nonmatching or invalid acceptance…  0.02s
+  ✓ pet search excludes the owners own caregiver listing                 0.02s
+  ✓ pet filter is not accepted until smart match is authorized           0.01s
+
+  Tests:    306 passed (3591 assertions)
+  Duration: 21.79s

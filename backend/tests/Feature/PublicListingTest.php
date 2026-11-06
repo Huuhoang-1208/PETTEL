@@ -25,7 +25,10 @@ class PublicListingTest extends TestCase
             ->assertJsonStructure(['data', 'links', 'meta']);
         $detail = $this->getJson("/api/listings/{$id}")->assertOk();
 
-        $this->assertSame($list->json('data.0'), $detail->json('data'));
+        $listItem = $list->json('data.0');
+        $this->assertSame([], $listItem['match_reasons']);
+        unset($listItem['match_reasons']);
+        $this->assertSame($listItem, $detail->json('data'));
         $this->assertEqualsCanonicalizing([
             'id', 'title', 'description', 'service_type', 'area_code',
             'price_vnd', 'price_unit', 'acceptance_rules_json', 'price_total_vnd', 'media',
@@ -34,7 +37,8 @@ class PublicListingTest extends TestCase
             ->assertJsonPath('data.price_total_vnd', null)
             ->assertJsonMissingPath('data.pet')
             ->assertJsonMissingPath('data.bookings')
-            ->assertJsonMissingPath('data.caregiver_profile_id');
+            ->assertJsonMissingPath('data.caregiver_profile_id')
+            ->assertJsonMissingPath('data.match_reasons');
         $this->assertStringNotContainsString('No chicken', $detail->getContent());
     }
 
