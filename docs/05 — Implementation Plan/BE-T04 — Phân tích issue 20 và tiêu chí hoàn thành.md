@@ -201,7 +201,7 @@ Thiết kế giữ matrix quyền/trạng thái P0, dùng MySQL làm nguồn quy
 | Expiry REQUESTED/AWAITING_PAYMENT | Implemented; every-minute scheduler, max batch 100, rechecks state/deadline under booking lock. | `backend/tests/Feature/BookingExpiryTest.php` |
 | Void/refund outbox and retry | Implemented durable MySQL operation, leases, stable gateway operation key, 5 retries with backoff then manual review. Default gateway is fail-closed and awaits HA05 binding. | `backend/tests/Feature/BookingCancellationTest.php`; `backend/app/Domain/Booking/Payment/` |
 | Admin handoff | Implemented manual review queue and audited retry route; retry keeps the gateway operation key. | `backend/tests/Feature/BookingCancellationTest.php` |
-| Formatting/static analysis/regression | `composer ci:check` passed; full backend suite passed 308 tests / 3,627 assertions on MySQL test DB. | Ignored local evidence: `docs/evidence/t04-handoff.md` |
+| Formatting/static analysis/regression | After merging BE-H04, `composer ci:check` passed; full backend suite passed 317 tests / 3,686 assertions on MySQL test DB. | Ignored local evidence: `docs/evidence/t04-handoff.md` |
 | Real sandbox/callback integration | Not part of T04 runtime; requires BE-HA05 adapter and callback race evidence. | Contract seam only; no fake success in runtime. |
 
 **Handoff:** T04 implementation is complete and ready for Hoàng’s review; reviewer sign-off is still pending. Do not mark payment sandbox/callback integration complete until BE-HA05 supplies the adapter and end-to-end evidence.
