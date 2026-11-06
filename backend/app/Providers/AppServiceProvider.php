@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Domain\Booking\Payment\PaymentCancellationGateway;
+use App\Domain\Booking\Payment\UnavailablePaymentCancellationGateway;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Contracts\Auth\CanResetPassword;
@@ -17,7 +19,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(PaymentCancellationGateway::class, UnavailablePaymentCancellationGateway::class);
     }
 
     /**

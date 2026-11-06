@@ -12,3 +12,6 @@ Artisan::command('inspire', function () {
 if (app()->environment('local')) {
     Schedule::job(new InfrastructureHeartbeat)->everyMinute();
 }
+
+Schedule::command('bookings:process-expiries --batch=100')->everyMinute();
+Schedule::command('bookings:process-cancellations --batch=100')->everyMinute();

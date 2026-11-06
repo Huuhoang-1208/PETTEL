@@ -436,6 +436,25 @@ Dùng Scramble sinh OpenAPI từ routes/FormRequest/Resource phục vụ Vue; re
 
 [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>) định nghĩa mã trạng thái và giá. `POST /api/bookings/quote` nhận pet_id, listing_id, start_at, end_at; trả price_total_vnd, price_unit, quantity, pricing_version và cancellation_policy_version, không tạo booking. POST booking tính lại cùng công thức trong transaction; không tin amount client. `POST /api/bookings/{id}/cancel` kiểm tra actor/state, chỉ trả CANCELLED sau void/refund sandbox tương ứng. `POST /api/bookings/{id}/messages` chỉ cho hai bên gửi khi booking từ REQUESTED đến AWAITING_CONFIRMATION. Care update chỉ caregiver trong IN_PROGRESS. Endpoint bật role CAREGIVER yêu cầu user đăng nhập, ghi audit; admin role không có route tự cấp. Các lỗi hết hạn dùng HTTP 409 với mã `REQUEST_EXPIRED` hoặc `PAYMENT_EXPIRED`; conflict, invalid state và idempotency conflict cũng trả 409.
 
+## M05 — Cancel booking và retry payment — contract được người dùng chấp nhận 06/11/2026
+
+`POST /api/bookings/{id}/cancel` yêu cầu actor là owner hoặc caregiver đã lưu trên booking; role admin không được dùng luồng thường. Bắt buộc header `Idempotency-Key`, định dạng như contract tạo booking. Key được scope theo actor + booking; hash payload canonical gồm booking ID, action `CANCEL`, reason code do server suy ra và `reason_note` đã chuẩn hóa. Cùng key/payload replay kết quả đã lưu; khác payload trả `409 IDEMPOTENCY_CONFLICT`; thiếu/sai key trả `422 VALIDATION_ERROR`.
+
+`reason_code` do server gán theo actor/source, không do client chọn: `OWNER_CANCELLED`, `CAREGIVER_CANCELLED`, `REQUEST_EXPIRED`, `PAYMENT_EXPIRED`; reject hiện có giữ `CAREGIVER_REJECTED`. `reason_note` tùy chọn, tối đa 500 ký tự sau Unicode NFC + trim, dùng để mô tả ngắn lý do thực tế như đổi kế hoạch, pet không khỏe (không cần nêu chẩn đoán), hoặc caregiver không còn sắp xếp được lịch. Không nhập thông tin liên hệ/tài chính, mật khẩu/mã xác thực hay chi tiết riêng tư không cần thiết. Note được lưu trong audit có kiểm soát truy cập, không ghi vào log thường.
+
+| Tình huống | HTTP | Mã/kết quả |
+|---|---:|---|
+| Hủy hoàn tất, hoặc replay cùng key/payload | 200 | Booking đã lưu; không thêm event/payment operation khi replay. |
+| Cùng actor gửi key mới sau khi đã tự hủy cùng booking/action/reason | 200 | Replay theo event lịch sử; không thêm event/payment operation. |
+| `CANCELLED` do expiry/reject, actor khác hoặc reason khác | 409 | `INVALID_STATE`; không coi là replay thành công. |
+| Cần void/refund qua gateway | 202 | Tạo operation bền vững, trả operation ID và booking hiện tại; booking tiếp tục giữ lịch cho tới khi worker xác nhận thành công. |
+| Replay cùng key khi operation còn pending/processing | 202 | Trả trạng thái operation mới nhất; không tạo operation/payment effect khác. |
+| Replay cùng key sau khi operation hoàn tất | 200 | Trả booking đã hủy. |
+| Replay cùng key khi gateway từ chối hoặc hết retry, operation vào manual review | 502 | `PAYMENT_CANCELLATION_FAILED`; booking/lịch giữ nguyên, có operation ID để admin xử lý. |
+| Attempt không phù hợp hoặc trạng thái gateway mâu thuẫn | 409 | `PAYMENT_STATE_MISMATCH`; giữ nguyên, yêu cầu đối soát. |
+
+Lưu cancellation operation/outbox bền vững trong MySQL với actor/source/reason, request key/hash, stable gateway operation key, trạng thái xử lý, attempt count, `next_retry_at` và `last_error_code`. Worker T04 tiếp tục độc lập với request HTTP; dùng lại cùng gateway operation key cho mọi retry/admin retry. Chốt tối đa 5 retry tự động sau lần gọi ban đầu, backoff 1, 2, 4, 8, 16 phút; sau đó chuyển admin. Chỉ cập nhật booking sang `CANCELLED` và thả lịch sau khi void/refund thành công; operation pending/failed không tạo booking status mới. Worker expiry chạy mỗi phút, batch tối đa 100, mục tiêu xử lý trong 2 phút khi worker/DB khả dụng; `REQUESTED` expiry nằm trong cùng lịch xử lý. Cancel/expiry/callback dùng lock order `booking → payment_attempt`, không khóa listing/user cho booking cũ. Giữ `payment_due_at`, current attempt và snapshots để audit. Admin chỉ xử lý ngoại lệ theo workflow M09 có lý do và audit qua `GET /api/admin/booking-cancellations` và `POST /api/admin/booking-cancellations/{id}/retry`; thao tác retry lưu audit và giữ nguyên gateway operation key.
+
 ## BE-H02 — Ví dụ request/response triển khai
 
 Các ID dưới đây là minh họa; thay bằng ID của fixture thực tế. Timestamp mẫu thuộc tương lai tại thời điểm viết; khi chạy thủ công phải chọn thời gian tương lai nằm trong slot. Phiên đăng nhập là owner ACTIVE có role OWNER, dùng cookie Sanctum và CSRF theo auth contract.
