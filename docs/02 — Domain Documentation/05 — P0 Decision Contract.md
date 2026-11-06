@@ -47,13 +47,23 @@ Nếu release lỗi, booking tiếp tục `AWAITING_CONFIRMATION`; retry cùng i
 
 ## 5. Chat, care update và quyền caregiver
 
-Owner và caregiver của booking được **đọc và gửi chat** khi booking ở `REQUESTED`, `AWAITING_PAYMENT`, `CONFIRMED`, `IN_PROGRESS` hoặc `AWAITING_CONFIRMATION`. Khi `CANCELLED` hoặc `COMPLETED`, chat chỉ đọc; lịch sử vẫn theo quy tắc retention. Chỉ caregiver tạo care update ở `IN_PROGRESS`; owner đọc. Không cho tạo care update ở `AWAITING_CONFIRMATION`. Admin chỉ đọc nội dung riêng khi xử lý report/booking có lý do và audit.
+Mỗi booking có một đoạn chat riêng. Khi đặt lại cùng caregiver, booking mới có chat từ `REQUESTED`. Tin nhắn và ảnh cũ vẫn thuộc booking ban đầu.
+
+| Trạng thái booking | Quyền chat của owner và caregiver thuộc booking |
+| --- | --- |
+| `REQUESTED`, `AWAITING_PAYMENT`, `CONFIRMED`, `IN_PROGRESS`, `AWAITING_CONFIRMATION` | Đọc tin, xem ảnh và gửi tin mới. |
+| `COMPLETED` | Đọc tin và xem ảnh theo thời hạn lưu dữ liệu. Được gửi tin mới trước khi đủ 90 ngày kể từ thời điểm booking chuyển sang `COMPLETED`. Mốc gửi cố định và tin nhắn mới không gia hạn mốc này. |
+| `CANCELLED` | Chỉ đọc tin và xem ảnh cũ theo thời hạn lưu dữ liệu. |
+
+Trong chat, tài khoản `DELETION_PENDING` chỉ được đọc tin và xem ảnh cũ của booking mình tham gia, kể cả booking đã đóng, trong thời hạn lưu dữ liệu và trước khi bị vô hiệu hóa. Yêu cầu gửi tin mới của tài khoản này trả `403 FORBIDDEN`. Với người ngoài booking, đọc, gửi và tải ảnh đều trả cùng `404 NOT_FOUND` như khi booking không tồn tại.
+
+Chỉ caregiver tạo care update ở `IN_PROGRESS`, còn owner có quyền đọc. Khi booking sang `AWAITING_CONFIRMATION`, quyền tạo care update kết thúc. Admin chỉ đọc nội dung riêng khi xử lý report/booking có lý do và audit.
 
 User đăng ký thường được role `OWNER`. User đã đăng nhập có thể chủ động bật role `CAREGIVER` và tạo profile/listing nháp; không cần admin duyệt role riêng. Chỉ admin duyệt listing trước khi `ACTIVE`, và admin role chỉ được cấp ngoài luồng tự đăng ký. Role caregiver hoặc listing ACTIVE không có nghĩa là danh tính/lý lịch đã xác minh. P0 không có badge Verified/Pro thật và không tạo `verification_claims`.
 
 ## 6. Dữ liệu và quyền riêng tư P0
 
-P0 dùng khóa tài khoản/xóa mềm và yêu cầu xóa được xử lý có audit; không có nút xóa cứng tức thì. Khi user yêu cầu xóa, đặt `users.status=DELETION_PENDING` và `deletion_requested_at`; ngừng booking/listing mới, ẩn profile/listing công khai. User chỉ được đăng nhập để xem và hoàn tất booking/report đang mở; mọi tác vụ khác bị chặn. Khi các việc đang mở kết thúc, khóa đăng nhập và ẩn danh tài khoản trong tối đa 30 ngày; nếu user chưa có việc mở thì mốc 30 ngày tính từ lúc yêu cầu. Giao diện báo rõ thời điểm dự kiến và dữ liệu lịch sử còn giữ theo bảng dưới. `DELETION_PENDING` vẫn cho đọc/ghi tối thiểu để đóng booking/report đang mở; `DEACTIVATED` không đăng nhập được.
+P0 dùng khóa tài khoản/xóa mềm và yêu cầu xóa được xử lý có audit; không có nút xóa cứng tức thì. Khi user yêu cầu xóa, đặt `users.status=DELETION_PENDING` và `deletion_requested_at`; ngừng booking/listing mới, ẩn profile/listing công khai. User chỉ được đăng nhập để thực hiện thao tác tối thiểu nhằm hoàn tất booking/report đang mở và xem lại chat theo quyền chỉ đọc tại §5. Khi các việc đang mở kết thúc, khóa đăng nhập và ẩn danh tài khoản trong tối đa 30 ngày; nếu user chưa có việc mở thì mốc 30 ngày tính từ lúc yêu cầu. Giao diện báo rõ thời điểm dự kiến và dữ liệu lịch sử còn giữ theo bảng dưới. `DEACTIVATED` không đăng nhập được.
 
 | Dữ liệu | Thời hạn P0 tính từ booking kết thúc hoặc sự kiện cuối | Xử lý |
 | --- | --- | --- |
@@ -192,7 +202,7 @@ Các quyết định cụ thể cho listing lifecycle, moderation source, change
 | `DAYCARE` theo giờ, `BOARDING` theo block 24 giờ | Theo ngày lịch, theo giờ mở cửa | Một công thức có thể tính và giải thích bằng khoảng thời gian UTC; không cần lịch check-in riêng cho P0. |
 | Không phí hủy trong sandbox | Biểu phí theo mốc giờ | Tránh mô phỏng quyền lợi tiền thật khi chưa có hợp đồng/chính sách. |
 | Admin xử lý im lặng sau 72 giờ | Auto release | Giữ bước kiểm tra con người khi owner không xác nhận. |
-| Chat đóng ghi ở terminal state | Cho nhắn không giới hạn | Giữ lịch sử giao dịch ổn định và giảm nội dung phải quản trị. |
+| Chat chỉ đọc khi `CANCELLED` hoặc đã đủ 90 ngày sau `COMPLETED` | Đóng quyền gửi ngay khi hoàn tất hoặc cho nhắn không giới hạn | Hai bên có thời gian hỏi lịch để đặt lại, với hạn gửi cố định theo booking cũ. |
 | Caregiver tự bật role, listing vẫn duyệt | Admin duyệt cả role | Một cổng duyệt nội dung công khai đủ cho P0. |
 | Retention theo loại dữ liệu | Giữ vô thời hạn | Giảm dữ liệu riêng tư tồn đọng; các mốc là mặc định P0 cần rà lại khi vận hành thật. |
 | Mã vùng nội bộ | Mã hành chính/free text | Tránh phụ thuộc thay đổi địa giới và giữ filter nhất quán. |

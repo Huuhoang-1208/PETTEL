@@ -3,6 +3,7 @@
 namespace App\Domain\Listing\Actions;
 
 use App\Models\Listing;
+use App\Models\MediaObject;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -76,7 +77,8 @@ class ValidateListingForReview
         $ids = array_column($items, 'media_object_id');
         if ($ids !== []) {
             $readyOwnedCount = DB::table('media_objects')->whereIn('id', $ids)
-                ->where('state', 'READY')->where('owner_user_id', $caregiver->id)->count();
+                ->where('state', 'READY')->where('owner_user_id', $caregiver->id)
+                ->whereNotIn('id', MediaObject::messageAttachmentIds())->count();
             $privateReferences = DB::table('pets')->whereIn('photo_media_id', $ids)->exists()
                 || DB::table('care_updates')->whereIn('media_object_id', $ids)->exists();
             if ($readyOwnedCount !== count($ids) || $privateReferences) {

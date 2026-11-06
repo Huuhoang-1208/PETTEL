@@ -30,4 +30,4 @@ User đăng ký nhận OWNER; user có thể tự bật CAREGIVER và tạo list
 
 # Xóa tài khoản P0
 
-Yêu cầu xóa đặt `DELETION_PENDING`: dừng booking/listing mới, chỉ cho user hoàn tất booking/report còn mở; sau đó vô hiệu hóa và ẩn danh trong tối đa 30 ngày. Policy phải kiểm tra status trên mọi route ghi. Xem [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>).
+Yêu cầu xóa đặt `DELETION_PENDING` và dừng booking/listing mới. Quyền hoàn tất booking/report còn mở và quyền chỉ đọc chat áp dụng theo [P0 Decision Contract §5–6](<../02 — Domain Documentation/05 — P0 Decision Contract.md#5-chat-care-update-và-quyền-caregiver>). Sau khi các việc đang mở kết thúc, tài khoản được vô hiệu hóa và ẩn danh trong tối đa 30 ngày. Policy phải kiểm tra status trên mọi route ghi.
