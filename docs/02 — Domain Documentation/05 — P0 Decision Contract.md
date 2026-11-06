@@ -129,6 +129,17 @@ Người dùng đã đồng ý các quyết định dưới đây. Đây là con
 
 Bảng lỗi và thứ tự xử lý tại [API Contract — M05 accept/reject](<../08 — Architecture & Technical Design/04 — API Contracts & Error Conventions.md>). Checklist triển khai và test tại [BE-HA03 — Quy tắc accept/reject và chống trùng lịch](<../05 — Implementation Plan/BE-HA03 — Quy tắc accept-reject và chống trùng lịch.md>).
 
+## 13. Cancel request, idempotency và lỗi payment — chốt nguyên tắc ngày 06/11/2026
+
+- API cancel thường bắt buộc `Idempotency-Key`; key scope theo actor + booking. Cùng key/cùng payload trả kết quả đã lưu, khác payload trả `409 IDEMPOTENCY_CONFLICT`, thiếu/sai key trả `422 VALIDATION_ERROR`.
+- Cancel replay với key mới chỉ trả `200` khi event xác nhận cùng actor đã hủy cùng booking với cùng action/reason. `CANCELLED` do expiry/reject, actor khác hoặc reason khác không phải replay của yêu cầu mới và trả `409 INVALID_STATE`.
+- Reason code do server gán theo actor/source: `OWNER_CANCELLED`, `CAREGIVER_CANCELLED`, `REQUEST_EXPIRED`, `PAYMENT_EXPIRED`; reject giữ `CAREGIVER_REJECTED`. Mô tả tự do (`reason_note`) tùy chọn, tối đa 500 ký tự sau NFC + trim; chỉ ghi giải thích ngắn, không yêu cầu chi tiết sức khỏe và không nhập thông tin liên hệ/tài chính hoặc bí mật. Lưu trong audit có kiểm soát truy cập, không đưa vào log thường.
+- Khi gateway timeout/lỗi có thể retry, trả `202 CANCELLATION_PENDING`; booking giữ nguyên status và tiếp tục khóa lịch. Từ chối cuối cùng sau retry tự động trả `502 PAYMENT_CANCELLATION_FAILED`, giữ booking/lịch và chuyển admin. Mâu thuẫn trạng thái attempt trả `409 PAYMENT_STATE_MISMATCH`, giữ nguyên để đối soát.
+- Cancellation operation/outbox phải được lưu bền vững trong MySQL cùng stable gateway operation key, actor/source/reason, key/hash, attempt count, `next_retry_at` và lỗi gần nhất. Worker T04 tiếp tục xử lý độc lập HTTP request. Đề xuất 5 lần retry tự động với backoff 1, 2, 4, 8, 16 phút, rồi đưa admin; mọi lần dùng cùng gateway operation key. Booking chỉ sang `CANCELLED` sau void/refund thành công; không thêm status booking `CANCEL_PENDING`.
+- Retry tối đa 5 lần sau lần gọi ban đầu; nếu hết retry vẫn lỗi thì operation vào hàng admin. Worker expiry chạy mỗi phút, batch tối đa 100 booking, mục tiêu xử lý trong 2 phút từ deadline khi worker/DB khả dụng. `REQUESTED` expiry cùng lịch xử lý, chuyển trực tiếp vì chưa có payment; nếu void/refund của `AWAITING_PAYMENT` chưa xong thì giữ status và lịch.
+- Hủy thường chỉ dành cho owner/caregiver liên quan theo quan hệ booking và quyền account còn hợp lệ. Admin chỉ xử lý ngoại lệ theo workflow M09, với lý do và audit riêng; không dùng endpoint cancel thường.
+- Lock order cancel/expiry/callback là `booking → payment_attempt`. Không khóa listing/user cho cancel booking cũ. Giữ `payment_due_at`, current attempt và snapshots; chỉ cập nhật trạng thái attempt theo kết quả payment, không xóa dấu vết.
+
 ## Decision log
 
 ### Bổ sung contract BE-HA03 task 1 (02/11/2026)

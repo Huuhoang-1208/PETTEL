@@ -12,6 +12,56 @@ GET /api/listings — bộ lọc công khai theo contract M04 bên dưới; `pet
 
 **Trạng thái triển khai BE-H03 — cập nhật 02/11/2026:** Đã có `GET /api/listings` và `GET /api/listings/{id}`. Bộ lọc hiện hỗ trợ `q`, `service_type`, `area_code`, `species`, `size`, `start_at`, `end_at`, `min_price_vnd`, `max_price_vnd`, `page` và `per_page`.
 
+**Mở rộng BE-H04 — Smart Match:** `GET /api/listings` nhận thêm `pet_id` tùy chọn. Khi không truyền `pet_id`, endpoint vẫn public và hỗ trợ lọc thủ công như H03. Khi có `pet_id`, caller phải đăng nhập với account `ACTIVE` và role `OWNER`; pet phải thuộc owner, chưa soft-delete và ở trạng thái `ACTIVE`. Pet không tồn tại/không thuộc caller trả cùng `404 NOT_FOUND`; pet ARCHIVED trả `409 INVALID_STATE`; thiếu species/size trả `422 VALIDATION_ERROR`. Không có caregiver route đọc pet live.
+
+Khi đã chọn pet, backend lấy `species`/`size` từ pet. Bộ lọc thủ công cùng tên được chấp nhận nếu trùng giá trị pet; nếu mâu thuẫn trả `422 VALIDATION_ERROR` tại trường tương ứng. Listing do chính owner quản lý bị loại khỏi kết quả Smart Match vì không thể đặt booking cho listing của mình. Điều kiện listing dùng `acceptance_rules_json` v1 và phải nhận đồng thời species và size; cấu hình không hợp lệ/version không hỗ trợ không được xem là nhận tất cả. Pet thiếu size không tự match và request trả 422 để owner cập nhật hồ sơ.
+
+Mỗi item của danh sách search có `match_reasons`, là mảng reason code chỉ cho điều kiện đã kiểm: `SPECIES_ACCEPTED`, `SIZE_ACCEPTED`, `AVAILABLE_FOR_REQUESTED_RANGE`, `TOTAL_PRICE_CALCULATED`, `WITHIN_REQUESTED_BUDGET`. Không có ngày thì không trả hai reason về lịch/tổng giá; không có cận giá thì không trả `WITHIN_REQUESTED_BUDGET`. Detail endpoint không có ngữ cảnh search nên không trả `match_reasons`. Nếu kết quả search rỗng, response vẫn 200 với `data: []`, links/meta phân trang như H03 và thêm `match_summary: {code: "NO_MATCHING_LISTINGS", message, suggestions}`. Summary chỉ đưa gợi ý chung; không khẳng định nguyên nhân loại từng listing khi chưa truy vấn xác nhận.
+
+Response Smart Match không trả dữ liệu pet, tên pet, pet notes hoặc booking snapshot. P0 v1 không tự lọc tuổi/nhu cầu đặc biệt, không tuyên bố đã kiểm tra hỗ trợ, không khẳng định AI và không cấp badge Verified. Các hành vi H04 này được kiểm thử ở feature level; không đổi contract booking hoặc quyền snapshot của caregiver.
+
+Ví dụ gọi Smart Match (ID pet là chuỗi số nguyên dương; ngày theo ISO 8601). Khi có kết quả, từng item có thêm `match_reasons`; các trường listing khác tuân theo allowlist H03:
+
+```http
+GET /api/listings?pet_id=101&start_at=2026-11-10T02:00:00Z&end_at=2026-11-10T05:00:00Z&max_price_vnd=200000
+```
+
+```json
+{
+  "data": [
+    {
+      "id": "501",
+      "title": "Chăm sóc thú cưng ban ngày",
+      "price_total_vnd": 150000,
+      "match_reasons": [
+        "SPECIES_ACCEPTED",
+        "SIZE_ACCEPTED",
+        "AVAILABLE_FOR_REQUESTED_RANGE",
+        "TOTAL_PRICE_CALCULATED",
+        "WITHIN_REQUESTED_BUDGET"
+      ]
+    }
+  ],
+  "links": {"first": "…", "last": "…", "prev": null, "next": null},
+  "meta": {"current_page": 1, "last_page": 1, "per_page": 20, "total": 1}
+}
+```
+
+Nếu không khớp, collection vẫn là `200`; `match_summary` chỉ chứa lời giải thích/gợi ý chung, không tiết lộ listing bị loại:
+
+```json
+{
+  "data": [],
+  "links": {"first": "…", "last": "…", "prev": null, "next": null},
+  "meta": {"current_page": 1, "last_page": 1, "per_page": 20, "total": 0},
+  "match_summary": {
+    "code": "NO_MATCHING_LISTINGS",
+    "message": "No listings match the selected criteria.",
+    "suggestions": ["Try adjusting your dates, area, or price range."]
+  }
+}
+```
+
 Danh sách và chi tiết dùng chung quy tắc công khai. Search và create/quote dùng chung `ApplyListingAvailability`. Số đơn vị tính tiền lấy từ `CalculateBookingPrice`; tổng giá được tính bằng số chính xác, lọc và sắp xếp trong database trước phân trang. Có ngày sắp tổng giá/ID tăng dần; không có ngày sắp ID tăng dần và tổng giá `null`. Mặc định 20, tối đa 50 kết quả/trang; `page` gây tràn số vị trí phân trang bị từ chối.
 
 Kiểm tra local trên working tree `be-h03` ngày 02/11/2026: Pint PASS (95 file), PHPStan PASS, migration/seed lặp PASS, toàn bộ 199 tests đạt với 2.351 assertions trên database `pettel_test` riêng. Các thay đổi H03 chưa commit tại thời điểm kiểm tra; SHA bàn giao và CI phải được ghi sau khi commit/push.
@@ -435,6 +485,25 @@ Dùng Scramble sinh OpenAPI từ routes/FormRequest/Resource phục vụ Vue; re
 # Contract P0 bổ sung
 
 [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>) định nghĩa mã trạng thái và giá. `POST /api/bookings/quote` nhận pet_id, listing_id, start_at, end_at; trả price_total_vnd, price_unit, quantity, pricing_version và cancellation_policy_version, không tạo booking. POST booking tính lại cùng công thức trong transaction; không tin amount client. `POST /api/bookings/{id}/cancel` kiểm tra actor/state, chỉ trả CANCELLED sau void/refund sandbox tương ứng. `POST /api/bookings/{id}/messages` chỉ cho hai bên gửi khi booking từ REQUESTED đến AWAITING_CONFIRMATION. Care update chỉ caregiver trong IN_PROGRESS. Endpoint bật role CAREGIVER yêu cầu user đăng nhập, ghi audit; admin role không có route tự cấp. Các lỗi hết hạn dùng HTTP 409 với mã `REQUEST_EXPIRED` hoặc `PAYMENT_EXPIRED`; conflict, invalid state và idempotency conflict cũng trả 409.
+
+## M05 — Cancel booking và retry payment — contract được người dùng chấp nhận 06/11/2026
+
+`POST /api/bookings/{id}/cancel` yêu cầu actor là owner hoặc caregiver đã lưu trên booking; role admin không được dùng luồng thường. Bắt buộc header `Idempotency-Key`, định dạng như contract tạo booking. Key được scope theo actor + booking; hash payload canonical gồm booking ID, action `CANCEL`, reason code do server suy ra và `reason_note` đã chuẩn hóa. Cùng key/payload replay kết quả đã lưu; khác payload trả `409 IDEMPOTENCY_CONFLICT`; thiếu/sai key trả `422 VALIDATION_ERROR`.
+
+`reason_code` do server gán theo actor/source, không do client chọn: `OWNER_CANCELLED`, `CAREGIVER_CANCELLED`, `REQUEST_EXPIRED`, `PAYMENT_EXPIRED`; reject hiện có giữ `CAREGIVER_REJECTED`. `reason_note` tùy chọn, tối đa 500 ký tự sau Unicode NFC + trim, dùng để mô tả ngắn lý do thực tế như đổi kế hoạch, pet không khỏe (không cần nêu chẩn đoán), hoặc caregiver không còn sắp xếp được lịch. Không nhập thông tin liên hệ/tài chính, mật khẩu/mã xác thực hay chi tiết riêng tư không cần thiết. Note được lưu trong audit có kiểm soát truy cập, không ghi vào log thường.
+
+| Tình huống | HTTP | Mã/kết quả |
+|---|---:|---|
+| Hủy hoàn tất, hoặc replay cùng key/payload | 200 | Booking đã lưu; không thêm event/payment operation khi replay. |
+| Cùng actor gửi key mới sau khi đã tự hủy cùng booking/action/reason | 200 | Replay theo event lịch sử; không thêm event/payment operation. |
+| `CANCELLED` do expiry/reject, actor khác hoặc reason khác | 409 | `INVALID_STATE`; không coi là replay thành công. |
+| Cần void/refund qua gateway | 202 | Tạo operation bền vững, trả operation ID và booking hiện tại; booking tiếp tục giữ lịch cho tới khi worker xác nhận thành công. |
+| Replay cùng key khi operation còn pending/processing | 202 | Trả trạng thái operation mới nhất; không tạo operation/payment effect khác. |
+| Replay cùng key sau khi operation hoàn tất | 200 | Trả booking đã hủy. |
+| Replay cùng key khi gateway từ chối hoặc hết retry, operation vào manual review | 502 | `PAYMENT_CANCELLATION_FAILED`; booking/lịch giữ nguyên, có operation ID để admin xử lý. |
+| Attempt không phù hợp hoặc trạng thái gateway mâu thuẫn | 409 | `PAYMENT_STATE_MISMATCH`; giữ nguyên, yêu cầu đối soát. |
+
+Lưu cancellation operation/outbox bền vững trong MySQL với actor/source/reason, request key/hash, stable gateway operation key, trạng thái xử lý, attempt count, `next_retry_at` và `last_error_code`. Worker T04 tiếp tục độc lập với request HTTP; dùng lại cùng gateway operation key cho mọi retry/admin retry. Chốt tối đa 5 retry tự động sau lần gọi ban đầu, backoff 1, 2, 4, 8, 16 phút; sau đó chuyển admin. Chỉ cập nhật booking sang `CANCELLED` và thả lịch sau khi void/refund thành công; operation pending/failed không tạo booking status mới. Worker expiry chạy mỗi phút, batch tối đa 100, mục tiêu xử lý trong 2 phút khi worker/DB khả dụng; `REQUESTED` expiry nằm trong cùng lịch xử lý. Cancel/expiry/callback dùng lock order `booking → payment_attempt`, không khóa listing/user cho booking cũ. Giữ `payment_due_at`, current attempt và snapshots để audit. Admin chỉ xử lý ngoại lệ theo workflow M09 có lý do và audit qua `GET /api/admin/booking-cancellations` và `POST /api/admin/booking-cancellations/{id}/retry`; thao tác retry lưu audit và giữ nguyên gateway operation key.
 
 ## BE-H02 — Ví dụ request/response triển khai
 

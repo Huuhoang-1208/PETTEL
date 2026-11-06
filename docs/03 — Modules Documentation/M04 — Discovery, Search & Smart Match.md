@@ -25,3 +25,11 @@ Filter `service_type` nhận DAYCARE/BOARDING, `species` nhận DOG/CAT/OTHER, `
 # Contract BE-H03 — chốt 02/11/2026
 
 Task 1 đã được người dùng chấp thuận và ghi tại [API Contract — M04](<../08 — Architecture & Technical Design/04 — API Contracts & Error Conventions.md>). H03 giữ bộ lọc thủ công gồm `size`; `pet_id` và việc đọc pet có quyền được bàn giao BE-H04. Query giá bắt buộc có đủ ngày; mặc định 20 kết quả/trang, tối đa 50. Route danh sách và chi tiết công khai chỉ trả listing đủ điều kiện ACTIVE, không có ngoại lệ xem DRAFT cho owner/admin trên route công khai. Ảnh và aggregate review chưa nằm trong allowlist response cơ sở H03, bổ sung khi có contract tương ứng. Đây là quyết định thiết kế, chưa xác nhận triển khai hoặc nghiệm thu tích hợp.
+
+# Contract BE-H04 — Smart Match
+
+`GET /api/listings` nhận `pet_id` tùy chọn. Không có pet thì giữ tìm kiếm thủ công public H03. Có pet thì yêu cầu owner đăng nhập, account ACTIVE, role OWNER; chỉ đọc pet ACTIVE, chưa xóa mềm, thuộc caller. Pet khác chủ/không tồn tại/xóa mềm trả 404 đồng nhất; pet archived trả 409; thiếu species/size trả 422. Nếu gửi thêm `species`/`size`, giá trị phải trùng pet, nếu không trả 422. Không trả dữ liệu pet trong kết quả. Listing do owner đang tìm quản lý bị loại khỏi Smart Match vì owner không thể đặt listing đó.
+
+Điều kiện match dùng chung logic `acceptance_rules_json` v1 với booking: pet phải khớp cả loài và kích cỡ. Rules hỏng/không hỗ trợ không được match; pet thiếu size không được suy đoán. Tái sử dụng kiểm tra slot và công thức tổng giá từ H03/booking. Mỗi search item trả `match_reasons` theo điều kiện đã kiểm; kết quả rỗng giữ 200/data rỗng và thêm summary cùng gợi ý nới lọc chung. Reason codes/schema chi tiết nằm trong [API Contract — M04](<../08 — Architecture & Technical Design/04 — API Contracts & Error Conventions.md>).
+
+Tuổi và nhu cầu đặc biệt chưa được dùng để lọc; không tuyên bố đã kiểm tra hỗ trợ, không khẳng định AI, không cấp badge xác minh. Pet notes chỉ tiếp tục ở snapshot booking theo quyền và retention P0. Contract này mô tả các quyết định triển khai BE-H04; không mở rộng schema hay tạo endpoint caregiver đọc pet live.

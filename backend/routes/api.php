@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\AcceptBookingController;
+use App\Http\Controllers\Admin\BookingCancellationQueueController;
 use App\Http\Controllers\Auth\EnableCaregiverRoleController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\CancelBookingController;
 use App\Http\Controllers\CaregiverListingController;
 use App\Http\Controllers\CaregiverProfileController;
 use App\Http\Controllers\ListingAvailabilityController;
@@ -72,6 +74,8 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
     });
 
 Route::middleware(['auth:sanctum', 'account.active', 'role:ADMIN'])->prefix('admin')->group(function () {
+    Route::get('/booking-cancellations', [BookingCancellationQueueController::class, 'index']);
+    Route::post('/booking-cancellations/{id}/retry', [BookingCancellationQueueController::class, 'retry'])->whereNumber('id');
     Route::get('/listings', [ListingLifecycleController::class, 'adminIndex']);
     Route::get('/listings/{id}', [ListingLifecycleController::class, 'show'])->whereNumber('id');
     Route::post('/listings/{id}/approve', [ListingLifecycleController::class, 'approve'])->whereNumber('id');
@@ -90,6 +94,11 @@ Route::post('/bookings/{id}/reject', RejectBookingController::class)
     ->middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
     ->whereNumber('id')
     ->name('bookings.reject');
+
+Route::post('/bookings/{id}/cancel', CancelBookingController::class)
+    ->middleware(['auth:sanctum', 'account.active'])
+    ->whereNumber('id')
+    ->name('bookings.cancel');
 
 Route::post('/bookings/{id}/accept', AcceptBookingController::class)
     ->middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])

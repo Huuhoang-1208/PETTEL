@@ -41,3 +41,4 @@ yarn-error.log
 /opencode.jsonc
 /frontend/node_modules
 /frontend/dist
+/docs/evidence/
