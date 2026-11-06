@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\DB;
 
 /** @property-read ListingMedia $pivot */
 class MediaObject extends Model
@@ -26,6 +28,11 @@ class MediaObject extends Model
         'object_key',
         'sha256',
     ];
+
+    public static function messageAttachmentIds(): Builder
+    {
+        return DB::table('message_attachments')->select('media_object_id');
+    }
 
     /** @return BelongsTo<User, $this> */
     public function owner(): BelongsTo

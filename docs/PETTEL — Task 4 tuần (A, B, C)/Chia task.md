@@ -363,11 +363,13 @@ Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE
 
 **Lịch:** N9–N10 \| **Timebox:** 6 giờ
 
-**Phụ thuộc:** BE-H02, BE-HA01; chốt quyền nhắn tin theo trạng thái
+**Phụ thuộc:** BE-H02, BE-HA01
 
 **Phạm vi:** M07 — Messaging & Storage
 
 **Branch đề xuất:** codex/4w-be-ha04
+
+Contract triển khai cho [issue #21](https://github.com/Huuhoang-1208/PETTEL/issues/21) được mô tả tại [M07](<../03 — Modules Documentation/M07 — Messaging & Care Updates.md>). Booking `COMPLETED` cho gửi tin trong 90 ngày cố định tính từ lúc hoàn tất. Booking `CANCELLED` và tài khoản `DELETION_PENDING` dùng quyền chat chỉ đọc.
 
 **Tasks to do:**
 

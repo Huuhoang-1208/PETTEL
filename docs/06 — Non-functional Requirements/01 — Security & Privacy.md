@@ -20,4 +20,4 @@ Test 401/403 trên mọi actor và tài nguyên không thuộc quyền; thử ID
 
 # Thời hạn P0
 
-[P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>) quy định chat/care update/pet notes riêng 90 ngày, booking/payment/audit cốt lõi 12 tháng, backup 30 ngày; report đang mở tạm giữ dữ liệu cần thiết đến 90 ngày sau khi đóng. Yêu cầu xóa đặt DELETION_PENDING, chỉ cho user xử lý booking/report còn mở; sau khi đóng thì vô hiệu hóa và ẩn danh trong tối đa 30 ngày, có audit. Không log nội dung riêng. Các mốc này áp dụng cho sandbox P0, chưa phải kết luận tuân thủ pháp lý.
+[P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>) quy định chat/care update/pet notes riêng 90 ngày, booking/payment/audit cốt lõi 12 tháng, backup 30 ngày; report đang mở tạm giữ dữ liệu cần thiết đến 90 ngày sau khi đóng. Yêu cầu xóa đặt `DELETION_PENDING`. Quyền xử lý booking/report còn mở và quyền chỉ đọc chat áp dụng theo P0 §5–6. Sau khi các việc đang mở kết thúc, tài khoản được vô hiệu hóa và ẩn danh trong tối đa 30 ngày, có audit. Không log nội dung riêng. Các mốc này áp dụng cho sandbox P0, chưa phải kết luận tuân thủ pháp lý.

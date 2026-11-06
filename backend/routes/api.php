@@ -4,6 +4,7 @@ use App\Http\Controllers\AcceptBookingController;
 use App\Http\Controllers\Admin\BookingCancellationQueueController;
 use App\Http\Controllers\Auth\EnableCaregiverRoleController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\BookingMessageController;
 use App\Http\Controllers\CancelBookingController;
 use App\Http\Controllers\CaregiverListingController;
 use App\Http\Controllers\CaregiverProfileController;
@@ -104,3 +105,12 @@ Route::post('/bookings/{id}/accept', AcceptBookingController::class)
     ->middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
     ->whereNumber('id')
     ->name('bookings.accept');
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/bookings/{id}/messages', [BookingMessageController::class, 'index'])
+        ->whereNumber('id')->name('bookings.messages.index');
+    Route::post('/bookings/{id}/messages', [BookingMessageController::class, 'store'])
+        ->whereNumber('id')->name('bookings.messages.store');
+    Route::get('/bookings/{id}/messages/{messageId}/attachment/{mediaId?}', [BookingMessageController::class, 'attachment'])
+        ->whereNumber(['id', 'messageId', 'mediaId'])->name('bookings.messages.attachment');
+});
