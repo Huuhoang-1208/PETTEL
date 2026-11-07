@@ -15,6 +15,9 @@ use App\Http\Controllers\ListingMediaController;
 use App\Http\Controllers\PetController;
 use App\Http\Controllers\PublicListingController;
 use App\Http\Controllers\RejectBookingController;
+use App\Http\Controllers\SandboxPaymentCallbackController;
+use App\Http\Controllers\SimulateSandboxPaymentController;
+use App\Http\Controllers\StartSandboxPaymentController;
 use App\Http\Controllers\StoreBookingReviewController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +28,9 @@ Route::get('/listings/{id}/reviews', [PublicListingController::class, 'reviews']
     ->whereNumber('id')->name('listings.reviews.index');
 Route::get('/listings/{id}/media/{mediaId}/content', [ListingMediaController::class, 'publicContent'])
     ->whereNumber(['id', 'mediaId'])->name('listings.media.content');
+
+Route::post('/sandbox/payment-callback', SandboxPaymentCallbackController::class)
+    ->name('sandbox.payment-callback');
 
 Route::middleware(['auth:sanctum', 'account.active'])->get('/user', function (Request $request) {
     return $request->user();
@@ -37,6 +43,12 @@ Route::post('/user/roles/caregiver', EnableCaregiverRoleController::class)
 Route::middleware(['auth:sanctum', 'account.active', 'role:OWNER'])->group(function () {
     Route::post('/bookings/quote', [BookingController::class, 'quote'])->name('bookings.quote');
     Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
+    Route::post('/bookings/{id}/sandbox-payments', StartSandboxPaymentController::class)
+        ->whereNumber('id')
+        ->name('bookings.sandbox-payments.store');
+    Route::post('/bookings/{id}/sandbox-payments/{attemptId}/simulate', SimulateSandboxPaymentController::class)
+        ->whereNumber(['id', 'attemptId'])
+        ->name('bookings.sandbox-payments.simulate');
 
     Route::get('/pets', [PetController::class, 'index'])->name('pets.index');
     Route::post('/pets', [PetController::class, 'store'])->name('pets.store');

@@ -35,4 +35,18 @@ return [
         ],
     ],
 
+    'payment_sandbox' => [
+        'provider' => 'pettel_sandbox',
+        'secret' => env(
+            'PAYMENT_SANDBOX_SECRET',
+            in_array(env('APP_ENV', 'production'), ['local', 'testing'], true)
+                ? 'pettel-local-sandbox-secret'
+                : null,
+        ),
+        'simulation_enabled' => env(
+            'PAYMENT_SANDBOX_SIMULATION_ENABLED',
+            in_array(env('APP_ENV', 'production'), ['local', 'testing'], true),
+        ),
+    ],
+
 ];
