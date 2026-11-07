@@ -25,3 +25,11 @@ Video call, camera trực tiếp, streaming và cam kết phản hồi thời gi
 # Quyết định P0
 
 [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>) là nguồn chuẩn cho quyền theo trạng thái và thời hạn lưu. Admin chỉ đọc khi xử lý report/booking có lý do và audit.
+
+# Triển khai BE-T05
+
+`GET /api/bookings/{id}/care-updates` trả lịch sử phân trang, sắp xếp theo `created_at`, `id`; `POST` cùng đường dẫn tạo cập nhật với `body` và/hoặc `image`. Chỉ caregiver thuộc booking tạo được khi booking là `IN_PROGRESS`. Owner và caregiver của booking được đọc; user khác nhận `403`.
+
+Ảnh lưu trên private local disk, chấp nhận JPEG/PNG/WebP, tối đa 10 MiB và 20 megapixel; API response cấp URL ký 5 phút. Endpoint ảnh vẫn yêu cầu Sanctum và kiểm tra participant, booking và quan hệ care update. Timestamp trả về UTC ISO-8601; client trình bày theo `Asia/Ho_Chi_Minh`.
+
+`care-updates:redact-expired` chạy hàng ngày. Sau 90 ngày, nội dung bị redacted và ảnh riêng bị xóa nếu không còn tham chiếu. Report OPEN/IN_REVIEW hoặc report đóng chưa đủ 90 ngày giữ nội dung booking liên quan.

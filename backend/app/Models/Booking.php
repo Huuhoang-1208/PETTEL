@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property CarbonImmutable $start_at
@@ -39,6 +40,18 @@ class Booking extends Model
     ];
 
     protected $hidden = ['request_idempotency_key', 'request_payload_hash'];
+
+    /** @return HasMany<CareUpdate, $this> */
+    public function careUpdates(): HasMany
+    {
+        return $this->hasMany(CareUpdate::class)->orderBy('created_at')->orderBy('id');
+    }
+
+    /** @return HasMany<Report, $this> */
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class);
+    }
 
     /** @return array<string, string> */
     protected function casts(): array
