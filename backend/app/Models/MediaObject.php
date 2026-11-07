@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -45,6 +46,12 @@ class MediaObject extends Model
     {
         return $this->belongsToMany(Listing::class, 'listing_media')
             ->withPivot('sort_order');
+    }
+
+    /** @return HasMany<CareUpdate, $this> */
+    public function careUpdates(): HasMany
+    {
+        return $this->hasMany(CareUpdate::class, 'media_object_id');
     }
 
     /** @return array{byte_size: 'integer'} */

@@ -8,6 +8,7 @@ use App\Http\Controllers\BookingMessageController;
 use App\Http\Controllers\CancelBookingController;
 use App\Http\Controllers\CaregiverListingController;
 use App\Http\Controllers\CaregiverProfileController;
+use App\Http\Controllers\CareUpdateController;
 use App\Http\Controllers\ListingAvailabilityController;
 use App\Http\Controllers\ListingChangeRequestController;
 use App\Http\Controllers\ListingLifecycleController;
@@ -122,6 +123,15 @@ Route::post('/bookings/{id}/accept', AcceptBookingController::class)
     ->middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
     ->whereNumber('id')
     ->name('bookings.accept');
+
+Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
+    Route::get('/bookings/{id}/care-updates', [CareUpdateController::class, 'index'])
+        ->whereNumber('id')->name('bookings.care-updates.index');
+    Route::post('/bookings/{id}/care-updates', [CareUpdateController::class, 'store'])
+        ->whereNumber('id')->name('bookings.care-updates.store');
+    Route::get('/bookings/{id}/care-updates/{careUpdateId}/image', [CareUpdateController::class, 'image'])
+        ->whereNumber(['id', 'careUpdateId'])->middleware('signed')->name('bookings.care-updates.image');
+});
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/bookings/{id}/messages', [BookingMessageController::class, 'index'])

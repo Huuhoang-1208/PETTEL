@@ -25,3 +25,9 @@ Local/dev có thể dùng Laravel private local disk với volume; demo/staging 
 # Xóa dữ liệu P0
 
 Job chỉ xóa object khi không còn tham chiếu hợp lệ và không có report đang giữ. Restore backup phải áp dụng lại danh sách yêu cầu xóa. Xem [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>).
+
+# Care update (BE-T05)
+
+Ảnh care update được chuẩn hóa JPEG/PNG/WebP, giới hạn 10 MiB và 20 megapixel, lưu trong private local disk với object key ngẫu nhiên. API cấp URL ký 5 phút; endpoint yêu cầu Sanctum và kiểm tra participant của booking cùng quan hệ ảnh/care update trên mỗi request. Response dùng `Cache-Control: private, no-store` và `X-Content-Type-Options: nosniff`.
+
+Lệnh `care-updates:redact-expired` chạy hàng ngày. Sau 90 ngày, nội dung care update được redacted; file chỉ bị xóa khi không còn tham chiếu khác. Booking có report OPEN/IN_REVIEW, hoặc report đóng trong vòng 90 ngày, chưa được purge.
