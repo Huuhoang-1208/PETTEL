@@ -154,6 +154,19 @@ class CareUpdateTest extends TestCase
             'updated_at' => now()->subDays(100),
         ]);
         Storage::disk('local')->put('care-updates/'.$booking->id.'/expired.jpg', 'test');
+        $messageFixture = BookingFixture::requested($this);
+        $sharedMedia = DB::table('media_objects')->insertGetId([
+            'owner_user_id' => $messageFixture['caregiver']->id,
+            'object_key' => 'care-updates/'.$messageFixture['booking']->id.'/message-shared.jpg',
+            'mime_type' => 'image/jpeg',
+            'byte_size' => 4,
+            'sha256' => hash('sha256', 'shared'),
+            'visibility' => 'PRIVATE',
+            'state' => 'READY',
+            'created_at' => now()->subDays(100),
+            'updated_at' => now()->subDays(100),
+        ]);
+        Storage::disk('local')->put('care-updates/'.$messageFixture['booking']->id.'/message-shared.jpg', 'shared');
         $expiredId = DB::table('care_updates')->insertGetId([
             'booking_id' => $booking->id,
             'sender_id' => $fixture['caregiver']->id,
@@ -161,6 +174,25 @@ class CareUpdateTest extends TestCase
             'media_object_id' => $media,
             'visibility' => 'VISIBLE',
             'created_at' => now()->subDays(100),
+        ]);
+        $sharedUpdateId = DB::table('care_updates')->insertGetId([
+            'booking_id' => $messageFixture['booking']->id,
+            'sender_id' => $messageFixture['caregiver']->id,
+            'body' => 'Old note with message image reference',
+            'media_object_id' => $sharedMedia,
+            'visibility' => 'VISIBLE',
+            'created_at' => now()->subDays(100),
+        ]);
+        $messageId = DB::table('messages')->insertGetId([
+            'booking_id' => $messageFixture['booking']->id,
+            'sender_id' => $messageFixture['caregiver']->id,
+            'body' => 'Image is also attached to a message',
+            'visibility' => 'VISIBLE',
+            'created_at' => now()->subDays(100),
+        ]);
+        DB::table('message_attachments')->insert([
+            'message_id' => $messageId,
+            'media_object_id' => $sharedMedia,
         ]);
         $heldId = DB::table('care_updates')->insertGetId([
             'booking_id' => $holdFixture['booking']->id,
@@ -196,12 +228,17 @@ class CareUpdateTest extends TestCase
 
         $this->artisan('care-updates:redact-expired')->assertSuccessful();
         $this->assertDatabaseHas('care_updates', ['id' => $expiredId, 'body' => null, 'media_object_id' => null]);
+        $this->assertDatabaseHas('care_updates', ['id' => $sharedUpdateId, 'body' => null, 'media_object_id' => null]);
         $this->assertNotNull(CareUpdate::query()->findOrFail($expiredId)->redacted_at);
         $this->assertDatabaseHas('care_updates', ['id' => $heldId, 'body' => 'Held note', 'redacted_at' => null]);
         $this->assertDatabaseHas('care_updates', [
             'id' => $recentlyClosedId, 'body' => 'Recently retained note', 'redacted_at' => null,
         ]);
         $this->assertDatabaseMissing('media_objects', ['id' => $media]);
-        $this->assertSame([], Storage::disk('local')->allFiles());
+        $this->assertDatabaseHas('media_objects', ['id' => $sharedMedia, 'state' => 'READY']);
+        $this->assertSame(
+            ['care-updates/'.$messageFixture['booking']->id.'/message-shared.jpg'],
+            Storage::disk('local')->allFiles(),
+        );
     }
 }
