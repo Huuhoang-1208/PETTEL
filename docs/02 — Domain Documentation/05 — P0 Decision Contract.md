@@ -206,3 +206,14 @@ Các quyết định cụ thể cho listing lifecycle, moderation source, change
 | Caregiver tự bật role, listing vẫn duyệt | Admin duyệt cả role | Một cổng duyệt nội dung công khai đủ cho P0. |
 | Retention theo loại dữ liệu | Giữ vô thời hạn | Giảm dữ liệu riêng tư tồn đọng; các mốc là mặc định P0 cần rà lại khi vận hành thật. |
 | Mã vùng nội bộ | Mã hành chính/free text | Tránh phụ thuộc thay đổi địa giới và giữ filter nhất quán. |
+
+### Bổ sung contract BE-H05 task 1 (07/11/2026)
+
+Người dùng đã đồng ý bốn nhóm quyết định dưới đây. Nguồn chi tiết: [BE-H05 — Contract review và rating công khai](<../05 — Implementation Plan/BE-H05 — Contract review và rating công khai.md>). Đây là chốt quy tắc, chưa xác nhận code/test/CI/reviewer hoặc nghiệm thu tích hợp. Mã completion/moderation khác nhau giữa danh sách vừa cung cấp và backlog main được ghi riêng trong contract; không tự đổi phân công hoặc stack.
+
+| ID | Quyết định | Phần nhận ảnh hưởng |
+| --- | --- | --- |
+| H05-D01 | Caller đăng nhập, ACTIVE, OWNER và sở hữu booking COMPLETED; server lấy owner/listing; rating nguyên 1–5, body tùy chọn tối đa 1.000 ký tự. Unique booking tiếp tục áp dụng khi review HIDDEN; tạo trùng trả 409. | H05, workflow completion, frontend review. |
+| H05-D02 | Review mới VISIBLE; report không tự ẩn. Moderation đổi status và ghi lịch sử cùng transaction. AVG/COUNT trực tiếp theo listing từ review VISIBLE, không demo, booking COMPLETED; chưa thêm cache, bảng/cột tổng hợp hoặc job. | H05, report/admin, H06, public listing. |
+| H05-D03 | `rating_average` là number làm tròn 2 chữ số thập phân; `review_count` là integer. Không có review đủ điều kiện trả null/0. | H05, listing/search API, FE-H02. |
+| H05-D04 | Seed review đặt is_demo=true, trả cờ để nhận diện minh họa khi hiển thị; không tính vào điểm/count và không mang nhãn xác minh. Client không tự đặt is_demo/status/owner_id/listing_id. | H05, seed, FE-H02. |

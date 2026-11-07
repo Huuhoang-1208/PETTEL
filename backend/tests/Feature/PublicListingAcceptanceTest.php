@@ -178,10 +178,13 @@ class PublicListingAcceptanceTest extends TestCase
 
         foreach ([
             [$list->json('data.0'), []],
-            [$datedList->json('data.0'), [
-                'AVAILABLE_FOR_REQUESTED_RANGE',
-                'TOTAL_PRICE_CALCULATED',
-            ]],
+            [
+                $datedList->json('data.0'),
+                [
+                    'AVAILABLE_FOR_REQUESTED_RANGE',
+                    'TOTAL_PRICE_CALCULATED',
+                ],
+            ],
         ] as [$item, $expectedReasons]) {
             $this->assertEqualsCanonicalizing([
                 'id',
@@ -194,6 +197,8 @@ class PublicListingAcceptanceTest extends TestCase
                 'acceptance_rules_json',
                 'price_total_vnd',
                 'media',
+                'rating_average',
+                'review_count',
                 'match_reasons',
             ], array_keys($item));
             $this->assertSame($expectedReasons, $item['match_reasons']);
@@ -217,6 +222,8 @@ class PublicListingAcceptanceTest extends TestCase
             'acceptance_rules_json',
             'price_total_vnd',
             'media',
+            'rating_average',
+            'review_count',
         ], array_keys($detailItem));
 
         foreach ([$list, $datedList, $detail] as $response) {

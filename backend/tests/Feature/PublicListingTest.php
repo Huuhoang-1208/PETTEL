@@ -30,8 +30,18 @@ class PublicListingTest extends TestCase
         unset($listItem['match_reasons']);
         $this->assertSame($listItem, $detail->json('data'));
         $this->assertEqualsCanonicalizing([
-            'id', 'title', 'description', 'service_type', 'area_code',
-            'price_vnd', 'price_unit', 'acceptance_rules_json', 'price_total_vnd', 'media',
+            'id',
+            'title',
+            'description',
+            'service_type',
+            'area_code',
+            'price_vnd',
+            'price_unit',
+            'acceptance_rules_json',
+            'price_total_vnd',
+            'media',
+            'rating_average',
+            'review_count',
         ], array_keys($detail->json('data')));
         $detail->assertJsonPath('data.price_vnd', 50000)
             ->assertJsonPath('data.price_total_vnd', null)
