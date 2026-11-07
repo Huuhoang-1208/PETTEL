@@ -134,8 +134,13 @@ class CancellationCoordinator
                 return ['booking' => $booking, 'operation' => $operation];
             }
 
+            $isLateAuthorizationRefund = $operation->source === 'SYSTEM'
+                && $operation->reason_code === 'PAYMENT_LATE_AUTHORIZED'
+                && $operation->operation_type === 'REFUND';
             $expectedBookingStatus = $operation->operation_type === 'VOID' ? 'AWAITING_PAYMENT' : 'CONFIRMED';
-            if ($booking->status !== $expectedBookingStatus) {
+            $bookingStatusMatches = $booking->status === $expectedBookingStatus
+                || ($isLateAuthorizationRefund && in_array($booking->status, ['AWAITING_PAYMENT', 'CANCELLED'], true));
+            if (! $bookingStatusMatches) {
                 $operation->status = 'MANUAL_REVIEW';
                 $operation->last_error_code = 'PAYMENT_STATE_MISMATCH';
                 $operation->lease_expires_at = null;
@@ -301,7 +306,11 @@ class CancellationCoordinator
 
     private function finishBookingCancellation(Booking $booking, BookingCancellationOperation $operation, CarbonImmutable $now): void
     {
-        if ($booking->status === 'CANCELLED') {
+        $isLateAuthorizationRefund = $operation->source === 'SYSTEM'
+            && $operation->reason_code === 'PAYMENT_LATE_AUTHORIZED'
+            && $operation->operation_type === 'REFUND';
+
+        if ($booking->status === 'CANCELLED' && ! $isLateAuthorizationRefund) {
             $matchingEvent = DB::table('booking_status_events')
                 ->where('booking_id', $booking->id)
                 ->where('to_status', 'CANCELLED')
@@ -317,7 +326,7 @@ class CancellationCoordinator
 
                 return;
             }
-        } else {
+        } elseif ($booking->status !== 'CANCELLED') {
             $fromStatus = $booking->status;
             $booking->status = 'CANCELLED';
             $booking->version++;

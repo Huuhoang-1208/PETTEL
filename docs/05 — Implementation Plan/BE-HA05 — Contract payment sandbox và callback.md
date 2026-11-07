@@ -2,7 +2,7 @@
 
 **Ngày chốt:** 07/11/2026 · **Owner:** Hào · **Reviewer:** Hoàng.
 
-**Trạng thái:** Các quyết định task 1 đã được thống nhất. Đây là contract triển khai cho sandbox/payment callback; chưa xác nhận adapter, endpoint hoặc kiểm thử tích hợp đã hoàn thành.
+**Trạng thái:** Các quyết định task 1 đã được thống nhất. Endpoint tạo attempt, callback có chữ ký và endpoint giả lập success/failure/timeout đã được triển khai. Task 7 đã có tài liệu kiểm tra và evidence bên dưới. Chưa có kết nối payment provider thật; không xử lý tiền thật.
 
 ## 1. Booking, attempt và hạn thanh toán
 
@@ -52,7 +52,114 @@ Lỗi HTTP có envelope API chung `{error: {code, message, details, request_id}}
 - Test bao gồm success/failure/timeout, retry sau FAILED, event lặp và event ID tái sử dụng với payload khác, event khác thứ tự, chữ ký sai, amount/reference sai, attempt cũ, callback muộn, callback chạy đồng thời với cancel, và retry/đối soát void-refund.
 - Mọi payment là mô phỏng. Không thu thẻ/CVV/OTP/tài khoản ngân hàng thật; không ghi callback secret hoặc dữ liệu xác thực vào log.
 
-## 6. Nguồn đối chiếu
+### Runtime đã triển khai
+
+- `POST /api/bookings/{id}/sandbox-payments`: owner đăng nhập gửi `Idempotency-Key`; server tạo attempt theo giá snapshot và deadline hiện có. Body không nhận amount hoặc kết quả thanh toán.
+- `POST /api/bookings/{id}/sandbox-payments/{attemptId}/simulate`: chỉ dùng trong local/testing; body `{ "result": "SUCCESS|FAILURE|TIMEOUT" }`. Timeout giữ attempt ở `PENDING`; success/failure chạy qua cùng bộ xử lý callback đã xác thực chữ ký.
+- `POST /api/sandbox/payment-callback`: server-to-server; yêu cầu `X-Payment-Signature` là HMAC-SHA256 của payload chuẩn hóa `event_id`, `booking_id`, `attempt_reference`, `amount_vnd`, `result`.
+- `PAYMENT_SANDBOX_SECRET` cấu hình secret ở môi trường triển khai. Mặc định chỉ tạo secret và bật endpoint giả lập trong `local`/`testing`; không bật endpoint giả lập ở production.
+- Callback authorize muộn ghi nhận attempt, không confirm booking và tạo operation `REFUND` trong outbox, kèm audit. Gateway hoàn tiền mặc định của T04 vẫn fail-closed cho đến khi adapter sandbox cancellation được tích hợp.
+
+## 6. Hướng dẫn kiểm tra và ví dụ API
+
+### Callback thành công
+
+Gửi `POST /api/sandbox/payment-callback` với payload dưới đây và chữ ký HMAC hợp lệ trong header `X-Payment-Signature`:
+
+```json
+{
+  "event_id": "9fc7d68d-34c8-4c1e-aabd-62f803d80c5d",
+  "booking_id": "123",
+  "attempt_reference": "sandbox_45cc6c8b-6f17-4e90-9e33-458c6b71bd2f",
+  "amount_vnd": 150000,
+  "result": "AUTHORIZED"
+}
+```
+
+Chữ ký là HMAC-SHA256 dạng hex của JSON compact theo đúng thứ tự trường `event_id`, `booking_id`, `attempt_reference`, `amount_vnd`, `result`, dùng `PAYMENT_SANDBOX_SECRET`. Với booking đang `AWAITING_PAYMENT`, attempt hiện hành `PENDING`, còn hạn và amount/reference khớp, phản hồi có dạng:
+
+```json
+{
+  "data": {
+    "event_id": "9fc7d68d-34c8-4c1e-aabd-62f803d80c5d",
+    "processing_status": "PROCESSED",
+    "rejection_code": null,
+    "attempt_status": "AUTHORIZED",
+    "booking_status": "CONFIRMED",
+    "compensation_operation_id": null,
+    "replayed": false
+  }
+}
+```
+
+`event_record_id` cũng được trả về cho callback mới. Callback lặp với cùng provider/event ID và payload trả HTTP 200 với `replayed: true`, không ghi event hay transition lần hai.
+
+### Thất bại và callback đến muộn
+
+Để kiểm tra kết quả thất bại, dùng cùng payload hợp lệ với `result: "FAILED"`. Callback được ghi nhận là `PROCESSED`, attempt thành `FAILED`, booking vẫn `AWAITING_PAYMENT`; owner có thể tạo attempt mới khi booking còn hạn.
+
+Nếu callback `AUTHORIZED` đến sau deadline, hoặc đang có yêu cầu `VOID` chưa hoàn tất, hệ thống không chuyển booking sang `CONFIRMED`. Attempt được ghi nhận `AUTHORIZED` và response có `compensation_operation_id`; tác vụ `REFUND` được đưa vào outbox. Nếu `VOID` còn `PENDING`/`PROCESSING`, nó được chuyển sang `MANUAL_REVIEW` với `PAYMENT_CALLBACK_RACE`. Khi booking đã `CANCELLED`, trạng thái đó được giữ nguyên và refund vẫn được xếp hàng.
+
+| Trường hợp | Kết quả cần thấy |
+| --- | --- |
+| `result: FAILED` hợp lệ | HTTP 200; attempt `FAILED`; booking không `CONFIRMED`. |
+| Callback authorize quá hạn hoặc có VOID đang chờ | HTTP 200; không confirm; attempt `AUTHORIZED`; có operation refund bù. |
+| Chữ ký sai/thiếu | HTTP 401 `INVALID_CALLBACK_SIGNATURE`; không thay đổi payment/booking. |
+| Payload sai hoặc có trường ngoài hợp đồng | HTTP 422 `VALIDATION_ERROR`. |
+| Booking/attempt reference không khớp | HTTP 200, `processing_status: REJECTED`, mã `PAYMENT_REFERENCE_MISMATCH`. |
+| Amount không khớp | HTTP 200, `processing_status: REJECTED`, mã `PAYMENT_AMOUNT_MISMATCH`. |
+| Event ID đã dùng với payload khác | HTTP 409 `PAYMENT_EVENT_CONFLICT`. |
+| Attempt/trạng thái không còn hợp lệ | HTTP 200, `processing_status: REJECTED`, mã `PAYMENT_STATE_MISMATCH`. |
+
+Ví dụ lỗi chữ ký (HTTP 401):
+
+```json
+{
+  "error": {
+    "code": "INVALID_CALLBACK_SIGNATURE",
+    "message": "Callback signature is invalid.",
+    "details": [],
+    "request_id": "<request-uuid>"
+  }
+}
+```
+
+Ví dụ callback có chữ ký hợp lệ nhưng amount sai (HTTP 200 acknowledgement; không phải authorize):
+
+```json
+{
+  "data": {
+    "event_id": "<event-uuid>",
+    "event_record_id": "<event-row-id>",
+    "processing_status": "REJECTED",
+    "rejection_code": "PAYMENT_AMOUNT_MISMATCH",
+    "attempt_status": "PENDING",
+    "booking_status": "AWAITING_PAYMENT",
+    "compensation_operation_id": null,
+    "replayed": false
+  }
+}
+```
+
+### Lệnh kiểm tra và kết quả
+
+Chạy toàn bộ pipeline từ thư mục gốc repository:
+
+```powershell
+docker compose -p pettel-test -f compose.test.yaml run --build --rm test
+```
+
+Kết quả lần kiểm tra ngày 07/11/2026: Pint đạt trên 171 file; PHPStan báo `[OK] No errors`; migration và seed thành công; **375 tests passed (4.252 assertions)**. Test liên quan trực tiếp: `backend/tests/Feature/SandboxPaymentSimulationTest.php` và `backend/tests/Feature/PaymentCallbackCancellationConcurrencyTest.php` (callback và cancel chạy trên hai tiến trình, cùng database MySQL test).
+
+## 7. Bàn giao reviewer
+
+**Reviewer:** Hoàng. Khi PR được tạo, yêu cầu Hoàng review phần `ProcessSandboxPaymentCallback`, hai test payment/cancellation nói trên và tài liệu này. Các điểm kiểm tra: chữ ký và response lỗi; callback replay không tạo side effect lần hai; callback muộn không xác nhận/hồi sinh booking; operation refund bù được ghi bền vững; test race không tạo transition trùng.
+
+**Phụ thuộc:** BE-HA03 cung cấp trạng thái `AWAITING_PAYMENT`, attempt hiện hành và hạn giữ chỗ. Theo mã/tài liệu trong repository, phần hết hạn/hủy/outbox tương ứng nằm ở BE-T04; liên kết với BE-HA04 trong tracker nhóm khi nghiệm thu. Hành vi tích hợp được kiểm tra qua `BookingCancellationTest`, `SandboxPaymentSimulationTest` và `PaymentCallbackCancellationConcurrencyTest`.
+
+Nội dung bàn giao PR: “Đã bổ sung hợp đồng callback sandbox, callback muộn và xử lý cạnh tranh với hủy. Đã chạy pipeline `docker compose -p pettel-test -f compose.test.yaml run --build --rm test`: Pint đạt, PHPStan đạt, 375 tests/4.252 assertions đạt. Nhờ Hoàng review transaction/lock order, idempotency callback và test race.”
+
+## 8. Nguồn đối chiếu
 
 - [M06 — Payment Sandbox](<../03 — Modules Documentation/M06 — Payment Sandbox.md>).
 - [Payment Sandbox Integration](<../08 — Architecture & Technical Design/07 — Payment Sandbox Integration.md>).
