@@ -608,14 +608,100 @@ Với key mới, nếu bắt đầu trong quá khứ: HTTP 422.
 
 Fixture dùng lại, kết quả kiểm tra và xác nhận reviewer: [BE-H02 — Review và bàn giao](<../05 — Implementation Plan/BE-H02 — Review và bàn giao.md>).
 
-## M08 — Review và rating — quy tắc chốt 07/11/2026
+## M08 — Review và rating công khai
 
-Nguồn chuẩn: [BE-H05 — Contract review và rating công khai](<../05 — Implementation Plan/BE-H05 — Contract review và rating công khai.md>). Người dùng đã đồng ý bốn nhóm quy tắc task 1; mục này chưa xác nhận endpoint review hoặc aggregate đã triển khai. Route, schema review công khai và bảng lỗi chi tiết còn được hoàn thiện khi triển khai H05.
+Nguồn quy tắc: [BE-H05 — Contract review và rating công khai](<../05 — Implementation Plan/BE-H05 — Contract review và rating công khai.md>). API tạo review, danh sách review công khai và aggregate rating đã được triển khai.
 
-- Caller tạo review phải đăng nhập, account ACTIVE, role OWNER và sở hữu booking COMPLETED. Rating nguyên 1–5, body tùy chọn tối đa 1.000 ký tự. Owner/listing lấy từ booking; client không tự đặt owner_id, listing_id, status hoặc is_demo. Một review/booking kể cả khi review HIDDEN; tạo trùng trả 409.
-- Review mới VISIBLE; chỉ VISIBLE hiển thị công khai. Report không tự ẩn review. Moderation đổi trạng thái và ghi lịch sử cùng transaction.
-- Aggregate theo listing có `rating_average` (JSON number, làm tròn 2 chữ số thập phân) và `review_count` (JSON integer), tính từ review VISIBLE, is_demo=false, booking COMPLETED. Không có review đủ điều kiện trả null/0, kể cả khi chỉ có review HIDDEN hoặc demo.
-- Query tổng hợp trực tiếp khi đọc, tránh một query cho mỗi listing; chưa thêm cache hoặc lưu sẵn aggregate. Sau khi dữ liệu commit, lần đọc tiếp theo phản ánh kết quả mới.
-- Review seed có is_demo=true. Nếu xuất hiện trong danh sách công khai, phải trả cờ để frontend ghi minh họa; seed không tính vào aggregate. review_count là số review tính điểm, không phải tổng item phân trang khi danh sách có kèm demo.
+### Tạo review
 
-Các trường aggregate là phần bổ sung được chốt cho public listing response trong H05; schema response hiện hành chỉ thay đổi khi implementation và kiểm thử tương ứng được bổ sung.
+`POST /api/bookings/{booking_id}/reviews`
+
+Yêu cầu đăng nhập, tài khoản `ACTIVE`, role `OWNER`, và booking thuộc người gửi với `status = COMPLETED`. `rating` phải là số nguyên từ 1 đến 5. `body` tùy chọn, tối đa 1.000 ký tự. Backend lấy `owner_id` và `listing_id` từ booking; client không được gửi `owner_id`, `listing_id`, `status` hoặc `is_demo`. Mỗi booking chỉ có một review, kể cả khi review hiện có đã `HIDDEN`.
+
+Review mới mặc định `VISIBLE`, `is_demo = false`. Thành công trả HTTP 201:
+
+```json
+{
+    "data": {
+        "id": "501",
+        "booking_id": "120",
+        "listing_id": "35",
+        "rating": 5,
+        "body": "Chăm sóc tốt",
+        "status": "VISIBLE",
+        "is_demo": false,
+        "created_at": "2026-11-07T10:30:00.000000Z"
+    }
+}
+```
+
+Các lỗi chính:
+
+| HTTP | `error.code` | Trường hợp |
+| --- | --- | --- |
+| 401 | Theo middleware auth hiện hành | Chưa đăng nhập. |
+| 403 | `FORBIDDEN` | Tài khoản/role không đủ điều kiện hoặc caregiver tự đánh giá dịch vụ của mình. |
+| 404 | `NOT_FOUND` | Booking không tồn tại hoặc không thuộc người gửi. |
+| 409 | `INVALID_STATE` | Booking chưa `COMPLETED`. |
+| 409 | `REVIEW_ALREADY_EXISTS` | Booking đã có review, kể cả review `HIDDEN`. |
+| 422 | `VALIDATION_ERROR` | Rating/body không hợp lệ hoặc request có trường không được hỗ trợ. |
+
+Lỗi do endpoint tạo review trả envelope `error` gồm `code`, `message`, `details` và `request_id`. Response của middleware xác thực/quyền tuân theo quy ước hiện hành.
+
+Ví dụ tạo trùng — HTTP 409:
+
+```json
+{
+    "error": {
+        "code": "REVIEW_ALREADY_EXISTS",
+        "message": "This booking already has a review.",
+        "details": [],
+        "request_id": "f39e3629-d503-49d7-93c7-81d74004e495"
+    }
+}
+```
+
+Rating sai kiểu/khoảng hoặc body không hợp lệ trả HTTP 422 `VALIDATION_ERROR`; `error.details` chứa lỗi theo tên trường. Booking chưa hoàn tất trả HTTP 409 `INVALID_STATE`; booking không tồn tại hoặc không thuộc caller trả HTTP 404 `NOT_FOUND`.
+
+### Danh sách review công khai và rating
+
+`GET /api/listings/{listing_id}/reviews?page=1&per_page=20`
+
+Chỉ review `VISIBLE` có booking `COMPLETED` được đưa vào danh sách. Mỗi item trả `id`, `rating`, `body`, `is_demo` và `created_at`. Review demo có thể xuất hiện trong danh sách để giao diện gắn nhãn minh họa.
+
+```json
+{
+    "data": [
+        {
+            "id": "501",
+            "rating": 5,
+            "body": "Chăm sóc tốt",
+            "is_demo": false,
+            "created_at": "2026-11-07T10:30:00.000000Z"
+        }
+    ],
+    "links": {
+        "first": "https://example.test/api/listings/35/reviews?page=1",
+        "last": "https://example.test/api/listings/35/reviews?page=1",
+        "prev": null,
+        "next": null
+    },
+    "meta": {
+        "current_page": 1,
+        "from": 1,
+        "last_page": 1,
+        "path": "https://example.test/api/listings/35/reviews",
+        "per_page": 20,
+        "to": 1,
+        "total": 1
+    },
+    "rating_average": 5,
+    "review_count": 1
+}
+```
+
+`rating_average` là JSON number làm tròn 2 chữ số; `review_count` là số review được tính điểm. Cả hai chỉ tính review `VISIBLE`, `is_demo = false`, thuộc booking `COMPLETED`. Khi không có review đủ điều kiện, trả `rating_average: null`, `review_count: 0`. `meta.total` có thể bao gồm review demo được hiển thị, nên không nhất thiết bằng `review_count`.
+
+Hai trường aggregate cũng có trong response chi tiết và danh sách listing. Chúng được tính trực tiếp từ dữ liệu khi đọc; sau khi tạo, ẩn hoặc khôi phục review commit, lần đọc kế tiếp phản ánh kết quả mới.
+
+Query phân trang sai trả HTTP 422 `VALIDATION_ERROR`; listing không công khai trả HTTP 404 `NOT_FOUND`.

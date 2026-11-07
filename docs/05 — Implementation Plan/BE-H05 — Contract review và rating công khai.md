@@ -2,7 +2,7 @@
 
 **Ngày chốt:** 07/11/2026 · **Owner:** Hoàng · **Reviewer:** Hào.
 
-**Trạng thái:** người dùng đã đồng ý bốn nhóm quyết định trong task 1. Đây là đầu vào triển khai; chưa xác nhận API, test, CI, reviewer hoặc nghiệm thu tích hợp đã đạt.
+**Trạng thái:** Bốn nhóm quyết định task 1 đã được áp dụng trong API/schema và có test. Task 6 đã kiểm tra luồng tạo review, public aggregate và action ẩn/khôi phục review; toàn bộ test chuẩn đạt ở lần chạy gần nhất. Chưa có endpoint quản trị report/moderation để nghiệm thu BE-T06 từ đầu đến cuối; chưa có xác nhận reviewer Hào.
 
 ## 1. Quyền và điều kiện tạo review — H05-D01
 
@@ -40,7 +40,9 @@ Khi mọi review đã bị ẩn hoặc chỉ còn review demo, trả `rating_ave
 - Review demo `VISIBLE` có thể xuất hiện trong danh sách công khai, nhưng response phải trả `is_demo` để frontend gắn nhãn minh họa.
 - Loại demo khỏi cả `rating_average` và `review_count`. Không gắn nhãn xác minh hoặc đánh giá từ giao dịch thật cho dữ liệu minh họa.
 - API tạo review thông thường do server đặt `is_demo = false`; không cho client thay cờ.
-- `DemoSeeder` ở baseline chưa có booking/review. Dữ liệu seed bổ sung và test fixture là phần triển khai sau task 1; fixture không chứng minh workflow hoàn tất thực tế đã tích hợp.
+- `backend/database/seeders/DemoSeeder.php` hiện chỉ tạo tài khoản, pet và caregiver profile mẫu; không tạo booking hoặc review. Vì không có review seed nên không cần sửa seeder hoặc thêm một booking `COMPLETED` giả chỉ để gắn review minh họa.
+- Nếu sau này bổ sung review seed, phải gắn với booking demo hợp lệ, đặt rõ `is_demo = true` và giữ quy tắc loại khỏi rating/count. Cờ `is_demo` được trả trong từng item review công khai.
+- Test fixture có thể đặt booking thành `COMPLETED` để kiểm tra H05, nhưng không chứng minh workflow hoàn tất/release thật đã tích hợp.
 
 ## 5. Điểm tích hợp và hai bản mã kế hoạch
 
@@ -68,3 +70,12 @@ Task 1 đã chốt bốn nhóm quy tắc; mã phân công/lịch và các điể
 - [API Contracts](<../08 — Architecture & Technical Design/04 — API Contracts & Error Conventions.md>).
 - [Backlog trong repo](<../PETTEL — Task 4 tuần (A, B, C)/Chia task.md>).
 - Migration `backend/database/migrations/2026_10_28_000004_create_booking_content_and_moderation_schema.php`, `backend/database/seeders/DemoSeeder.php`, `backend/tests/Support/BookingFixture.php` và API listing tại baseline.
+
+## 7. Bàn giao task 7
+
+- Hợp đồng endpoint, ví dụ thành công, lỗi chính, phân trang và quy tắc aggregate được ghi tại [API Contracts — M08](<../08 — Architecture & Technical Design/04 — API Contracts & Error Conventions.md>).
+- Seed: hiện chưa có review seed trong `DemoSeeder`; không có dữ liệu review nào cần đổi thành demo. Nếu bổ sung về sau, bắt buộc `is_demo = true`; API tạo review thật luôn do server đặt `is_demo = false`.
+- Lệnh kiểm tra chuẩn: `docker compose -p pettel-test -f compose.test.yaml run --build --rm test`.
+- Kết quả lần chạy gần nhất trên nhánh `be-h05`: Pint đạt, PHPStan không lỗi, migration/seed đạt, 355 tests và 4105 assertions đạt.
+- Phụ thuộc: BE-T01 cung cấp schema/state; moderation action hiện được kiểm thử cùng API đọc công khai, nhưng endpoint report/admin của BE-T06 chưa có trong nhánh này nên chưa nghiệm thu end-to-end. Workflow hoàn tất booking/release cũng cần kiểm tra trên luồng thật; H05 hiện dùng fixture `COMPLETED`.
+- Reviewer: Hào. Khi tạo PR, thêm Hào làm reviewer và liên kết issue H05 cùng các phụ thuộc đang chờ tích hợp.
