@@ -607,3 +607,15 @@ Với key mới, nếu bắt đầu trong quá khứ: HTTP 422.
 `request_id` trong ví dụ là giá trị minh họa. Các trường hợp 401/403/419/404/409/422 khác theo bảng lỗi M05 ở trên. Auth/CSRF sử dụng response của lớp auth hiện hành, không giả định mọi lỗi auth có cùng envelope với lỗi booking.
 
 Fixture dùng lại, kết quả kiểm tra và xác nhận reviewer: [BE-H02 — Review và bàn giao](<../05 — Implementation Plan/BE-H02 — Review và bàn giao.md>).
+
+## M08 — Review và rating — quy tắc chốt 07/11/2026
+
+Nguồn chuẩn: [BE-H05 — Contract review và rating công khai](<../05 — Implementation Plan/BE-H05 — Contract review và rating công khai.md>). Người dùng đã đồng ý bốn nhóm quy tắc task 1; mục này chưa xác nhận endpoint review hoặc aggregate đã triển khai. Route, schema review công khai và bảng lỗi chi tiết còn được hoàn thiện khi triển khai H05.
+
+- Caller tạo review phải đăng nhập, account ACTIVE, role OWNER và sở hữu booking COMPLETED. Rating nguyên 1–5, body tùy chọn tối đa 1.000 ký tự. Owner/listing lấy từ booking; client không tự đặt owner_id, listing_id, status hoặc is_demo. Một review/booking kể cả khi review HIDDEN; tạo trùng trả 409.
+- Review mới VISIBLE; chỉ VISIBLE hiển thị công khai. Report không tự ẩn review. Moderation đổi trạng thái và ghi lịch sử cùng transaction.
+- Aggregate theo listing có `rating_average` (JSON number, làm tròn 2 chữ số thập phân) và `review_count` (JSON integer), tính từ review VISIBLE, is_demo=false, booking COMPLETED. Không có review đủ điều kiện trả null/0, kể cả khi chỉ có review HIDDEN hoặc demo.
+- Query tổng hợp trực tiếp khi đọc, tránh một query cho mỗi listing; chưa thêm cache hoặc lưu sẵn aggregate. Sau khi dữ liệu commit, lần đọc tiếp theo phản ánh kết quả mới.
+- Review seed có is_demo=true. Nếu xuất hiện trong danh sách công khai, phải trả cờ để frontend ghi minh họa; seed không tính vào aggregate. review_count là số review tính điểm, không phải tổng item phân trang khi danh sách có kèm demo.
+
+Các trường aggregate là phần bổ sung được chốt cho public listing response trong H05; schema response hiện hành chỉ thay đổi khi implementation và kiểm thử tương ứng được bổ sung.

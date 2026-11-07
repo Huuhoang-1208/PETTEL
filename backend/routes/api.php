@@ -15,11 +15,14 @@ use App\Http\Controllers\ListingMediaController;
 use App\Http\Controllers\PetController;
 use App\Http\Controllers\PublicListingController;
 use App\Http\Controllers\RejectBookingController;
+use App\Http\Controllers\StoreBookingReviewController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/listings', [PublicListingController::class, 'index']);
 Route::get('/listings/{id}', [PublicListingController::class, 'show'])->whereNumber('id');
+Route::get('/listings/{id}/reviews', [PublicListingController::class, 'reviews'])
+    ->whereNumber('id')->name('listings.reviews.index');
 Route::get('/listings/{id}/media/{mediaId}/content', [ListingMediaController::class, 'publicContent'])
     ->whereNumber(['id', 'mediaId'])->name('listings.media.content');
 
@@ -42,6 +45,8 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:OWNER'])->group(funct
     Route::patch('/pets/{pet}/archive', [PetController::class, 'archive'])->name('pets.archive');
     Route::patch('/pets/{pet}/activate', [PetController::class, 'activate'])->name('pets.activate');
     Route::delete('/pets/{pet}', [PetController::class, 'destroy'])->name('pets.destroy');
+    Route::post('/bookings/{id}/reviews', StoreBookingReviewController::class)
+        ->whereNumber('id')->name('bookings.reviews.store');
 });
 
 Route::middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])

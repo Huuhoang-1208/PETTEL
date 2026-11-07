@@ -144,7 +144,7 @@ File thực nằm private storage. `listing_media` chỉ là quan hệ ảnh lis
 | --- | --- | --- |
 | `reviews` | `id`, `booking_id!`, `owner_id!`, `listing_id!`, `rating!`, `body?`, `status!` (`VISIBLE`,`HIDDEN`), `is_demo!` mặc định false, timestamps | `UQ(booking_id)`, FK booking/owner/listing `RESTRICT`, `CHECK(rating BETWEEN 1 AND 5)`. Service chỉ cho owner của booking `COMPLETED`. `owner_id/listing_id` là bản sao phục vụ truy vấn, phải khớp booking. |
 
-Chỉ review từ booking hoàn tất **thật trong hệ thống** và `VISIBLE` mới tính rating công khai. `is_demo` dùng để gắn nhãn minh họa; không gán “verified caregiver” từ review, rating hoặc seed. Không tạo bảng verification/badge P0; role caregiver tự kích hoạt, chỉ listing cần admin duyệt.
+Chỉ review `VISIBLE`, `is_demo = false`, gắn booking `COMPLETED` mới tính rating công khai. Theo [contract H05 chốt 07/11/2026](<../05 — Implementation Plan/BE-H05 — Contract review và rating công khai.md>), tính AVG/COUNT trực tiếp khi đọc theo listing, chưa thêm bảng/cột tổng hợp, cache hoặc job; response là `rating_average` (number làm tròn 2 chữ số thập phân) và `review_count` (integer), mặc định null/0 khi không có review đủ điều kiện. Review demo VISIBLE có thể hiển thị kèm `is_demo`, nhưng bị loại khỏi cả điểm và count. Review HIDDEN vẫn giữ unique booking; report không tự ẩn, moderation đổi trạng thái và ghi lịch sử cùng transaction. Không gán “verified caregiver” từ review, rating hoặc seed. Không tạo bảng verification/badge P0; role caregiver tự kích hoạt, chỉ listing cần admin duyệt.
 
 ### M09 — Report, Moderation, Audit
 
