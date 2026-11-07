@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\MediaObject;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -60,7 +61,8 @@ class PetRequest extends FormRequest
                 'integer',
                 Rule::exists('media_objects', 'id')->where(fn (Builder $query) => $query
                     ->where('owner_user_id', $this->user()->id)
-                    ->where('state', 'READY')),
+                    ->where('state', 'READY')
+                    ->whereNotIn('id', MediaObject::messageAttachmentIds())),
             ],
         ];
     }

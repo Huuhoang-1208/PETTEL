@@ -53,6 +53,12 @@ class Booking extends Model
         return $this->hasMany(Report::class);
     }
 
+    /** @return HasMany<Message, $this> */
+    public function messages(): HasMany
+    {
+        return $this->hasMany(Message::class);
+    }
+
     /** @return array<string, string> */
     protected function casts(): array
     {

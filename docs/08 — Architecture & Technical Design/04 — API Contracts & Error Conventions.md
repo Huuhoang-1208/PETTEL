@@ -484,7 +484,7 @@ Dùng Scramble sinh OpenAPI từ routes/FormRequest/Resource phục vụ Vue; re
 
 # Contract P0 bổ sung
 
-[P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>) định nghĩa mã trạng thái và giá. `POST /api/bookings/quote` nhận pet_id, listing_id, start_at, end_at; trả price_total_vnd, price_unit, quantity, pricing_version và cancellation_policy_version, không tạo booking. POST booking tính lại cùng công thức trong transaction; không tin amount client. `POST /api/bookings/{id}/cancel` kiểm tra actor/state, chỉ trả CANCELLED sau void/refund sandbox tương ứng. `POST /api/bookings/{id}/messages` chỉ cho hai bên gửi khi booking từ REQUESTED đến AWAITING_CONFIRMATION. Care update chỉ caregiver trong IN_PROGRESS. Endpoint bật role CAREGIVER yêu cầu user đăng nhập, ghi audit; admin role không có route tự cấp. Các lỗi hết hạn dùng HTTP 409 với mã `REQUEST_EXPIRED` hoặc `PAYMENT_EXPIRED`; conflict, invalid state và idempotency conflict cũng trả 409.
+[P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>) định nghĩa mã trạng thái và giá. `POST /api/bookings/quote` nhận pet_id, listing_id, start_at, end_at; trả price_total_vnd, price_unit, quantity, pricing_version và cancellation_policy_version, không tạo booking. POST booking tính lại cùng công thức trong transaction; không tin amount client. `POST /api/bookings/{id}/cancel` kiểm tra actor/state, chỉ trả CANCELLED sau void/refund sandbox tương ứng. Quyền đọc, gửi tin và tải ảnh theo [contract M07](<../03 — Modules Documentation/M07 — Messaging & Care Updates.md>). Care update chỉ caregiver trong IN_PROGRESS. Endpoint bật role CAREGIVER yêu cầu user đăng nhập, ghi audit; admin role không có route tự cấp. Các lỗi hết hạn dùng HTTP 409 với mã `REQUEST_EXPIRED` hoặc `PAYMENT_EXPIRED`; conflict, invalid state và idempotency conflict cũng trả 409.
 
 ## M05 — Cancel booking và retry payment — contract được người dùng chấp nhận 06/11/2026
 
@@ -607,3 +607,101 @@ Với key mới, nếu bắt đầu trong quá khứ: HTTP 422.
 `request_id` trong ví dụ là giá trị minh họa. Các trường hợp 401/403/419/404/409/422 khác theo bảng lỗi M05 ở trên. Auth/CSRF sử dụng response của lớp auth hiện hành, không giả định mọi lỗi auth có cùng envelope với lỗi booking.
 
 Fixture dùng lại, kết quả kiểm tra và xác nhận reviewer: [BE-H02 — Review và bàn giao](<../05 — Implementation Plan/BE-H02 — Review và bàn giao.md>).
+
+## M08 — Review và rating công khai
+
+Nguồn quy tắc: [BE-H05 — Contract review và rating công khai](<../05 — Implementation Plan/BE-H05 — Contract review và rating công khai.md>). API tạo review, danh sách review công khai và aggregate rating đã được triển khai.
+
+### Tạo review
+
+`POST /api/bookings/{booking_id}/reviews`
+
+Yêu cầu đăng nhập, tài khoản `ACTIVE`, role `OWNER`, và booking thuộc người gửi với `status = COMPLETED`. `rating` phải là số nguyên từ 1 đến 5. `body` tùy chọn, tối đa 1.000 ký tự. Backend lấy `owner_id` và `listing_id` từ booking; client không được gửi `owner_id`, `listing_id`, `status` hoặc `is_demo`. Mỗi booking chỉ có một review, kể cả khi review hiện có đã `HIDDEN`.
+
+Review mới mặc định `VISIBLE`, `is_demo = false`. Thành công trả HTTP 201:
+
+```json
+{
+    "data": {
+        "id": "501",
+        "booking_id": "120",
+        "listing_id": "35",
+        "rating": 5,
+        "body": "Chăm sóc tốt",
+        "status": "VISIBLE",
+        "is_demo": false,
+        "created_at": "2026-11-07T10:30:00.000000Z"
+    }
+}
+```
+
+Các lỗi chính:
+
+| HTTP | `error.code` | Trường hợp |
+| --- | --- | --- |
+| 401 | Theo middleware auth hiện hành | Chưa đăng nhập. |
+| 403 | `FORBIDDEN` | Tài khoản/role không đủ điều kiện hoặc caregiver tự đánh giá dịch vụ của mình. |
+| 404 | `NOT_FOUND` | Booking không tồn tại hoặc không thuộc người gửi. |
+| 409 | `INVALID_STATE` | Booking chưa `COMPLETED`. |
+| 409 | `REVIEW_ALREADY_EXISTS` | Booking đã có review, kể cả review `HIDDEN`. |
+| 422 | `VALIDATION_ERROR` | Rating/body không hợp lệ hoặc request có trường không được hỗ trợ. |
+
+Lỗi do endpoint tạo review trả envelope `error` gồm `code`, `message`, `details` và `request_id`. Response của middleware xác thực/quyền tuân theo quy ước hiện hành.
+
+Ví dụ tạo trùng — HTTP 409:
+
+```json
+{
+    "error": {
+        "code": "REVIEW_ALREADY_EXISTS",
+        "message": "This booking already has a review.",
+        "details": [],
+        "request_id": "f39e3629-d503-49d7-93c7-81d74004e495"
+    }
+}
+```
+
+Rating sai kiểu/khoảng hoặc body không hợp lệ trả HTTP 422 `VALIDATION_ERROR`; `error.details` chứa lỗi theo tên trường. Booking chưa hoàn tất trả HTTP 409 `INVALID_STATE`; booking không tồn tại hoặc không thuộc caller trả HTTP 404 `NOT_FOUND`.
+
+### Danh sách review công khai và rating
+
+`GET /api/listings/{listing_id}/reviews?page=1&per_page=20`
+
+Chỉ review `VISIBLE` có booking `COMPLETED` được đưa vào danh sách. Mỗi item trả `id`, `rating`, `body`, `is_demo` và `created_at`. Review demo có thể xuất hiện trong danh sách để giao diện gắn nhãn minh họa.
+
+```json
+{
+    "data": [
+        {
+            "id": "501",
+            "rating": 5,
+            "body": "Chăm sóc tốt",
+            "is_demo": false,
+            "created_at": "2026-11-07T10:30:00.000000Z"
+        }
+    ],
+    "links": {
+        "first": "https://example.test/api/listings/35/reviews?page=1",
+        "last": "https://example.test/api/listings/35/reviews?page=1",
+        "prev": null,
+        "next": null
+    },
+    "meta": {
+        "current_page": 1,
+        "from": 1,
+        "last_page": 1,
+        "path": "https://example.test/api/listings/35/reviews",
+        "per_page": 20,
+        "to": 1,
+        "total": 1
+    },
+    "rating_average": 5,
+    "review_count": 1
+}
+```
+
+`rating_average` là JSON number làm tròn 2 chữ số; `review_count` là số review được tính điểm. Cả hai chỉ tính review `VISIBLE`, `is_demo = false`, thuộc booking `COMPLETED`. Khi không có review đủ điều kiện, trả `rating_average: null`, `review_count: 0`. `meta.total` có thể bao gồm review demo được hiển thị, nên không nhất thiết bằng `review_count`.
+
+Hai trường aggregate cũng có trong response chi tiết và danh sách listing. Chúng được tính trực tiếp từ dữ liệu khi đọc; sau khi tạo, ẩn hoặc khôi phục review commit, lần đọc kế tiếp phản ánh kết quả mới.
+
+Query phân trang sai trả HTTP 422 `VALIDATION_ERROR`; listing không công khai trả HTTP 404 `NOT_FOUND`.

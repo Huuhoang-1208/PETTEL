@@ -47,6 +47,7 @@ class Listing extends Model
         return $this->belongsToMany(MediaObject::class, 'listing_media')
             ->using(ListingMedia::class)
             ->withPivot('sort_order')
+            ->whereNotIn('media_objects.id', MediaObject::messageAttachmentIds())
             ->orderByPivot('sort_order');
     }
 

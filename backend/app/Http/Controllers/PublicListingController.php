@@ -12,9 +12,15 @@ use App\Http\Resources\SearchListingResource;
 use App\Models\Listing;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Validator;
+use stdClass;
 
 class PublicListingController extends Controller
 {
@@ -134,6 +140,74 @@ class PublicListingController extends Controller
 
     public function show(string $id): PublicListingResource
     {
+        return PublicListingResource::make($this->findPublicListing($id));
+    }
+
+    public function reviews(Request $request, string $id): AnonymousResourceCollection
+    {
+        $listing = $this->findPublicListing($id);
+        $query = $request->query();
+
+        $validator = validator($query, [
+            'page' => ['bail', 'sometimes', 'required', 'integer', 'min:1'],
+            'per_page' => ['bail', 'sometimes', 'required', 'integer', 'between:1,50'],
+        ]);
+
+        $validator->after(function (Validator $validator) use ($query): void {
+            foreach (array_diff(array_keys($query), ['page', 'per_page']) as $field) {
+                $validator->errors()->add($field, 'This query parameter is not supported.');
+            }
+
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+
+            $page = (int) ($query['page'] ?? 1);
+            $perPage = (int) ($query['per_page'] ?? 20);
+
+            if ($page - 1 > intdiv(PHP_INT_MAX, $perPage)) {
+                $validator->errors()->add('page', 'Page exceeds the supported range.');
+            }
+        });
+
+        if ($validator->fails()) {
+            throw new HttpResponseException(response()->json([
+                'error' => [
+                    'code' => 'VALIDATION_ERROR',
+                    'message' => 'The given data was invalid.',
+                    'details' => $validator->errors()->toArray(),
+                    'request_id' => (string) Str::uuid(),
+                ],
+            ], 422));
+        }
+
+        $filters = $validator->validated();
+        $reviews = $this->visibleReviews()
+            ->where('reviews.listing_id', $listing->id)
+            ->select(['reviews.id', 'reviews.rating', 'reviews.body', 'reviews.is_demo', 'reviews.created_at'])
+            ->orderByDesc('reviews.created_at')
+            ->orderByDesc('reviews.id')
+            ->paginate((int) ($filters['per_page'] ?? 20), ['*'], 'page', (int) ($filters['page'] ?? 1))
+            ->appends($filters)
+            ->through(static fn (stdClass $review): array => [
+                'id' => (string) $review->id,
+                'rating' => (int) $review->rating,
+                'body' => $review->body,
+                'is_demo' => (bool) $review->is_demo,
+                'created_at' => CarbonImmutable::parse($review->created_at, 'UTC')->format('Y-m-d\\TH:i:s.u\\Z'),
+            ]);
+
+        $attributes = $listing->getAttributes();
+        $average = $attributes['rating_average'] ?? null;
+
+        return JsonResource::collection($reviews)->additional([
+            'rating_average' => $average === null ? null : round((float) $average, 2),
+            'review_count' => (int) ($attributes['review_count'] ?? 0),
+        ]);
+    }
+
+    private function findPublicListing(string $id): Listing
+    {
         $listing = $this->publicListings()->whereKey($id)->first();
 
         if ($listing === null) {
@@ -146,7 +220,17 @@ class PublicListingController extends Controller
             ], 404));
         }
 
-        return PublicListingResource::make($listing);
+        return $listing;
+    }
+
+    private function visibleReviews(): QueryBuilder
+    {
+        return DB::table('reviews')
+            ->join('bookings', 'bookings.id', '=', 'reviews.booking_id')
+            ->whereColumn('bookings.listing_id', 'reviews.listing_id')
+            ->whereColumn('bookings.owner_id', 'reviews.owner_id')
+            ->where('bookings.status', 'COMPLETED')
+            ->where('reviews.status', 'VISIBLE');
     }
 
     /**
@@ -190,7 +274,7 @@ class PublicListingController extends Controller
             );
         }
 
-        $priced = $query->select('listings.*')->selectRaw(
+        $priced = $query->select('listings.*', 'review_ratings.rating_average', 'review_ratings.review_count')->selectRaw(
             'CASE '.implode(' ', $cases).' ELSE NULL END AS price_total_vnd',
             $bindings,
         );
@@ -204,9 +288,17 @@ class PublicListingController extends Controller
     /** @return Builder<Listing> */
     private function publicListings(): Builder
     {
+        $ratings = $this->visibleReviews()
+            ->where('reviews.is_demo', false)
+            ->select('reviews.listing_id')
+            ->selectRaw('AVG(reviews.rating) AS rating_average, COUNT(*) AS review_count')
+            ->groupBy('reviews.listing_id');
+
         return Listing::query()
+            ->select('listings.*', 'review_ratings.rating_average', 'review_ratings.review_count')
+            ->leftJoinSub($ratings, 'review_ratings', 'review_ratings.listing_id', '=', 'listings.id')
             ->with('media')
-            ->where('status', 'ACTIVE')
+            ->where('listings.status', 'ACTIVE')
             ->whereRelation('caregiverProfile.user', 'status', 'ACTIVE')
             ->whereRelation('caregiverProfile.user.roles', 'role', 'CAREGIVER');
     }

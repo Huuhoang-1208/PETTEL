@@ -62,7 +62,7 @@ Ký hiệu `!` = NOT NULL, `?` = nullable, `UQ` = unique. Ngoài các cột li�
 
 | Bảng | Cột cốt lõi | Khóa / quy tắc |
 | --- | --- | --- |
-| `users` (đã có, mở rộng) | `id`, `name!`, `email!`, `password!`, `email_verified_at?`, `remember_token?`, `status!` (`ACTIVE`, `SUSPENDED`, `DELETION_PENDING`, `DEACTIVATED`), `deletion_requested_at?`, timestamps | `UQ(email)` hiện có. `status` mới mặc định `ACTIVE`; `DELETION_PENDING` chỉ cho thao tác booking/report đang mở; sau khi đóng, ẩn danh và `DEACTIVATED` trong tối đa 30 ngày. Admin provisioning riêng. Không coi `email_verified_at` là email đã xác minh khi luồng verification chưa bật. |
+| `users` (đã có, mở rộng) | `id`, `name!`, `email!`, `password!`, `email_verified_at?`, `remember_token?`, `status!` (`ACTIVE`, `SUSPENDED`, `DELETION_PENDING`, `DEACTIVATED`), `deletion_requested_at?`, timestamps | `UQ(email)` hiện có. `status` mới mặc định `ACTIVE`. Quyền và thời hạn xử lý `DELETION_PENDING` theo [P0 §5–6](<../02 — Domain Documentation/05 — P0 Decision Contract.md#5-chat-care-update-và-quyền-caregiver>). Admin provisioning riêng. Không coi `email_verified_at` là email đã xác minh khi luồng verification chưa bật. |
 | `user_roles` | `user_id!`, `role!` (`OWNER`, `CAREGIVER`, `ADMIN`), `assigned_at!`, `assigned_by_user_id?` | PK `(user_id,role)`; FK user và assigner. Cột role/status là VARCHAR có CHECK trên MySQL 8.4, không dùng ENUM. Đăng ký thường gán OWNER phía server; user có thể đồng thời OWNER/CAREGIVER; ADMIN chỉ cấp ngoài luồng tự đăng ký. User tự bật CAREGIVER với audit; chỉ listing cần admin duyệt. |
 
 Giữ nguyên bảng Laravel `password_reset_tokens` và `sessions`; không tạo token SPA riêng. Nếu dùng Sanctum stateful cookie, `personal_access_tokens` chỉ xuất hiện nếu package/migration yêu cầu cho client bên ngoài, không dùng cho Vue P0.
@@ -132,7 +132,7 @@ Giá tổng nằm ở `price_snapshot_vnd`; đơn vị, số lượng, `pricing_
 
 | Bảng | Cột cốt lõi | Khóa / quy tắc |
 | --- | --- | --- |
-| `messages` | `id`, `booking_id!`, `sender_id!`, `body!`, `visibility!` (`VISIBLE`,`HIDDEN`), `created_at!` | FK booking/sender `RESTRICT`; hai bên đọc khi có quyền; ghi từ `REQUESTED` đến `AWAITING_CONFIRMATION`, terminal state chỉ đọc. Admin đọc khi có lý do/audit. |
+| `messages` | `id`, `booking_id!`, `sender_id!`, `body!`, `visibility!` (`VISIBLE`,`HIDDEN`), `created_at!` | FK booking/sender `RESTRICT`. Quyền chat theo [P0 §5](<../02 — Domain Documentation/05 — P0 Decision Contract.md#5-chat-care-update-và-quyền-caregiver>). |
 | `care_updates` | `id`, `booking_id!`, `sender_id!`, `body?`, `media_object_id?`, `visibility!`, `created_at!` | FK booking/sender/media `RESTRICT`; yêu cầu body hoặc media; chỉ tạo sau khi booking vào `IN_PROGRESS`, đóng quyền tạo mới khi rời `IN_PROGRESS`. Một ảnh/update P0; mở rộng bảng nối khi cần nhiều ảnh. |
 | `media_objects` | `id`, `owner_user_id!`, `object_key!`, `mime_type!`, `byte_size!`, `sha256!`, `visibility!` (`PRIVATE`,`PUBLIC_ELIGIBLE`), `state!` (`READY`,`PENDING_DELETE`), timestamps | `UQ(object_key)`; FK owner `RESTRICT`; `byte_size > 0`; MIME/size kiểm tra trước lưu. DB chỉ giữ key, không giữ public URL lâu dài hay đường dẫn máy. |
 
@@ -144,7 +144,7 @@ File thực nằm private storage. `listing_media` chỉ là quan hệ ảnh lis
 | --- | --- | --- |
 | `reviews` | `id`, `booking_id!`, `owner_id!`, `listing_id!`, `rating!`, `body?`, `status!` (`VISIBLE`,`HIDDEN`), `is_demo!` mặc định false, timestamps | `UQ(booking_id)`, FK booking/owner/listing `RESTRICT`, `CHECK(rating BETWEEN 1 AND 5)`. Service chỉ cho owner của booking `COMPLETED`. `owner_id/listing_id` là bản sao phục vụ truy vấn, phải khớp booking. |
 
-Chỉ review từ booking hoàn tất **thật trong hệ thống** và `VISIBLE` mới tính rating công khai. `is_demo` dùng để gắn nhãn minh họa; không gán “verified caregiver” từ review, rating hoặc seed. Không tạo bảng verification/badge P0; role caregiver tự kích hoạt, chỉ listing cần admin duyệt.
+Chỉ review `VISIBLE`, `is_demo = false`, gắn booking `COMPLETED` mới tính rating công khai. Theo [contract H05 chốt 07/11/2026](<../05 — Implementation Plan/BE-H05 — Contract review và rating công khai.md>), tính AVG/COUNT trực tiếp khi đọc theo listing, chưa thêm bảng/cột tổng hợp, cache hoặc job; response là `rating_average` (number làm tròn 2 chữ số thập phân) và `review_count` (integer), mặc định null/0 khi không có review đủ điều kiện. Review demo VISIBLE có thể hiển thị kèm `is_demo`, nhưng bị loại khỏi cả điểm và count. Review HIDDEN vẫn giữ unique booking; report không tự ẩn, moderation đổi trạng thái và ghi lịch sử cùng transaction. Không gán “verified caregiver” từ review, rating hoặc seed. Không tạo bảng verification/badge P0; role caregiver tự kích hoạt, chỉ listing cần admin duyệt.
 
 ### M09 — Report, Moderation, Audit
 
@@ -252,7 +252,7 @@ Chi tiết công thức, quyền theo trạng thái, thời hạn và ví dụ n
 | Giữ chỗ | 15 phút từ accept, retry không gia hạn; callback sau hạn không confirm. |
 | Hủy và payment | Không phí hủy trong sandbox. Owner/caregiver hủy từ REQUESTED đến trước IN_PROGRESS; hủy CONFIRMED trước start cần REFUNDED trước khi CANCELLED. Sau IN_PROGRESS chỉ admin xử lý ngoại lệ. |
 | Hoàn tất và tranh chấp | Nhắc owner sau 24 giờ; sau 72 giờ đưa admin queue, không auto release. Admin có lý do/audit chọn release+COMPLETED hoặc refund+CANCELLED ngoại lệ; report đang xử lý giữ booking chờ. Release lỗi retry cùng key 1/5/15 phút, rồi chuyển admin. |
-| Chat/care update | Hai bên chat từ REQUESTED đến AWAITING_CONFIRMATION; CANCELLED/COMPLETED chỉ đọc. Chỉ caregiver tạo care update trong IN_PROGRESS. |
+| Chat/care update | Quyền chat và thời hạn gửi sau `COMPLETED` theo [P0 §5](<../02 — Domain Documentation/05 — P0 Decision Contract.md#5-chat-care-update-và-quyền-caregiver>). Chỉ caregiver tạo care update trong `IN_PROGRESS`. |
 | Caregiver/verification | User tự bật role CAREGIVER; admin duyệt listing trước ACTIVE. Admin role cấp ngoài đăng ký; không có badge Verified/Pro thật hoặc `verification_claims` P0. |
 | Retention/xóa | Yêu cầu xóa đặt DELETION_PENDING, hạn chế truy cập; sau khi booking/report mở đóng thì ẩn danh và DEACTIVATED trong tối đa 30 ngày. Dữ liệu riêng booking giữ 90 ngày, dữ liệu cốt lõi 12 tháng, backup 30 ngày; report mở tạm giữ đến 90 ngày sau đóng. |
 | Công suất | Một booking khóa lịch trên một listing. Không có giới hạn chéo nhiều listing cùng caregiver trong P0. |

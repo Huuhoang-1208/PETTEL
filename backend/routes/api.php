@@ -4,6 +4,7 @@ use App\Http\Controllers\AcceptBookingController;
 use App\Http\Controllers\Admin\BookingCancellationQueueController;
 use App\Http\Controllers\Auth\EnableCaregiverRoleController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\BookingMessageController;
 use App\Http\Controllers\CancelBookingController;
 use App\Http\Controllers\CaregiverListingController;
 use App\Http\Controllers\CaregiverProfileController;
@@ -15,13 +16,22 @@ use App\Http\Controllers\ListingMediaController;
 use App\Http\Controllers\PetController;
 use App\Http\Controllers\PublicListingController;
 use App\Http\Controllers\RejectBookingController;
+use App\Http\Controllers\SandboxPaymentCallbackController;
+use App\Http\Controllers\SimulateSandboxPaymentController;
+use App\Http\Controllers\StartSandboxPaymentController;
+use App\Http\Controllers\StoreBookingReviewController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/listings', [PublicListingController::class, 'index']);
 Route::get('/listings/{id}', [PublicListingController::class, 'show'])->whereNumber('id');
+Route::get('/listings/{id}/reviews', [PublicListingController::class, 'reviews'])
+    ->whereNumber('id')->name('listings.reviews.index');
 Route::get('/listings/{id}/media/{mediaId}/content', [ListingMediaController::class, 'publicContent'])
     ->whereNumber(['id', 'mediaId'])->name('listings.media.content');
+
+Route::post('/sandbox/payment-callback', SandboxPaymentCallbackController::class)
+    ->name('sandbox.payment-callback');
 
 Route::middleware(['auth:sanctum', 'account.active'])->get('/user', function (Request $request) {
     return $request->user();
@@ -34,6 +44,12 @@ Route::post('/user/roles/caregiver', EnableCaregiverRoleController::class)
 Route::middleware(['auth:sanctum', 'account.active', 'role:OWNER'])->group(function () {
     Route::post('/bookings/quote', [BookingController::class, 'quote'])->name('bookings.quote');
     Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
+    Route::post('/bookings/{id}/sandbox-payments', StartSandboxPaymentController::class)
+        ->whereNumber('id')
+        ->name('bookings.sandbox-payments.store');
+    Route::post('/bookings/{id}/sandbox-payments/{attemptId}/simulate', SimulateSandboxPaymentController::class)
+        ->whereNumber(['id', 'attemptId'])
+        ->name('bookings.sandbox-payments.simulate');
 
     Route::get('/pets', [PetController::class, 'index'])->name('pets.index');
     Route::post('/pets', [PetController::class, 'store'])->name('pets.store');
@@ -42,6 +58,8 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:OWNER'])->group(funct
     Route::patch('/pets/{pet}/archive', [PetController::class, 'archive'])->name('pets.archive');
     Route::patch('/pets/{pet}/activate', [PetController::class, 'activate'])->name('pets.activate');
     Route::delete('/pets/{pet}', [PetController::class, 'destroy'])->name('pets.destroy');
+    Route::post('/bookings/{id}/reviews', StoreBookingReviewController::class)
+        ->whereNumber('id')->name('bookings.reviews.store');
 });
 
 Route::middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
@@ -113,4 +131,13 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         ->whereNumber('id')->name('bookings.care-updates.store');
     Route::get('/bookings/{id}/care-updates/{careUpdateId}/image', [CareUpdateController::class, 'image'])
         ->whereNumber(['id', 'careUpdateId'])->middleware('signed')->name('bookings.care-updates.image');
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/bookings/{id}/messages', [BookingMessageController::class, 'index'])
+        ->whereNumber('id')->name('bookings.messages.index');
+    Route::post('/bookings/{id}/messages', [BookingMessageController::class, 'store'])
+        ->whereNumber('id')->name('bookings.messages.store');
+    Route::get('/bookings/{id}/messages/{messageId}/attachment/{mediaId?}', [BookingMessageController::class, 'attachment'])
+        ->whereNumber(['id', 'messageId', 'mediaId'])->name('bookings.messages.attachment');
 });

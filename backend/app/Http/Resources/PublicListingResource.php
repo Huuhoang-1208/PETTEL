@@ -14,6 +14,8 @@ class PublicListingResource extends JsonResource
     {
         $total = $this->getAttributes()['price_total_vnd'] ?? null;
 
+        $average = $this->getAttributes()['rating_average'] ?? null;
+
         return [
             'id' => (string) $this->id,
             'title' => $this->title,
@@ -32,6 +34,8 @@ class PublicListingResource extends JsonResource
                 'thumbnail_url' => route('listings.media.content', ['id' => $this->id, 'mediaId' => $media->id, 'variant' => 'thumbnail']),
             ])->values()),
             'price_total_vnd' => $total === null ? null : (int) $total,
+            'rating_average' => $average === null ? null : round((float) $average, 2),
+            'review_count' => (int) ($this->getAttributes()['review_count'] ?? 0),
         ];
     }
 }

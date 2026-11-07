@@ -8,7 +8,9 @@ Mô phỏng payment cho booking: tạo attempt, nhận thành công/thất bại
 
 # Quy tắc
 
-Amount VND khớp booking snapshot. Callback có event ID duy nhất, secret/chữ ký và booking reference hợp lệ; xử lý idempotent, transaction bảo vệ chuyển trạng thái. Không RELEASED hai lần. Retry tạo attempt mới; chỉ attempt hiện hành được đổi booking. PENDING thất bại không tự xác nhận booking.
+Amount VND khớp booking snapshot. Callback có event ID duy nhất, secret/chữ ký và booking reference hợp lệ; xử lý idempotent, transaction bảo vệ chuyển trạng thái. Không RELEASED hai lần. Retry tạo attempt mới; chỉ attempt hiện hành được đổi booking. PENDING thất bại không tự xác nhận booking. Hạn thanh toán là 15 phút từ accept; callback authorize muộn không confirm/hồi sinh booking. Nếu sandbox đã authorize, tạo tác vụ bù void/refund có audit.
+
+Contract chi tiết của BE-HA05, gồm timeout, event ID/payload hash, response callback lỗi và lock order, nằm tại [BE-HA05 — Contract payment sandbox và callback](<../05 — Implementation Plan/BE-HA05 — Contract payment sandbox và callback.md>).
 
 # Dữ liệu và phụ thuộc
 

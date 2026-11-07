@@ -90,6 +90,7 @@ class RedactExpiredCareUpdates extends Command
     private function mediaReferencedElsewhere(MediaObject $media, CareUpdate $current): bool
     {
         return DB::table('care_updates')->where('media_object_id', $media->id)->where('id', '<>', $current->id)->exists()
+            || DB::table('message_attachments')->where('media_object_id', $media->id)->exists()
             || DB::table('pets')->where('photo_media_id', $media->id)->exists()
             || DB::table('listing_media')->where('media_object_id', $media->id)->exists();
     }

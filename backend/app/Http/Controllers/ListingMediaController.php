@@ -105,7 +105,8 @@ class ListingMediaController extends Controller
 
     public function ownerContent(Request $request, string $mediaId): Response
     {
-        $media = MediaObject::query()->whereKey($mediaId)->where('owner_user_id', $request->user()->id)->where('state', 'READY')->first();
+        $media = MediaObject::query()->whereKey($mediaId)->where('owner_user_id', $request->user()->id)
+            ->where('state', 'READY')->whereNotIn('id', MediaObject::messageAttachmentIds())->first();
         if ($media === null) {
             ListingError::fail(404, 'NOT_FOUND', 'Media not found.');
         }
@@ -121,7 +122,8 @@ class ListingMediaController extends Controller
         if ($listing === null) {
             ListingError::fail(404, 'NOT_FOUND', 'Listing not found.');
         }
-        $media = MediaObject::query()->whereKey($mediaId)->where('owner_user_id', $request->user()->id)->where('state', 'READY')->first();
+        $media = MediaObject::query()->whereKey($mediaId)->where('owner_user_id', $request->user()->id)
+            ->where('state', 'READY')->whereNotIn('id', MediaObject::messageAttachmentIds())->first();
         if ($media === null || ! $this->listingReferencesMedia($listing, $mediaId)) {
             ListingError::fail(404, 'NOT_FOUND', 'Media not found.');
         }
@@ -139,7 +141,8 @@ class ListingMediaController extends Controller
         if ((string) $listing->caregiverProfile()->value('user_id') === (string) $request->user()->id) {
             ListingError::fail(403, 'FORBIDDEN', 'An administrator cannot review their own listing.');
         }
-        $media = MediaObject::query()->whereKey($mediaId)->where('state', 'READY')->first();
+        $media = MediaObject::query()->whereKey($mediaId)->where('state', 'READY')
+            ->whereNotIn('id', MediaObject::messageAttachmentIds())->first();
         if ($media === null) {
             ListingError::fail(404, 'NOT_FOUND', 'Media not found.');
         }
@@ -254,7 +257,8 @@ class ListingMediaController extends Controller
         if (count(array_unique($ids)) !== count($ids)) {
             ListingError::fail(422, 'VALIDATION_ERROR', 'Media IDs must be unique.');
         }
-        $count = MediaObject::query()->whereIn('id', $ids)->where('owner_user_id', $owner->id)->where('state', 'READY')->count();
+        $count = MediaObject::query()->whereIn('id', $ids)->where('owner_user_id', $owner->id)
+            ->where('state', 'READY')->whereNotIn('id', MediaObject::messageAttachmentIds())->count();
         if ($count !== count($ids) || DB::table('pets')->whereIn('photo_media_id', $ids)->exists()
             || DB::table('care_updates')->whereIn('media_object_id', $ids)->exists()) {
             ListingError::fail(422, 'VALIDATION_ERROR', 'One or more images cannot be used.');
