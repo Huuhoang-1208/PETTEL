@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Booking;
+use App\Support\PublicReviewCache;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -86,11 +87,18 @@ class PublicReviewTest extends TestCase
         $booking = $fixture['booking'];
         $booking->update(['status' => 'COMPLETED']);
         $url = "/api/listings/{$booking->listing_id}";
+        $reviewsUrl = $url.'/reviews';
 
         $this->getJson($url)->assertOk()->assertJsonPath('data.review_count', 0);
+        $this->getJson($reviewsUrl)->assertOk()->assertJsonCount(0, 'data');
 
         $this->postJson("/api/bookings/{$booking->id}/reviews", ['rating' => 5])
             ->assertCreated();
+
+        $this->getJson($reviewsUrl)->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('rating_average', 5)
+            ->assertJsonPath('review_count', 1);
 
         $this->getJson($url)->assertOk()
             ->assertJsonPath('data.rating_average', 5)
@@ -98,6 +106,7 @@ class PublicReviewTest extends TestCase
 
         foreach (['HIDDEN', 'VISIBLE'] as $status) {
             DB::table('reviews')->where('booking_id', $booking->id)->update(['status' => $status]);
+            PublicReviewCache::invalidate((string) $booking->listing_id);
             $visible = $status === 'VISIBLE';
 
             $this->getJson($url)->assertOk()

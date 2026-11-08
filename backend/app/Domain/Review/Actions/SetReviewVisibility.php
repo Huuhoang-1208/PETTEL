@@ -3,6 +3,7 @@
 namespace App\Domain\Review\Actions;
 
 use App\Models\User;
+use App\Support\PublicReviewCache;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -23,7 +24,7 @@ class SetReviewVisibility
         $requestId = is_string($requestId) && Str::isUuid($requestId)
             ? $requestId : (string) Str::uuid();
 
-        DB::transaction(function () use ($actor, $reportId, $status, $reason, $requestId): void {
+        $listingId = DB::transaction(function () use ($actor, $reportId, $status, $reason, $requestId): ?string {
             $admin = User::query()->whereKey($actor->id)->lockForUpdate()->first();
             $role = DB::table('user_roles')->where('user_id', $actor->id)
                 ->where('role', 'ADMIN')->lockForUpdate()->first();
@@ -60,7 +61,7 @@ class SetReviewVisibility
             }
 
             if ($review->status === $status) {
-                return;
+                return null;
             }
 
             $action = $status === 'HIDDEN' ? 'REVIEW_HIDDEN' : 'REVIEW_RESTORED';
@@ -95,7 +96,13 @@ class SetReviewVisibility
                 ], JSON_THROW_ON_ERROR),
                 'created_at' => $now,
             ]);
+
+            return (string) $review->listing_id;
         }, 3);
+
+        if ($listingId !== null) {
+            PublicReviewCache::invalidate($listingId);
+        }
     }
 
     /** @param array<string, mixed> $details */

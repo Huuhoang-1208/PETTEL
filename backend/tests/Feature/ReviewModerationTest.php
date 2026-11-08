@@ -78,10 +78,14 @@ class ReviewModerationTest extends TestCase
     {
         $fixture = $this->fixture();
         $action = app(SetReviewVisibility::class);
+        $reviewsUrl = "/api/listings/{$fixture['booking']->listing_id}/reviews";
+
+        $this->getJson($reviewsUrl)->assertOk()->assertJsonCount(1, 'data');
 
         foreach (['HIDDEN', 'HIDDEN'] as $status) {
             $action->handle($fixture['admin'], $fixture['report_id'], $status, 'Hide review');
         }
+        $this->getJson($reviewsUrl)->assertOk()->assertJsonCount(0, 'data');
         $this->assertDatabaseCount('moderation_actions', 1);
         $this->assertDatabaseCount('audit_logs', 1);
 
@@ -89,7 +93,7 @@ class ReviewModerationTest extends TestCase
             $action->handle($fixture['admin'], $fixture['report_id'], $status, 'Restore review');
         }
 
-        $this->getJson("/api/listings/{$fixture['booking']->listing_id}/reviews")->assertOk()
+        $this->getJson($reviewsUrl)->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('rating_average', 5)
             ->assertJsonPath('review_count', 1);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\User;
+use App\Support\PublicReviewCache;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
@@ -114,6 +115,8 @@ class StoreBookingReviewController extends Controller
 
             $this->fail(409, 'REVIEW_ALREADY_EXISTS', 'This booking already has a review.');
         }
+
+        PublicReviewCache::invalidate($review['listing_id']);
 
         return response()->json(['data' => $review], 201);
     }
