@@ -137,7 +137,7 @@ Gate BE chỉ được xác nhận khi đạt các điều kiện tại mục 5 
 |---|---|---|---|
 | 1. Query/cache/benchmark | Pass (synthetic workload) | [k6 raw results](../../backend/benchmarks/results), [EXPLAIN notes](../../backend/benchmarks/results/explain-analyze.md), [benchmark instructions/results](../../backend/benchmarks/README.md) | Search p95 ~0.76–0.79s, detail ~0.68–0.70s, HTTP errors 0%; cache warm review p95 mean 0.35s vs one tagged no-cache 0.62s. Synthetic data/host only; not a production capacity guarantee. |
 | 2. Scramble/OpenAPI | In progress / Blocked | `backend/composer.json`, `backend/composer.lock`, [OpenAPI tạm sinh](<../08 — Architecture & Technical Design/OpenAPI — Scramble provisional.json>), `ApiDocumentationAccessTest` | 66 API operations được sinh; inventory có 68 route rows gồm docs UI/JSON (2 route ngoài API) và một optional path được chuẩn hóa. `--fail-on-unknown` phát hiện 57 schema chưa suy luận; cần bổ sung type/response contract và route → test matrix trước khi nghiệm thu. |
-| 3. Bốn workflow/Gate BE | Blocked | CI backend: 384 passed / 4,331 assertions | Report creation/admin triage chưa có API; chưa thấy lifecycle completion/release đầy đủ; Pulse chưa được cài; cần kiểm tra vận hành worker/scheduler và nhận xác nhận owners. |
+| 3. Bốn workflow/Gate BE | Blocked | CI backend: 384 passed / 4,341 assertions | Report creation/admin triage chưa có API; chưa thấy lifecycle completion/release đầy đủ; Pulse chưa được cài; cần kiểm tra vận hành worker/scheduler và nhận xác nhận owners. |
 | Gate BE tổng thể | Blocked | — | Chưa đạt đầy đủ điều kiện mục 5 |
 | Frontend | Blocked | — | Chỉ unblocked sau Gate BE Pass |
 
