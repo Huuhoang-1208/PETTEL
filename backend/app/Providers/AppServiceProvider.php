@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Domain\Booking\Payment\PaymentCancellationGateway;
-use App\Domain\Booking\Payment\UnavailablePaymentCancellationGateway;
+use App\Domain\Booking\Payment\PaymentReleaseGateway;
+use App\Domain\Booking\Payment\SandboxPaymentCancellationGateway;
+use App\Domain\Booking\Payment\SandboxPaymentReleaseGateway;
 use App\Models\User;
 use App\Support\PerformanceQueryRecorder;
 use Carbon\CarbonImmutable;
@@ -38,7 +40,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->bind(PaymentCancellationGateway::class, UnavailablePaymentCancellationGateway::class);
+        $this->app->bind(PaymentCancellationGateway::class, SandboxPaymentCancellationGateway::class);
+        $this->app->bind(PaymentReleaseGateway::class, SandboxPaymentReleaseGateway::class);
     }
 
     /**
@@ -52,13 +55,31 @@ class AppServiceProvider extends ServiceProvider
                     'App\\Http\\Requests\\StoreBookingRequest' => ['Idempotency-Key'],
                     'App\\Http\\Requests\\CancelBookingRequest' => ['Idempotency-Key'],
                     'App\\Http\\Requests\\ListingRequest' => [
-                        'id', 'user_id', 'caregiver_profile_id', 'status', 'capacity', 'version',
-                        'suspension_source', 'published_at', 'created_at', 'updated_at', 'deleted_at',
-                        'listing_media', 'availability_slots',
+                        'id',
+                        'user_id',
+                        'caregiver_profile_id',
+                        'status',
+                        'capacity',
+                        'version',
+                        'suspension_source',
+                        'published_at',
+                        'created_at',
+                        'updated_at',
+                        'deleted_at',
+                        'listing_media',
+                        'availability_slots',
                     ],
                     'App\\Http\\Requests\\CaregiverProfileRequest' => [
-                        'id', 'user_id', 'caregiver_profile_id', 'status', 'capacity', 'version',
-                        'published_at', 'created_at', 'updated_at', 'deleted_at',
+                        'id',
+                        'user_id',
+                        'caregiver_profile_id',
+                        'status',
+                        'capacity',
+                        'version',
+                        'published_at',
+                        'created_at',
+                        'updated_at',
+                        'deleted_at',
                     ],
                 ];
 
@@ -165,8 +186,16 @@ class AppServiceProvider extends ServiceProvider
                         'decision_reason' => $string('', [], true),
                         'listing_version' => new IntegerType,
                     ], [
-                        'id', 'listing_id', 'base_listing_version', 'proposed_data_json', 'status',
-                        'requested_by_user_id', 'requested_at', 'reviewed_by_user_id', 'reviewed_at', 'decision_reason',
+                        'id',
+                        'listing_id',
+                        'base_listing_version',
+                        'proposed_data_json',
+                        'status',
+                        'requested_by_user_id',
+                        'requested_at',
+                        'reviewed_by_user_id',
+                        'reviewed_at',
+                        'decision_reason',
                     ]);
                 };
                 $schemaFor = static function (string $route, string $method, string $status = '200') use ($openApi): ?Schema {
@@ -179,9 +208,11 @@ class AppServiceProvider extends ServiceProvider
                             return null;
                         }
                         foreach ($operation->responses ?? [] as $response) {
-                            if (! $response instanceof Response
+                            if (
+                                ! $response instanceof Response
                                 || (string) $response->code !== $status
-                                || ! array_key_exists('application/json', $response->content)) {
+                                || ! array_key_exists('application/json', $response->content)
+                            ) {
                                 continue;
                             }
                             $schema = $response->getContent('application/json');
@@ -200,9 +231,11 @@ class AppServiceProvider extends ServiceProvider
                             continue;
                         }
                         $operation = $path->operations[strtolower($method)] ?? null;
-                        if ($operation === null || collect($operation->responses ?? [])->contains(
-                            fn ($response): bool => $response instanceof Response && (string) $response->code === '201',
-                        )) {
+                        if (
+                            $operation === null || collect($operation->responses ?? [])->contains(
+                                fn ($response): bool => $response instanceof Response && (string) $response->code === '201',
+                            )
+                        ) {
                             return;
                         }
                         foreach ($operation->responses ?? [] as $response) {
@@ -248,9 +281,14 @@ class AppServiceProvider extends ServiceProvider
                 }
 
                 $booking = $object([
-                    'id' => $string(), 'status' => $string(), 'pet_id' => $string(), 'listing_id' => $string(),
-                    'start_at' => $string('date-time'), 'end_at' => $string('date-time'),
-                    'price_snapshot_vnd' => new IntegerType, 'payment_due_at' => $string('date-time', [], true),
+                    'id' => $string(),
+                    'status' => $string(),
+                    'pet_id' => $string(),
+                    'listing_id' => $string(),
+                    'start_at' => $string('date-time'),
+                    'end_at' => $string('date-time'),
+                    'price_snapshot_vnd' => new IntegerType,
+                    'payment_due_at' => $string('date-time', [], true),
                 ], ['id', 'status', 'pet_id', 'listing_id', 'start_at', 'end_at', 'price_snapshot_vnd', 'payment_due_at']);
                 if ($schema = $schemaFor('bookings', 'post', '200')) {
                     $schema->type = clone $booking;
@@ -259,11 +297,18 @@ class AppServiceProvider extends ServiceProvider
                     $schema->type = clone $booking;
                 }
 
-                $paymentStart = $object(['data' => $object([
-                    'id' => $string(), 'booking_id' => $string(), 'attempt_no' => new IntegerType,
-                    'amount_vnd' => new IntegerType, 'status' => $string(), 'provider_ref' => $string(),
-                    'payment_due_at' => $string('date-time', [], true), 'is_sandbox' => new BooleanType,
-                ], ['id', 'booking_id', 'attempt_no', 'amount_vnd', 'status', 'provider_ref', 'payment_due_at', 'is_sandbox'])], ['data']);
+                $paymentStart = $object([
+                    'data' => $object([
+                        'id' => $string(),
+                        'booking_id' => $string(),
+                        'attempt_no' => new IntegerType,
+                        'amount_vnd' => new IntegerType,
+                        'status' => $string(),
+                        'provider_ref' => $string(),
+                        'payment_due_at' => $string('date-time', [], true),
+                        'is_sandbox' => new BooleanType,
+                    ], ['id', 'booking_id', 'attempt_no', 'amount_vnd', 'status', 'provider_ref', 'payment_due_at', 'is_sandbox']),
+                ], ['data']);
                 foreach (['200', '201'] as $status) {
                     if ($schema = $schemaFor('bookings/{id}/sandbox-payments', 'post', $status)) {
                         $schema->type = clone $paymentStart;
@@ -271,19 +316,26 @@ class AppServiceProvider extends ServiceProvider
                 }
 
                 $reviewItem = $object([
-                    'id' => $string(), 'rating' => new IntegerType, 'body' => $string('', [], true),
-                    'is_demo' => new BooleanType, 'created_at' => $string('date-time'),
+                    'id' => $string(),
+                    'rating' => new IntegerType,
+                    'body' => $string('', [], true),
+                    'is_demo' => new BooleanType,
+                    'created_at' => $string('date-time'),
                 ], ['id', 'rating', 'body', 'is_demo', 'created_at']);
                 if ($schema = $schemaFor('listings/{id}/reviews', 'get')) {
                     $schema->type = $object([
                         'data' => $array($reviewItem),
                         'links' => $object([
-                            'first' => $string('uri'), 'last' => $string('uri'),
-                            'prev' => $string('uri', [], true), 'next' => $string('uri', [], true),
+                            'first' => $string('uri'),
+                            'last' => $string('uri'),
+                            'prev' => $string('uri', [], true),
+                            'next' => $string('uri', [], true),
                         ], ['first', 'last', 'prev', 'next']),
                         'meta' => $object([
-                            'current_page' => new IntegerType, 'last_page' => new IntegerType,
-                            'per_page' => new IntegerType, 'total' => new IntegerType,
+                            'current_page' => new IntegerType,
+                            'last_page' => new IntegerType,
+                            'per_page' => new IntegerType,
+                            'total' => new IntegerType,
                         ], ['current_page', 'last_page', 'per_page', 'total']),
                         'rating_average' => (new NumberType)->nullable(true),
                         'review_count' => new IntegerType,
@@ -302,28 +354,58 @@ class AppServiceProvider extends ServiceProvider
                 }
 
                 if ($schema = $schemaFor('bookings/{id}/reviews', 'post')) {
-                    $schema->type = $object(['data' => $object([
-                        'id' => $string(), 'booking_id' => $string(), 'listing_id' => $string(),
-                        'rating' => new IntegerType, 'body' => $string('', [], true), 'status' => $string(),
-                        'is_demo' => new BooleanType, 'created_at' => $string('date-time'),
-                    ], ['id', 'booking_id', 'listing_id', 'rating', 'body', 'status', 'is_demo', 'created_at'])], ['data']);
+                    $schema->type = $object([
+                        'data' => $object([
+                            'id' => $string(),
+                            'booking_id' => $string(),
+                            'listing_id' => $string(),
+                            'rating' => new IntegerType,
+                            'body' => $string('', [], true),
+                            'status' => $string(),
+                            'is_demo' => new BooleanType,
+                            'created_at' => $string('date-time'),
+                        ], ['id', 'booking_id', 'listing_id', 'rating', 'body', 'status', 'is_demo', 'created_at']),
+                    ], ['data']);
                 }
                 if ($schema = $schemaFor('bookings/{id}/reviews', 'post', '201')) {
-                    $schema->type = $object(['data' => $object([
-                        'id' => $string(), 'booking_id' => $string(), 'listing_id' => $string(),
-                        'rating' => new IntegerType, 'body' => $string('', [], true), 'status' => $string(),
-                        'is_demo' => new BooleanType, 'created_at' => $string('date-time'),
-                    ], ['id', 'booking_id', 'listing_id', 'rating', 'body', 'status', 'is_demo', 'created_at'])], ['data']);
+                    $schema->type = $object([
+                        'data' => $object([
+                            'id' => $string(),
+                            'booking_id' => $string(),
+                            'listing_id' => $string(),
+                            'rating' => new IntegerType,
+                            'body' => $string('', [], true),
+                            'status' => $string(),
+                            'is_demo' => new BooleanType,
+                            'created_at' => $string('date-time'),
+                        ], ['id', 'booking_id', 'listing_id', 'rating', 'body', 'status', 'is_demo', 'created_at']),
+                    ], ['data']);
                 }
 
                 $setUnknownTypes = static function ($type, string $route = '', string $method = '') use (&$setUnknownTypes, $string, $object): void {
                     if ($type instanceof ObjectType) {
                         foreach ($type->properties as $name => $property) {
-                            if ($property instanceof UnknownType || in_array($name, [
-                                'sex', 'size', 'service_type', 'area_code', 'price_unit', 'processing_status',
-                                'rejection_code', 'mime_type', 'listing_version', 'created_at', 'start_at',
-                                'end_at', 'decided_at', 'image_url', 'thumbnail_url', 'body', 'result',
-                            ], true)) {
+                            if (
+                                $property instanceof UnknownType || in_array($name, [
+                                    'sex',
+                                    'size',
+                                    'service_type',
+                                    'area_code',
+                                    'price_unit',
+                                    'processing_status',
+                                    'rejection_code',
+                                    'mime_type',
+                                    'listing_version',
+                                    'created_at',
+                                    'start_at',
+                                    'end_at',
+                                    'decided_at',
+                                    'image_url',
+                                    'thumbnail_url',
+                                    'body',
+                                    'result',
+                                ], true)
+                            ) {
                                 $replacement = match ($name) {
                                     'sex' => $string('', ['MALE', 'FEMALE', 'UNKNOWN'], true),
                                     'size' => $string('', ['SMALL', 'MEDIUM', 'LARGE'], true),
@@ -342,12 +424,17 @@ class AppServiceProvider extends ServiceProvider
                                     default => $property,
                                 };
                                 $type->properties[$name] = $replacement;
-                            } elseif ($property instanceof ArrayType && $name === 'items'
+                            } elseif (
+                                $property instanceof ArrayType && $name === 'items'
                                 && $route === 'listings/{id}/reviews' && $method === 'get'
-                                && $property->items instanceof UnknownType) {
+                                && $property->items instanceof UnknownType
+                            ) {
                                 $property->items = $object([
-                                    'id' => $string(), 'rating' => new IntegerType, 'body' => $string('', [], true),
-                                    'is_demo' => new BooleanType, 'created_at' => $string('date-time'),
+                                    'id' => $string(),
+                                    'rating' => new IntegerType,
+                                    'body' => $string('', [], true),
+                                    'is_demo' => new BooleanType,
+                                    'created_at' => $string('date-time'),
                                 ], ['id', 'rating', 'body', 'is_demo', 'created_at']);
                             } else {
                                 $setUnknownTypes($property, $route, $method);
@@ -380,12 +467,16 @@ class AppServiceProvider extends ServiceProvider
                 foreach ($openApi->paths as $routePath => $path) {
                     foreach ($path->operations as $method => $operation) {
                         foreach ($operation->parameters as $parameter) {
-                            if ($parameter instanceof Parameter && $parameter->name === 'variant'
-                                && $parameter->schema instanceof Schema) {
+                            if (
+                                $parameter instanceof Parameter && $parameter->name === 'variant'
+                                && $parameter->schema instanceof Schema
+                            ) {
                                 $parameter->schema->type = $string('', ['image', 'thumbnail']);
                             }
-                            if ($parameter instanceof Parameter && $parameter->name === 'change_request_id'
-                                && $parameter->in === 'query') {
+                            if (
+                                $parameter instanceof Parameter && $parameter->name === 'change_request_id'
+                                && $parameter->in === 'query'
+                            ) {
                                 $type = $string();
                                 $type->pattern = '^[1-9][0-9]*$';
                                 $parameter->setSchema(Schema::fromType($type));
@@ -399,8 +490,10 @@ class AppServiceProvider extends ServiceProvider
                             }
                         }
                         foreach ($operation->responses ?? [] as $response) {
-                            if (! $response instanceof Response
-                                || ! array_key_exists('application/json', $response->content)) {
+                            if (
+                                ! $response instanceof Response
+                                || ! array_key_exists('application/json', $response->content)
+                            ) {
                                 continue;
                             }
                             $responseSchema = $response->getContent('application/json');
@@ -432,6 +525,8 @@ class AppServiceProvider extends ServiceProvider
                     'bookings|post' => 'Creates a REQUESTED booking from server-owned price and caller identity. A matching idempotency key replays the prior result; a key reused with changed business data conflicts.',
                     'bookings/quote|post' => 'Calculates the current quote without creating a booking or requiring an idempotency key.',
                     'bookings/{id}/accept|post' => 'Transitions an eligible REQUESTED booking to AWAITING_PAYMENT and creates one calendar hold; invalid state, expiry, or unavailable calendar is rejected.',
+                    'bookings/{id}/start|post' => 'Only the assigned caregiver can transition a CONFIRMED booking to IN_PROGRESS; the booking and its status event are committed together.',
+                    'bookings/{id}/request-completion|post' => 'Only the assigned caregiver can report completion from IN_PROGRESS, transitioning the booking to AWAITING_CONFIRMATION; this does not complete or release payment.',
                     'bookings/{id}/cancel|post' => 'Cancellation behavior depends on booking/payment state. Payment void/refund processing can be queued; the response may be accepted for asynchronous processing.',
                     'bookings/{id}/reject|post' => 'Caregiver rejection is allowed only for an eligible REQUESTED booking. A replay by the same caregiver does not add a second event.',
                     'bookings/{id}/care-updates|post' => 'Only the assigned caregiver may create an update while the booking is IN_PROGRESS; `body` and/or an image may be supplied.',
@@ -463,10 +558,14 @@ class AppServiceProvider extends ServiceProvider
                     'caregiver/listings/{id}/restore|post' => 'Restores a caregiver-owned archived listing only when its state and caregiver eligibility permit it.',
                     'pets/{pet}/archive|patch' => 'Archives a pet owned by the authenticated user; archived pets are excluded from active Smart Match use.',
                     'pets/{pet}/activate|patch' => 'Activates a pet owned by the authenticated user, subject to the pet lifecycle rules.',
+                    'bookings/{id}/confirm-completion|post' => 'Only the booking owner may confirm completion. The request creates or reuses one durable release operation; the booking remains AWAITING_CONFIRMATION until sandbox release succeeds.',
                 ];
                 $methodNames = [
-                    'get' => 'Get', 'post' => 'Create', 'put' => 'Replace',
-                    'patch' => 'Update', 'delete' => 'Delete',
+                    'get' => 'Get',
+                    'post' => 'Create',
+                    'put' => 'Replace',
+                    'patch' => 'Update',
+                    'delete' => 'Delete',
                 ];
                 $responseDescriptions = [
                     '200' => 'The operation completed successfully.',
@@ -534,8 +633,11 @@ class AppServiceProvider extends ServiceProvider
                         $mutating = in_array($method, ['post', 'put', 'patch', 'delete'], true);
                         $hasResourceId = str_contains($route, '{');
                         $hasQueryContract = in_array($route, [
-                            'listings', 'admin/listings', 'admin/listing-change-requests',
-                            'caregiver/listings', 'caregiver/listings/{id}/change-requests',
+                            'listings',
+                            'admin/listings',
+                            'admin/listing-change-requests',
+                            'caregiver/listings',
+                            'caregiver/listings/{id}/change-requests',
                         ], true);
                         $statefulAction = $mutating && ($protected || str_starts_with($route, 'sandbox/'));
                         $expectedErrors = [];
@@ -601,14 +703,15 @@ class AppServiceProvider extends ServiceProvider
                 'email' => $notifiable->getEmailForPasswordReset(),
             ]));
 
-        Password::defaults(fn (): ?Password => app()->isProduction()
-            ? Password::min(12)
-                ->mixedCase()
-                ->letters()
-                ->numbers()
-                ->symbols()
-                ->uncompromised()
-            : null,
+        Password::defaults(
+            fn (): ?Password => app()->isProduction()
+                ? Password::min(12)
+                    ->mixedCase()
+                    ->letters()
+                    ->numbers()
+                    ->symbols()
+                    ->uncompromised()
+                : null,
         );
     }
 }

@@ -3,12 +3,14 @@
 use App\Http\Controllers\AcceptBookingController;
 use App\Http\Controllers\Admin\BookingCancellationQueueController;
 use App\Http\Controllers\Auth\EnableCaregiverRoleController;
+use App\Http\Controllers\BookingCareLifecycleController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BookingMessageController;
 use App\Http\Controllers\CancelBookingController;
 use App\Http\Controllers\CaregiverListingController;
 use App\Http\Controllers\CaregiverProfileController;
 use App\Http\Controllers\CareUpdateController;
+use App\Http\Controllers\ConfirmBookingCompletionController;
 use App\Http\Controllers\ListingAvailabilityController;
 use App\Http\Controllers\ListingChangeRequestController;
 use App\Http\Controllers\ListingLifecycleController;
@@ -50,6 +52,9 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:OWNER'])->group(funct
     Route::post('/bookings/{id}/sandbox-payments/{attemptId}/simulate', SimulateSandboxPaymentController::class)
         ->whereNumber(['id', 'attemptId'])
         ->name('bookings.sandbox-payments.simulate');
+    Route::post('/bookings/{id}/confirm-completion', ConfirmBookingCompletionController::class)
+        ->whereNumber('id')
+        ->name('bookings.confirm-completion');
 
     Route::get('/pets', [PetController::class, 'index'])->name('pets.index');
     Route::post('/pets', [PetController::class, 'store'])->name('pets.store');
@@ -123,6 +128,16 @@ Route::post('/bookings/{id}/accept', AcceptBookingController::class)
     ->middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
     ->whereNumber('id')
     ->name('bookings.accept');
+
+Route::post('/bookings/{id}/start', [BookingCareLifecycleController::class, 'start'])
+    ->middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
+    ->whereNumber('id')
+    ->name('bookings.start');
+
+Route::post('/bookings/{id}/request-completion', [BookingCareLifecycleController::class, 'requestCompletion'])
+    ->middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
+    ->whereNumber('id')
+    ->name('bookings.request-completion');
 
 Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::get('/bookings/{id}/care-updates', [CareUpdateController::class, 'index'])

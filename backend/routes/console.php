@@ -16,3 +16,4 @@ if (app()->environment('local')) {
 Schedule::command('bookings:process-expiries --batch=100')->everyMinute();
 Schedule::command('bookings:process-cancellations --batch=100')->everyMinute();
 Schedule::command('care-updates:redact-expired --batch=100')->daily();
+Schedule::command('bookings:process-releases --batch=100')->everyMinute();
