@@ -56,6 +56,18 @@ class AuthenticationTest extends TestCase
             ->assertUnauthorized();
     }
 
+    public function test_current_user_endpoint_requires_authentication_and_returns_the_session_user(): void
+    {
+        $this->getJson('/api/user')->assertUnauthorized();
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->getJson('/api/user')
+            ->assertOk()
+            ->assertJsonPath('id', $user->id)
+            ->assertJsonPath('email', $user->email);
+    }
+
     public function test_users_can_logout(): void
     {
         $user = User::factory()->create();

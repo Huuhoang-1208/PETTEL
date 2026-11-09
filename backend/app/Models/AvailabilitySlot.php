@@ -2,10 +2,15 @@
 
 namespace App\Models;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/** @property int $id
+ * @property CarbonImmutable $start_at
+ * @property CarbonImmutable $end_at
+ */
 class AvailabilitySlot extends Model
 {
     use SoftDeletes;

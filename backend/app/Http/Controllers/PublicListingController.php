@@ -145,6 +145,9 @@ class PublicListingController extends Controller
         return PublicListingResource::make($this->findPublicListing($id));
     }
 
+    /**
+     * @response array{data: list<array{id: string, rating: int, body: ?string, is_demo: bool, created_at: string}>, links: array{first: string, last: string, prev: ?string, next: ?string}, meta: array{current_page: int, last_page: int, per_page: int, total: int}, rating_average: ?float, review_count: int}
+     */
     public function reviews(Request $request, string $id): AnonymousResourceCollection
     {
         $listing = $this->findPublicListing($id);

@@ -15,6 +15,9 @@ use Normalizer;
 
 class StoreBookingReviewController extends Controller
 {
+    /**
+     * @response array{data: array{id: string, booking_id: string, listing_id: string, rating: int, body: ?string, status: string, is_demo: bool, created_at: string}}
+     */
     public function __invoke(Request $request, string $id): JsonResponse
     {
         $owner = $request->user();

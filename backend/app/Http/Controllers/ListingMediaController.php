@@ -9,6 +9,7 @@ use App\Http\Resources\ListingResource;
 use App\Models\Listing;
 use App\Models\MediaObject;
 use App\Models\User;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -43,6 +44,10 @@ class ListingMediaController extends Controller
             ListingError::fail(422, 'VALIDATION_ERROR', 'Image dimensions exceed the allowed limit.', ['file' => ['Maximum 20 megapixels.']]);
         }
         $mime = (new \finfo(FILEINFO_MIME_TYPE))->buffer($bytes);
+        if (! is_string($mime)) {
+            imagedestroy($image);
+            ListingError::fail(422, 'VALIDATION_ERROR', 'Unsupported image content.', ['file' => ['Upload a valid JPEG, PNG or WebP image.']]);
+        }
         $format = match ($mime) {
             'image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp',
             default => null,
@@ -99,7 +104,7 @@ class ListingMediaController extends Controller
         }
 
         return response()->json(['data' => [
-            'id' => (string) $media->id, 'mime_type' => $mime, 'byte_size' => $media->byte_size,
+            'id' => (string) $media->id, 'mime_type' => (string) $mime, 'byte_size' => $media->byte_size,
         ]], 201);
     }
 
@@ -132,6 +137,7 @@ class ListingMediaController extends Controller
         return $this->serve($media, $query['variant'] ?? 'image');
     }
 
+    #[QueryParameter('change_request_id', description: 'Positive ID of a pending change request whose proposed media is being reviewed.', type: 'string', infer: false)]
     public function adminContent(Request $request, string $id, string $mediaId): Response
     {
         $listing = Listing::query()->whereKey($id)->first();
@@ -217,8 +223,8 @@ class ListingMediaController extends Controller
         $allowed = $admin ? ['variant', 'change_request_id'] : ['variant'];
 
         return app(ListingInput::class)->query($request, $allowed, [
-            'variant' => ['sometimes', 'in:image,thumbnail'],
-            'change_request_id' => ['sometimes', 'regex:/^[1-9][0-9]*$/'],
+            'variant' => ['sometimes', 'string', 'in:image,thumbnail'],
+            'change_request_id' => ['sometimes', 'string', 'regex:/^[1-9][0-9]*$/'],
         ]);
     }
 

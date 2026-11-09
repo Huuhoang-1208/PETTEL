@@ -51,17 +51,29 @@ class CaregiverProfileRequest extends FormRequest
                     'DN_EAST',
                 ]),
             ],
-            'id' => ['missing'],
-            'user_id' => ['missing'],
-            'caregiver_profile_id' => ['missing'],
-            'status' => ['missing'],
-            'capacity' => ['missing'],
-            'version' => ['missing'],
-            'published_at' => ['missing'],
-            'created_at' => ['missing'],
-            'updated_at' => ['missing'],
-            'deleted_at' => ['missing'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            foreach ([
+                'id',
+                'user_id',
+                'caregiver_profile_id',
+                'status',
+                'capacity',
+                'version',
+                'published_at',
+                'created_at',
+                'updated_at',
+                'deleted_at',
+            ] as $field) {
+                if (array_key_exists($field, $this->getInputSource()->all())) {
+                    $validator->errors()->add($field, "The {$field} field must not be present.");
+                }
+            }
+        });
     }
 
     protected function failedValidation(Validator $validator): void

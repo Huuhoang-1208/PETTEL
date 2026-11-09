@@ -14,6 +14,7 @@ class ApiDocumentationAccessTest extends TestCase
     public function test_api_documentation_is_not_available_to_guests(): void
     {
         $this->getJson('/docs/api.json')->assertForbidden();
+        $this->get('/docs/api')->assertForbidden();
     }
 
     public function test_api_documentation_is_not_available_to_non_admin_users(): void
@@ -26,6 +27,7 @@ class ApiDocumentationAccessTest extends TestCase
         ]);
 
         $this->actingAs($user)->getJson('/docs/api.json')->assertForbidden();
+        $this->actingAs($user)->get('/docs/api')->assertForbidden();
     }
 
     public function test_active_admin_can_view_the_openapi_document(): void
@@ -40,6 +42,15 @@ class ApiDocumentationAccessTest extends TestCase
         $this->actingAs($admin)
             ->getJson('/docs/api.json')
             ->assertOk()
-            ->assertJsonPath('openapi', fn (string $version): bool => str_starts_with($version, '3.'));
+            ->assertJsonPath('openapi', fn (string $version): bool => str_starts_with($version, '3.'))
+            ->assertJsonPath('info.title', 'PETTEL')
+            ->assertJsonPath('components.securitySchemes.sanctumSession.type', 'apiKey')
+            ->assertJsonPath('components.securitySchemes.sanctumSession.in', 'cookie')
+            ->assertJsonPath('components.securitySchemes.sanctumSession.name', config('session.cookie'))
+            ->assertJsonPath('security.0.sanctumSession', [])
+            ->assertJsonPath('paths./listings.get.security', [])
+            ->assertJsonMissingPath('components.securitySchemes.bearerAuth');
+
+        $this->actingAs($admin)->get('/docs/api')->assertOk();
     }
 }

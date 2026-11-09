@@ -11,7 +11,12 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /** @mixin Message */
 class BookingMessageResource extends JsonResource
 {
-    /** @return array<string, mixed> */
+    /**
+     * @return array{
+     *   id: string, booking_id: string, sender_id: string, body: ?string, created_at: string,
+     *   attachments: mixed
+     * }
+     */
     public function toArray(Request $request): array
     {
         return [
@@ -19,7 +24,7 @@ class BookingMessageResource extends JsonResource
             'booking_id' => (string) $this->booking_id,
             'sender_id' => (string) $this->sender_id,
             'body' => $this->body,
-            'created_at' => CarbonImmutable::parse($this->created_at, 'UTC')->format('Y-m-d\TH:i:s.u\Z'),
+            'created_at' => self::formatTimestamp($this->created_at),
             'attachments' => $this->whenLoaded('attachments', fn () => $this->attachments->map(
                 fn (MediaObject $media): array => [
                     'id' => (string) $media->getKey(),
@@ -33,5 +38,14 @@ class BookingMessageResource extends JsonResource
                 ],
             )),
         ];
+    }
+
+    private static function formatTimestamp(mixed $value): string
+    {
+        $timestamp = $value instanceof \DateTimeInterface
+            ? CarbonImmutable::instance($value)
+            : CarbonImmutable::parse((string) $value, 'UTC');
+
+        return $timestamp->utc()->format('Y-m-d\TH:i:s.u\Z');
     }
 }

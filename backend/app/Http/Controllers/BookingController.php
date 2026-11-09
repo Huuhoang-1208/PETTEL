@@ -11,6 +11,9 @@ use Illuminate\Support\Arr;
 
 class BookingController extends Controller
 {
+    /**
+     * @response array{price_total_vnd: int, price_unit: string, quantity: int, pricing_version: int, cancellation_policy_version: int}
+     */
     public function quote(QuoteBookingRequest $request): JsonResponse
     {
         $context = $request->validateSources();
@@ -18,6 +21,9 @@ class BookingController extends Controller
         return response()->json(Arr::except($context['pricing'], ['unit_price_vnd']));
     }
 
+    /**
+     * @response array{id: string, status: string, pet_id: string, listing_id: string, start_at: string, end_at: string, price_snapshot_vnd: int, payment_due_at: ?string}
+     */
     public function store(StoreBookingRequest $request, CreateBooking $createBooking): JsonResponse
     {
         $booking = $createBooking->handle($request);

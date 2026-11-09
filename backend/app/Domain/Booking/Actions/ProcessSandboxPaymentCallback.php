@@ -14,7 +14,10 @@ class ProcessSandboxPaymentCallback
 {
     /**
      * @param  array{event_id: string, booking_id: string, attempt_reference: string, amount_vnd: int, result: string}  $payload
-     * @return array<string, mixed>
+     * @return array{
+     *   event_id: string, event_record_id?: string, processing_status: string, rejection_code: ?string,
+     *   attempt_status?: ?string, booking_status?: ?string, compensation_operation_id?: ?string, replayed: bool
+     * }
      */
     public function handle(array $payload, string $signature): array
     {
@@ -51,8 +54,8 @@ class ProcessSandboxPaymentCallback
 
                     return [
                         'event_id' => $payload['event_id'],
-                        'processing_status' => $existing->processing_status,
-                        'rejection_code' => $existing->rejection_code,
+                        'processing_status' => (string) $existing->processing_status,
+                        'rejection_code' => $existing->rejection_code === null ? null : (string) $existing->rejection_code,
                         'attempt_status' => $attempt?->status,
                         'booking_status' => $booking?->status,
                         'replayed' => true,
@@ -174,8 +177,8 @@ class ProcessSandboxPaymentCallback
 
             return [
                 'event_id' => $payload['event_id'],
-                'processing_status' => $existing->processing_status,
-                'rejection_code' => $existing->rejection_code,
+                'processing_status' => (string) $existing->processing_status,
+                'rejection_code' => $existing->rejection_code === null ? null : (string) $existing->rejection_code,
                 'replayed' => true,
             ];
         }

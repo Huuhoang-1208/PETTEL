@@ -169,6 +169,15 @@ class ListingAvailabilityController extends Controller
     /** @return array{id: string, start_at: string, end_at: string} */
     private function resource(AvailabilitySlot $slot): array
     {
-        return ['id' => (string) $slot->id, 'start_at' => $slot->start_at->utc()->format('Y-m-d\TH:i:s.u\Z'), 'end_at' => $slot->end_at->utc()->format('Y-m-d\TH:i:s.u\Z')];
+        return [
+            'id' => (string) $slot->id,
+            'start_at' => self::formatTimestamp($slot->start_at),
+            'end_at' => self::formatTimestamp($slot->end_at),
+        ];
+    }
+
+    private static function formatTimestamp(CarbonImmutable $value): string
+    {
+        return $value->utc()->format('Y-m-d\TH:i:s.u\Z');
     }
 }

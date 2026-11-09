@@ -19,6 +19,7 @@ class ListingChangeRequestController extends Controller
 {
     private const FIELDS = ['title', 'description', 'service_type', 'area_code', 'price_vnd', 'price_unit', 'acceptance_rules_json', 'media'];
 
+    /** @response array{data: list<array{id: string, listing_id: string, base_listing_version: int, proposed_data_json: array{schema_version: int, data: array<string, mixed>}, status: string, requested_by_user_id: string, requested_at: ?string, reviewed_by_user_id: ?string, reviewed_at: ?string, decision_reason: ?string, listing_version?: int}>, links: array{first: string, last: string, prev: ?string, next: ?string}, meta: array{current_page: int, last_page: int, per_page: int, total: int}} */
     public function index(Request $request, string $id): mixed
     {
         $listing = $this->listing($request, $id, false);
@@ -34,6 +35,7 @@ class ListingChangeRequestController extends Controller
         return response()->json($this->pagination($page));
     }
 
+    /** @response array{data: list<array{id: string, listing_id: string, base_listing_version: int, proposed_data_json: array{schema_version: int, data: array<string, mixed>}, status: string, requested_by_user_id: string, requested_at: ?string, reviewed_by_user_id: ?string, reviewed_at: ?string, decision_reason: ?string, listing_version?: int}>, links: array{first: string, last: string, prev: ?string, next: ?string}, meta: array{current_page: int, last_page: int, per_page: int, total: int}} */
     public function queue(Request $request): mixed
     {
         $filters = app(ListingInput::class)->query($request, ['status', 'page', 'per_page'], [
@@ -52,6 +54,7 @@ class ListingChangeRequestController extends Controller
         return response()->json($this->pagination($page));
     }
 
+    /** @response array{data: array{id: string, listing_id: string, base_listing_version: int, proposed_data_json: array{schema_version: int, data: array<string, mixed>}, status: string, requested_by_user_id: string, requested_at: ?string, reviewed_by_user_id: ?string, reviewed_at: ?string, decision_reason: ?string, listing_version?: int}} */
     public function show(Request $request, string $id, string $requestId): mixed
     {
         $listing = $this->listing($request, $id, false);
@@ -61,6 +64,7 @@ class ListingChangeRequestController extends Controller
         return response()->json(['data' => $this->format($change)]);
     }
 
+    /** @response array{data: array{id: string, listing_id: string, base_listing_version: int, proposed_data_json: array{schema_version: int, data: array<string, mixed>}, status: string, requested_by_user_id: string, requested_at: ?string, reviewed_by_user_id: ?string, reviewed_at: ?string, decision_reason: ?string, listing_version?: int}} */
     public function adminShow(Request $request, string $id, string $requestId): mixed
     {
         $listing = $this->listing($request, $id, true);
@@ -71,6 +75,7 @@ class ListingChangeRequestController extends Controller
         return response()->json(['data' => $this->format($change)]);
     }
 
+    /** @response array{data: array{id: string, listing_id: string, base_listing_version: int, proposed_data_json: array{schema_version: int, data: array<string, mixed>}, status: string, requested_by_user_id: string, requested_at: ?string, reviewed_by_user_id: ?string, reviewed_at: ?string, decision_reason: ?string, listing_version?: int}} */
     public function store(Request $request, string $id, ListingWorkflow $workflow): mixed
     {
         $listing = $this->listing($request, $id, false);
@@ -113,6 +118,7 @@ class ListingChangeRequestController extends Controller
         return response()->json(['data' => $this->format($record)], 201);
     }
 
+    /** @response array{data: array{id: string, listing_id: string, base_listing_version: int, proposed_data_json: array{schema_version: int, data: array<string, mixed>}, status: string, requested_by_user_id: string, requested_at: ?string, reviewed_by_user_id: ?string, reviewed_at: ?string, decision_reason: ?string, listing_version?: int}} */
     public function withdraw(Request $request, string $id, string $requestId, ListingWorkflow $workflow): mixed
     {
         $listing = $this->listing($request, $id, false);
@@ -188,6 +194,7 @@ class ListingChangeRequestController extends Controller
         return response()->json(['data' => $this->format($record, $listing->refresh())]);
     }
 
+    /** @response array{data: array{id: string, listing_id: string, base_listing_version: int, proposed_data_json: array{schema_version: int, data: array<string, mixed>}, status: string, requested_by_user_id: string, requested_at: ?string, reviewed_by_user_id: ?string, reviewed_at: ?string, decision_reason: ?string, listing_version?: int}} */
     public function reject(Request $request, string $id, string $requestId, ListingWorkflow $workflow): mixed
     {
         $listing = $this->listing($request, $id, true);
@@ -246,14 +253,14 @@ class ListingChangeRequestController extends Controller
         return $change;
     }
 
-    /** @return array<string, mixed> */
+    /** @return array{title: string, description: string, service_type: string, area_code: string, price_vnd: int, price_unit: string, acceptance_rules_json: array{schema_version: int, species: list<string>, sizes: list<string>}, media: array<int, array{media_object_id: string, sort_order: int}>} */
     private function currentPayload(Listing $listing): array
     {
         return [
             ...$listing->only(['title', 'description', 'service_type', 'area_code', 'price_vnd', 'price_unit']),
             'acceptance_rules_json' => $listing->acceptance_rules_json,
             'media' => DB::table('listing_media')->where('listing_id', $listing->id)->orderBy('sort_order')->get()
-                ->map(fn ($media) => ['media_object_id' => (string) $media->media_object_id, 'sort_order' => (int) $media->sort_order])->all(),
+                ->map(fn ($media) => ['media_object_id' => (string) $media->media_object_id, 'sort_order' => (int) $media->sort_order])->values()->all(),
         ];
     }
 
@@ -306,7 +313,7 @@ class ListingChangeRequestController extends Controller
         return null;
     }
 
-    /** @return array<string, mixed> */
+    /** @return array{id: string, listing_id: string, base_listing_version: int, proposed_data_json: array{schema_version: int, data: array<string, mixed>}, status: string, requested_by_user_id: string, requested_at: ?string, reviewed_by_user_id: ?string, reviewed_at: ?string, decision_reason: ?string, listing_version?: int} */
     private function format(object $record, ?Listing $listing = null): array
     {
         $proposal = data_get($record, 'proposed_data_json');
@@ -338,9 +345,8 @@ class ListingChangeRequestController extends Controller
         return $value === null ? null : CarbonImmutable::parse($value, 'UTC')->utc()->format('Y-m-d\TH:i:s.u\Z');
     }
 
-    /** @return array<string, mixed> */
-    /** @param LengthAwarePaginator<int, mixed> $page
-     * @return array<string, mixed>
+    /** @param LengthAwarePaginator<int, array{id: string, listing_id: string, base_listing_version: int, proposed_data_json: array{schema_version: int, data: array<string, mixed>}, status: string, requested_by_user_id: string, requested_at: ?string, reviewed_by_user_id: ?string, reviewed_at: ?string, decision_reason: ?string, listing_version?: int}> $page
+     * @return array{data: array<int, array{id: string, listing_id: string, base_listing_version: int, proposed_data_json: array{schema_version: int, data: array<string, mixed>}, status: string, requested_by_user_id: string, requested_at: ?string, reviewed_by_user_id: ?string, reviewed_at: ?string, decision_reason: ?string, listing_version?: int}>, links: array{first: string, last: string, prev: ?string, next: ?string}, meta: array{current_page: int, last_page: int, per_page: int, total: int}}
      */
     private function pagination(LengthAwarePaginator $page): array
     {

@@ -25,7 +25,7 @@ class SimulateSandboxPaymentController extends Controller
         abort_unless((bool) config('services.payment_sandbox.simulation_enabled'), 404);
 
         $validator = Validator::make($request->all(), [
-            'result' => ['required', 'in:SUCCESS,FAILURE,TIMEOUT'],
+            'result' => ['required', 'string', 'in:SUCCESS,FAILURE,TIMEOUT'],
         ]);
 
         if ($validator->fails() || array_diff(array_keys($request->all()), ['result']) !== []) {

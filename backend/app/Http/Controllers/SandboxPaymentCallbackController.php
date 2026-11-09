@@ -18,7 +18,7 @@ class SandboxPaymentCallbackController extends Controller
             'booking_id' => ['required', 'integer', 'min:1'],
             'attempt_reference' => ['required', 'string', 'max:191'],
             'amount_vnd' => ['required', 'integer', 'min:1'],
-            'result' => ['required', 'in:AUTHORIZED,FAILED'],
+            'result' => ['required', 'string', 'in:AUTHORIZED,FAILED'],
         ]);
 
         if ($validator->fails() || array_diff(array_keys($request->all()), [
