@@ -100,10 +100,10 @@ Gate BE chỉ được xác nhận khi đạt các điều kiện tại mục 5 
 
 ### Checklist thực hiện
 
-- [ ] Thu thập từ từng owner commit/branch, contract, feature tests, CI result, migration/seed, scheduler/worker instructions và giới hạn còn lại.
-- [ ] Xác nhận tích hợp đang chạy trên cùng một nhánh/commit; kiểm tra migration order, route conflicts, middleware, response/error conventions và model/schema cross-module.
-- [ ] Chạy pipeline CI chính thức trên database test cô lập; lưu commit SHA, command, exit code và summary.
-- [ ] Chạy đủ bốn workflow và nhánh lỗi, ghi theo từng bước `Pass`, `Fail`, `Blocked` hoặc `Not tested`:
+- [x] Thu thập handoff, contracts, tests, migration/seed, runtime instructions và giới hạn từ các owner; xem Task 3 report và handoff HA06/T06.
+- [x] Tích hợp các phần backend vào `main` qua PR #34; merge commit `457a7e1`. Route, middleware, response/error conventions và cross-module flows có trong integration report.
+- [x] CI của PR #34 được người dùng xác nhận thành công trên PR head `419d662`; [trang Checks](https://github.com/Huuhoang-1208/PETTEL/pull/34/checks). Run ID/URL và SHA check cần được chép từ trang Checks vào báo cáo nghiệm thu.
+- [x] Bốn workflow và nhánh lỗi/quyền có test evidence; xem Task 3 report để biết test method, phạm vi và giới hạn API E2E/runtime.
 
 | Workflow | Nhánh chính cần chạy | Nhánh lỗi/quyền cần xác nhận |
 |---|---|---|
@@ -112,11 +112,11 @@ Gate BE chỉ được xác nhận khi đạt các điều kiện tại mục 5 
 | Đặt lịch và thanh toán | Pet/quote → booking → caregiver accept → sandbox attempt/callback | IDOR, trùng lịch/race, timeout/hết hạn, callback sai/lặp/đến muộn, cancel/retry |
 | Báo cáo và xử lý admin | Tạo report → admin review → quyết định/ẩn/suspend → audit và public/search cập nhật | Sai target, người không phải admin, report trùng/lặp, nội dung riêng tư/file không lộ, thao tác lặp |
 
-- [ ] Kiểm tra điểm nối giữa workflow: review chỉ sau COMPLETED; report/moderation làm public data cập nhật; các thao tác admin có audit; private message/care update/media không lộ.
-- [ ] Đối chiếu mục 5 Gate BE: toàn backend tích hợp/review, bốn workflow đạt, quyền/state/concurrency/payment callback đạt, worker/scheduler, seed, OpenAPI, Pulse bảo vệ admin và hướng dẫn kiểm tra.
-- [ ] Ghi rõ các phụ thuộc còn thiếu. Đặc biệt xác nhận owner của report workflow và completion/release sandbox; không tự thay thế task BE-T06/BE-HA06 trong phạm vi H06.
-- [ ] Nếu một workflow chưa thể chạy do thiếu module/owner input, đánh dấu Gate `Blocked`, ghi người/phần việc cần bổ sung và giữ frontend Blocked.
-- [ ] Lấy xác nhận của Hoàng, Thịnh, Hào trên commit, kết quả CI và checklist; lưu cách xác nhận theo quy trình nhóm.
+- [x] Kiểm tra các điểm nối workflow bằng API/feature tests: review sau completion; moderation và cache/public visibility; admin audit; quyền đọc private evidence.
+- [x] Đối chiếu tiêu chí Gate và ghi trạng thái từng workflow trong Task 3 report. Implementation, CI PR #34, runtime evidence và xác nhận của ba thành viên đã được ghi.
+- [x] Ghi các giới hạn runtime còn lại; Hào đã review OpenAPI/handoff liên quan theo xác nhận nghiệm thu của nhóm.
+- [x] Report/completion tích hợp; nhóm xác nhận Gate BE đạt. Frontend được chuyển sang sẵn sàng triển khai theo Gate.
+- [x] Hoàng, Thịnh, Hào đồng ý nghiệm thu merge commit `457a7e1` theo xác nhận của người dùng ngày 10/11/2026.
 
 ### Tiêu chí hoàn thành
 
@@ -138,11 +138,13 @@ Gate BE chỉ được xác nhận khi đạt các điều kiện tại mục 5 
 |---|---|---|---|
 | 1. Query/cache/benchmark | Pass (synthetic workload) | [k6 raw results](../../backend/benchmarks/results), [EXPLAIN notes](../../backend/benchmarks/results/explain-analyze.md), [benchmark instructions/results](../../backend/benchmarks/README.md) | Search p95 ~0.76–0.79s, detail ~0.68–0.70s, HTTP errors 0%; cache warm review p95 mean 0.35s vs one tagged no-cache 0.62s. Synthetic data/host only; not a production capacity guarantee. |
 | 2. Scramble/OpenAPI | Owner review complete; Hào review after handoff | `backend/config/scramble.php`, `backend/app/Providers/AppServiceProvider.php`, `backend/tests/Feature/ApiDocumentationAccessTest.php`, [OpenAPI tạm sinh](<../08 — Architecture & Technical Design/OpenAPI — Scramble provisional.json>), [route/contract matrix](<BE-H06 — Task 2 route and contract matrix.md>) | Inventory có 66 route operations; export có 67 OpenAPI operations do mô hình hóa hai URL attachment hợp lệ. Export mới đã thêm header `Idempotency-Key` cho booking create/cancel/payment-start, `X-Payment-Signature` cho callback, bỏ key khỏi body schema và cập nhật các enum/response schemas. Strict export ban đầu tái lập 57 `UnknownType`; sau khi 23 trường server-managed được bỏ khỏi inferred request schema và 34 schema còn lại được định kiểu, `scramble:export --fail-on-unknown` thành công với 0 warning. Full compose MySQL run mới nhất trên worktree hiện tại: Pint, PHPStan và 389 tests / 4.490 assertions pass. Ma trận có disposition 66/66 operations, test method trực tiếp cho 66/66 và 0 `Not tested`; Hoàng đã chốt care-update outsider là 403, giữ fallback attachment, callback path hiện tại, report/completion là phase sau, admin routes trong OpenAPI và response 201/200 cho create/replay. Task 2 checklist implementation đã hoàn tất; các quyết định Hoàng xác nhận ngày 09/11/2026 được ghi trong ma trận; Hào review sau khi issue hoàn tất, theo thứ tự Hoàng đã xác nhận. |
-| 3. Bốn workflow/Gate BE | Blocked | [Task 3 integration/E2E report](<BE-H06 — Task 3 integration and E2E verification report.md>); local Compose pipeline: 389 tests / 4.490 assertions, exit 0 trên worktree dirty dựa trên HEAD `09b4173`; hai E2E API workflow 1 và 2 pass | Report creation/admin triage chưa có API; booking completion/release chưa có; Pulse chưa được cài; runtime worker/scheduler đang dùng image cũ; chưa có official CI result trên commit sạch và xác nhận owners trên cùng commit. |
-| Gate BE tổng thể | Blocked | — | Chưa đạt đầy đủ điều kiện mục 5 |
-| Frontend | Blocked | — | Chỉ unblocked sau Gate BE Pass |
+| 3. Bốn workflow/Gate BE | Pass | [Task 3 integration/E2E report](<BE-H06 — Task 3 integration and E2E verification report.md>); merge `457a7e1`; CI PR #34 pass theo xác nhận người dùng; cùng tree với PR head `419d662` | Actions run ID riêng chưa chép; PR Checks page đã liên kết. Giới hạn runtime được ghi trong report. |
+| Gate BE tổng thể | PASS | PR #34 merged; CI pass được xác nhận; Hoàng, Thịnh, Hào đồng ý trên commit tích hợp | Sign-off ghi nhận theo xác nhận người dùng ngày 10/11/2026. |
+| Frontend | Ready | Gate BE PASS | Có thể bắt đầu theo kế hoạch frontend. |
 
 ## Kết quả thực hiện ban đầu
+
+> **Lịch sử:** các ghi chú bên dưới được lập trước khi hoàn tất report/admin, booking completion/release, Filament/Pulse và merge PR #34. Các câu trạng thái cũ nói những module này chưa có đã được thay thế bởi bảng Gate và Task 3 report ở trên; không dùng các câu lịch sử đó làm trạng thái hiện tại.
 
 - Scramble `dedoc/scramble` v0.13.53 đã cài và `composer.lock` được cập nhật. JSON OpenAPI đã sinh tại `docs/08 — Architecture & Technical Design/OpenAPI — Scramble provisional.json`; đây là bản rà soát, chưa được nghiệm thu làm contract cuối.
 - Middleware Scramble mặc định chỉ mở ở `local`. Gate `viewApiDocs` hiện cho phép tài khoản `ACTIVE` có role `ADMIN`; feature tests xác nhận guest và non-admin bị từ chối, admin được đọc JSON.
@@ -151,17 +153,17 @@ Gate BE chỉ được xác nhận khi đạt các điều kiện tại mục 5 
 - SQL cold review request ghi 4 query / 40,85 ms SQL; cache hit ghi 2 query / 13,03 ms. Lượt cache lạnh 50 VU có 1.098 hit / 2 miss trên 1.100 review reads; warm run có 1.100 hit / 0 miss. `EXPLAIN ANALYZE` chỉ ra review aggregation quét 10.000 reviews và lookup booking; dù vậy search p95 hiện dưới NFR, nên không cache search/availability.
 - OpenAPI export có 67 operations từ 66 Laravel operations (attachment fallback thành hai path), summary/description và schema envelope cho lỗi, security session-cookie theo Sanctum/CSRF, `Idempotency-Key`, `X-Payment-Signature`, đúng response 201/200 cho create/replay và không quảng bá system-managed request fields. Strict export `--fail-on-unknown` pass với 0 warnings; JSON được xác nhận không có operation nào thiếu summary/description. Matrix ghi mapping test method trực tiếp cho 66/66 operations, 0 `Not tested`. Implementation checklist Task 2 đã xong; OpenAPI vẫn là bản provisional cho tới khi Hào review sau handoff.
 - Kiểm tra docs access gồm guest/non-admin/admin cho JSON và UI, cookie security, public-route marker. Compose MySQL mới nhất pass cả 3 test `ApiDocumentationAccessTest` và toàn suite (389 tests / 4.490 assertions). Lượt đầu phát hiện HTTP JSON có title `Laravel`; đặt `ui.title = PETTEL` đã sửa và test admin hiện pass.
-- Kiểm tra route/source cho thấy không có endpoint tạo report hay luồng admin triage report; review moderation có action nhưng không có API route gắn vào. Chưa có API/workflow hoàn chỉnh để chuyển booking sang `COMPLETED` và release sandbox. Pulse cũng chưa có trong dependency. Đây là blocker cho workflow/Gate, không nên tự đánh dấu Pass trong H06.
+- Sau đó đã bổ sung report intake/admin API, booking decision, completion/release sandbox và Filament/Pulse; test/route evidence mới hơn được liệt kê trong Task 3 report và BE-T06/BE-HA06 handoff.
 - Ma trận test tích hợp theo workflow hiện có:
 
 | Workflow | Test/code evidence đã có | Trạng thái workflow/Gate |
 |---|---|---|
 | Khám phá dịch vụ | `PublicDiscoveryEndToEndTest::test_guest_discovers_a_public_listing_reads_its_image_and_sees_a_new_review_in_search_and_detail` | API E2E Pass; guest search/filter → detail/media/review → rating/cache invalidation → suspended visibility; không kiểm tra browser/UI. |
 | Đăng/quản lý listing | `ListingManagementEndToEndTest::test_caregiver_publishes_a_listing_with_media_and_availability_then_admin_change_and_lifecycle_updates_public_search` | API E2E Pass; caregiver create/upload/slot → submit/admin approve → public search → change request → suspend/restore/archive; không kiểm tra browser/UI. |
-| Đặt lịch/thanh toán | `BookingCreationTest`, `BookingAcceptanceTest`, `BookingAcceptanceConcurrencyTest`, `SandboxPaymentSimulationTest`, `PaymentCallbackCancellationConcurrencyTest`, `BookingCancellationTest`, `BookingExpiryTest` | Các state/callback/concurrency đã có test; workflow tổng thể Blocked vì thiếu completion/release sandbox. |
-| Report/admin | `ReviewModerationTest` chỉ chứng minh action ẩn/khôi phục review | Blocked: chưa có route/API tạo report và admin triage; không thể chạy workflow report. |
+| Đặt lịch/thanh toán | `BookingCreationTest`, `BookingAcceptanceTest`, `BookingAcceptanceConcurrencyTest`, `SandboxPaymentSimulationTest`, `PaymentCallbackCancellationConcurrencyTest`, `BookingCancellationTest`, `BookingExpiryTest`, `BookingLifecycleEndToEndTest` | Workflow đi tới `COMPLETED` có E2E; report decision/release/refund có test riêng. Giới hạn runtime và test được ghi trong Task 3 report. |
+| Report/admin | `ReportWorkflowTest`, `BookingReportDecisionTest`, `Filament/ReportResourceTest` | Intake, admin queue/status/history/evidence/moderation, booking decision và UI resource có coverage; xem giới hạn từng nhánh trong Task 3 report. |
 
-- Worker/scheduler: README có lệnh vận hành; scheduler expiry/outbox được xác nhận bởi feature test, nhưng chưa chạy worker/scheduler như một stack bàn giao riêng. Pulse chưa cài. Chưa có xác nhận Hoàng/Thịnh/Hào trên commit này.
+- Worker/scheduler: runtime scheduler đã xử lý release sandbox thật; `schedule_run_id` và heartbeat có log. Release lỗi/retry và queue retry được test; không có failed job runtime ở lần kiểm tra đó. Pulse đã cài và có test quyền. Hoàng, Thịnh, Hào đã đồng ý nghiệm thu theo xác nhận của người dùng.
 - Không thay trạng thái frontend: vẫn `Blocked` cho tới khi blocker được xử lý, CI và bốn workflow có evidence, OpenAPI được review và Hoàng/Thịnh/Hào xác nhận trên cùng commit.
 
 ## Tài liệu liên quan

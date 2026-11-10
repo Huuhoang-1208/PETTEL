@@ -1,10 +1,11 @@
 # BE-H06 — Task 3: Integration and E2E verification report
 
 - **Ngày cập nhật:** 10/11/2026 (Asia/Ho_Chi_Minh)
-- **Branch:** `be-ha06`
-- **HEAD hiện tại khi chạy kiểm tra:** `f28834b80aa8a784fde870d739f26387fff431ad`
-- **Base/common ancestor với `origin/main`:** `0bea158df902bf744efb8217b19f778898140f7d` (theo refs cục bộ hiện có; chưa fetch remote mới)
-- **Trạng thái worktree:** có thay đổi chưa commit trong release worker, follow-up test và tài liệu. Kết quả dưới đây thuộc worktree `be-ha06` tại HEAD nêu trên cộng các thay đổi đó; không phải CI trên commit sạch.
+- **Branch tích hợp:** `main`
+- **Merge commit hiện tại:** `457a7e1aea75be3a2ba301ca95c6c860cf7bfefb` (PR #34)
+- **PR head đã kiểm tra:** `419d662c1f14b56d74efb8a359d506a30a262948`
+- **Trạng thái worktree tại cập nhật:** sạch; `HEAD`, `origin/main` và `origin/HEAD` cùng trỏ merge commit `457a7e1`.
+- **CI:** người dùng xác nhận CI của PR #34 thành công. [Trang Checks của PR #34](https://github.com/Huuhoang-1208/PETTEL/pull/34/checks). Run URL/ID và SHA thực tế của check chưa được lưu độc lập; không suy diễn đây là lần chạy trên merge commit nếu trang Checks không xác nhận.
 
 ## Kết luận
 
@@ -12,9 +13,9 @@
 - Queue context suite đạt 3 tests / 31 assertions, gồm request ID, schedule run ID, exhausted retry và `queue:retry`. Pint hai file vận hành đạt.
 - Worker/scheduler image từ worktree hiện tại build và chạy được. Runtime sandbox đã xử lý booking `1`: release operation `1` chuyển `PENDING → COMPLETED` trong lần gọi đầu, booking chuyển `AWAITING_CONFIRMATION → COMPLETED`, payment attempt thành `RELEASED`, và có payment event `RELEASED`. Scheduler log lúc `2026-11-10 08:27:00 UTC` ghi exit code `0` cùng `schedule_run_id=2407c88e-4abd-485a-8032-7739deb0b42e`. `queue:failed` không có job.
 - Strict Scramble export và OpenAPI access test đã đạt trong lần kiểm tra trước; chi tiết route nằm trong Task 2 matrix.
-- Full pipeline mới nhất trên worktree hiện tại đã đạt: Pint 234 files; PHPStan 164 files không lỗi; migration/seed và 441 tests / 5.122 assertions đều pass. Đây là local Docker pipeline, không phải GitHub Actions result; worktree có thay đổi chưa commit.
+- Full pipeline Docker gần nhất được ghi nhận trong lần chạy trước PR đạt: Pint 234 files; PHPStan 164 files không lỗi; migration/seed và 441 tests / 5.122 assertions pass trên worktree tại thời điểm đó. Đây là kết quả local trên SHA cũ, không gán lại số liệu cho merge commit.
 - `BookingCompletionFollowupTest` đạt 7 tests / 66 assertions: reminder một lần sau 24 giờ, admin queue sau 72 giờ, admin completion không cần report và có audit; release lỗi giữ follow-up mở, release thành công đặt `resolved_at` trong cùng transaction.
-- **Overall: Gate BE chưa xác nhận.** Local pipeline trên working tree hiện tại đã pass. Còn cần commit/SHA bàn giao, official CI cho đúng commit, đồng bộ các handoff/review đang chờ và xác nhận của Hoàng, Thịnh, Hào.
+- **Overall: Gate BE PASS theo xác nhận của nhóm.** PR #34 đã merge; CI thành công theo xác nhận của người dùng. Cả Hoàng, Thịnh và Hào đã đồng ý nghiệm thu trên merge commit `457a7e1`. PR head `419d662` và merge commit `457a7e1` có cùng tree. [Trang Checks của PR #34](https://github.com/Huuhoang-1208/PETTEL/pull/34/checks) được lưu làm liên kết CI; Actions run ID/URL riêng chưa được chép vào report.
 
 ## 1. Bàn giao, nhánh và nguồn
 
@@ -23,7 +24,7 @@
 | Identity, booking creation, discovery, Smart Match, review | Hoàng (BE-H01/H02/H04/H05) | Implementation, feature tests và handoff/review docs; API contracts/modules | Có trong integration base; review/CI evidence có mức độ khác nhau theo issue. Không có xác nhận mới của owner trên SHA Task 3. |
 | Schema, pet, listing, availability, care/report | Thịnh (BE-T01/T02/T03/T05/T06) | Migration/schema, report API/admin controller, policies, Filament/Pulse, feature tests và module/API docs | Report workflow có API coverage; Filament/Pulse đã được thêm, dashboard access và Report Resource có test. Handoff/owner review vẫn cần xác nhận. |
 | Runtime, acceptance/payment sandbox | Hào (BE-HA01/HA02/HA03/HA05/HA06) | Compose, scheduler/worker, completion/release/refund operations, E2E tests | Runtime sandbox đã được scheduler dùng để xử lý release operation thật thành công; chi tiết ở mục 5. Không thử nhánh lỗi/retry trên runtime trong lần này; nhánh đó được test trong suite. |
-| Git integration point | Hoàng điều phối; cả ba xác nhận Gate | `be-ha06` HEAD `f28834b`; local `origin/main` `9e292ab` | Tested tree có thay đổi chưa commit sau HEAD; refs cục bộ cho thấy HEAD hiện tại chưa nằm trong `origin/main`. Chưa kiểm tra trạng thái PR/remote mới hơn. |
+| Git integration point | Hoàng điều phối; cả ba xác nhận Gate | PR #34; merge commit `457a7e1`; PR head `419d662` | Đã merge vào `main`; workspace sạch tại merge commit. Cần đính kèm GitHub Actions run URL/SHA cụ thể vào hồ sơ nghiệm thu. |
 
 Các tài liệu cũ của T04/HA03 có ghi nhận trạng thái khác nhau giữa thời điểm viết và implementation sau đó. Source hiện tại cùng test mới hơn được dùng làm bằng chứng kỹ thuật; owner nên đồng bộ lại tài liệu bàn giao T04/HA03 trước khi ký Gate. Không tự sửa contract từ các tài liệu mâu thuẫn.
 
@@ -44,17 +45,18 @@ Các branch refs khác trong bảng audit cũ là snapshot lịch sử, chưa fe
 
 | Field | Result |
 |---|---|
-| Commit checked out | `f28834b80aa8a784fde870d739f26387fff431ad` (HEAD; tested tree có thay đổi chưa commit) |
-| Tested tree | Branch `be-ha06`, HEAD trên cộng thay đổi working tree; không phải commit sạch |
+| Commit checked out hiện tại | `457a7e1aea75be3a2ba301ca95c6c860cf7bfefb` — merge commit PR #34 |
+| Commit CI theo thông tin hiện có | PR head `419d662c1f14b56d74efb8a359d506a30a262948`; người dùng xác nhận CI thành công |
+| Tested tree của số liệu local 441/5.122 | Worktree lịch sử trước merge, trên SHA `f28834b`; không gán các số liệu này cho `457a7e1` |
 | Command | `docker compose -p pettel-completion-check -f compose.test.yaml run --build --rm test` |
 | Exit code | **0 — PASS** |
 | Pint / PHPStan | **PASS** — Pint 234 files; PHPStan 164 files, không có lỗi |
 | Database / migrations / seed | **PASS** — MySQL 8.4 cô lập; `migrate:fresh --seed` và seed lần hai |
 | Feature/unit suite | **PASS** — 441 tests, 5.122 assertions, 75.35 giây |
-| GitHub Actions | Chưa có run URL/SHA; local pipeline không được gọi là official CI. |
+| GitHub Actions | **PASS theo xác nhận của người dùng trên PR #34**; [trang Checks](https://github.com/Huuhoang-1208/PETTEL/pull/34/checks). Run URL/ID chưa ghi nhận; xác minh SHA check trước khi ghi là CI của merge commit `457a7e1`. |
 | Runtime phụ trợ | QueueContextPropagationTest: 3 tests / 31 assertions; worker/scheduler runtime có schedule IDs; release operation sandbox thật được xử lý thành công; `queue:failed` rỗng. |
 
-Pipeline cục bộ ở trên chạy trên worktree dirty bằng command đã ghi. Sau khi người dùng commit, cần ghi SHA mới và chạy/đối chiếu CI trên đúng commit; không ghi kết quả local thay cho GitHub Actions.
+Số liệu local trong bảng thuộc lần chạy trên worktree trước PR #34. Trạng thái CI mới là thông tin người dùng xác nhận cho PR #34; lấy run URL, head SHA và kết quả trực tiếp từ trang Checks trước khi gắn số liệu pipeline vào một commit cụ thể.
 
 ## 4. Bốn workflow và nhánh lỗi
 
@@ -82,10 +84,9 @@ Pipeline cục bộ ở trên chạy trên worktree dirty bằng command đã gh
 
 | Blocker | Owner / dependency | Cần có để gỡ |
 |---|---|---|
-| Worktree dirty, chưa có SHA sạch cho kết quả pipeline | Hoàng điều phối | Người dùng commit phần đã review, ghi SHA và chạy CI trên commit đó. |
-| Pipeline gắn với commit sạch / official CI | Hoàng điều phối | Local full pipeline đã pass trên tested working tree; sau khi commit, ghi SHA và đối chiếu GitHub Actions trên đúng commit. |
+| Ghi chính xác run CI và SHA đã kiểm tra | Hoàng điều phối | PR #34 đã merge; người dùng xác nhận CI pass. Lưu run URL/ID và head SHA từ GitHub Checks; nếu chỉ chạy trên PR head `419d662`, không gọi đó là lần chạy trên merge commit `457a7e1`. |
 | Runtime release failure/retry và failed job thật | Hào | Runtime lần này chứng minh xử lý release thành công; lỗi/retry chỉ có bằng chứng test. Không có failed job runtime để chạy `queue:retry`. Chỉ tạo lỗi sandbox có kiểm soát nếu Gate yêu cầu bằng chứng runtime bổ sung. |
-| Official CI và xác nhận của cả ba trên cùng commit | Hoàng, Thịnh, Hào | GitHub Actions run URL/SHA và sign-off reviewer/owners; local pipeline không thay xác nhận này. |
-| Đồng bộ handoff với SHA/source sau pipeline | Hoàng điều phối | Sau khi commit phần đã kiểm tra, cập nhật SHA tested tree và gắn GitHub Actions run của đúng commit. |
+| Official CI và xác nhận của cả ba trên cùng tree | Hoàng, Thịnh, Hào | Người dùng xác nhận CI PR #34 pass; PR head `419d662` và merge `457a7e1` cùng tree; cả ba đã đồng ý nghiệm thu theo xác nhận của người dùng. Link Checks ở đầu báo cáo; run ID riêng chưa ghi. |
+| Owner/reviewer sign-off và đồng bộ handoff | Hoàng điều phối; Hoàng, Thịnh, Hào xác nhận | Đã cập nhật các tài liệu với merge SHA `457a7e1`; người dùng xác nhận cả ba đồng ý trên commit tích hợp ngày 10/11/2026. |
 
-**Gate BE:** Chưa xác nhận; giữ frontend ở `Blocked` theo backlog. Các luồng chính có code/test, nhưng Gate chỉ đổi sau khi tested tree được commit/tích hợp, official CI chạy trên đúng commit, tài liệu/review còn chờ được cập nhật và cả ba owner xác nhận. Runtime completion-follow-up cũng cần được xác minh nếu tiêu chí nghiệm thu yêu cầu bằng chứng chạy trên image mới.
+**Gate BE: PASS.** Backend đã tích hợp vào `main`, CI PR #34 được xác nhận thành công, PR head và merge commit có cùng tree, và cả ba thành viên đã đồng ý nghiệm thu. Run ID riêng chưa được lưu nhưng trang Checks đã liên kết. Runtime release đã có bằng chứng; lần đó release thành công ngay, còn nhánh lỗi/retry được xác nhận bằng test.
