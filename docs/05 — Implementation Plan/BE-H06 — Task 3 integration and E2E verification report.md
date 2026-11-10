@@ -10,7 +10,7 @@
 
 - Booking lifecycle đã có E2E từ tạo booking tới `COMPLETED`, gồm release retry; report/admin có E2E API cho intake, evidence, moderation, `DISMISSED`, booking decision và lịch sử.
 - Queue context suite đạt 3 tests / 31 assertions, gồm request ID, schedule run ID, exhausted retry và `queue:retry`. Pint hai file vận hành đạt.
-- Worker/scheduler image từ worktree hiện tại build và chạy được. Runtime schedule có bốn lệnh định kỳ và heartbeat; log có `schedule_run_id`. Booking commands chạy thành công nhưng không có operation đến hạn (`selected: 0`, `processed: 0`). `queue:failed` không có job.
+- Worker/scheduler image từ worktree hiện tại build và chạy được. Runtime sandbox đã xử lý booking `1`: release operation `1` chuyển `PENDING → COMPLETED` trong lần gọi đầu, booking chuyển `AWAITING_CONFIRMATION → COMPLETED`, payment attempt thành `RELEASED`, và có payment event `RELEASED`. Scheduler log lúc `2026-11-10 08:27:00 UTC` ghi exit code `0` cùng `schedule_run_id=2407c88e-4abd-485a-8032-7739deb0b42e`. `queue:failed` không có job.
 - Strict Scramble export và OpenAPI access test đã đạt trong lần kiểm tra trước; chi tiết route nằm trong Task 2 matrix.
 - Full pipeline trên worktree hiện tại đã đạt: Pint 220 files, PHPStan 153 files không lỗi, migration/seed và 422 tests / 4.945 assertions đều pass. Đây không phải GitHub Actions result và worktree vẫn chưa commit.
 - **Overall: Gate BE chưa xác nhận.** Cần pipeline pass trên worktree, commit/SHA bàn giao, review và xác nhận của Hoàng, Thịnh, Hào; các gap ngoài phạm vi code đã triển khai cần được giữ rõ.
@@ -20,8 +20,8 @@
 | Hạng mục | Owner theo backlog | Bằng chứng trong repository | Kết quả kiểm tra |
 |---|---|---|---|
 | Identity, booking creation, discovery, Smart Match, review | Hoàng (BE-H01/H02/H04/H05) | Implementation, feature tests và handoff/review docs; API contracts/modules | Có trong integration base; review/CI evidence có mức độ khác nhau theo issue. Không có xác nhận mới của owner trên SHA Task 3. |
-| Schema, pet, listing, availability, care/report | Thịnh (BE-T01/T02/T03/T05/T06) | Migration/schema, report API/admin controller, policies, feature tests và module/API docs | Report workflow được triển khai và có API coverage; Filament/Pulse chưa được triển khai trong source này nếu vẫn là yêu cầu của handoff T06. |
-| Runtime, acceptance/payment sandbox | Hào (BE-HA01/HA02/HA03/HA05/HA06) | Compose, scheduler/worker, completion/release/refund operations, E2E tests | Booking completion/release và report decision operations có; runtime scheduler chạy, nhưng lượt kiểm tra hiện không có booking operation đến hạn để xử lý. |
+| Schema, pet, listing, availability, care/report | Thịnh (BE-T01/T02/T03/T05/T06) | Migration/schema, report API/admin controller, policies, Filament/Pulse, feature tests và module/API docs | Report workflow có API coverage; Filament/Pulse đã được thêm, dashboard access và Report Resource có test. Handoff/owner review vẫn cần xác nhận. |
+| Runtime, acceptance/payment sandbox | Hào (BE-HA01/HA02/HA03/HA05/HA06) | Compose, scheduler/worker, completion/release/refund operations, E2E tests | Runtime sandbox đã được scheduler dùng để xử lý release operation thật thành công; chi tiết ở mục 5. Không thử nhánh lỗi/retry trên runtime trong lần này; nhánh đó được test trong suite. |
 | Git integration point | Hoàng điều phối; cả ba xác nhận Gate | `be-ha06` HEAD `b0efd9c`; `origin/main` `36592d9` | Worktree còn dirty, chưa có SHA sạch đại diện cho toàn bộ kết quả kiểm thử. |
 
 Các tài liệu cũ của T04/HA03 có ghi nhận trạng thái khác nhau giữa thời điểm viết và implementation sau đó. Source hiện tại cùng test mới hơn được dùng làm bằng chứng kỹ thuật; owner nên đồng bộ lại tài liệu bàn giao T04/HA03 trước khi ký Gate. Không tự sửa contract từ các tài liệu mâu thuẫn.
@@ -51,7 +51,7 @@ Branch refs có sẵn tại thời điểm audit (không fetch remote mới): lo
 | Database / migrations / seed | **PASS** — MySQL 8.4 cô lập; `migrate:fresh --seed` và seed lần hai |
 | Feature/unit suite | **PASS** — 422 tests, 4.945 assertions, 56.78 giây |
 | GitHub Actions | Chưa có run URL/SHA; local pipeline không được gọi là official CI. |
-| Runtime phụ trợ | QueueContextPropagationTest: 3 tests / 31 assertions; worker/scheduler runtime có schedule IDs, các booking commands không có candidate đến hạn; queue:failed rỗng. |
+| Runtime phụ trợ | QueueContextPropagationTest: 3 tests / 31 assertions; worker/scheduler runtime có schedule IDs; release operation sandbox thật được xử lý thành công; `queue:failed` rỗng. |
 
 Pipeline cục bộ ở trên chạy trên worktree dirty bằng command đã ghi. Sau khi người dùng commit, cần ghi SHA mới và chạy/đối chiếu CI trên đúng commit; không ghi kết quả local thay cho GitHub Actions.
 
@@ -72,9 +72,9 @@ Pipeline cục bộ ở trên chạy trên worktree dirty bằng command đã gh
 
 - Compose source defines `backend`, `worker` (`queue:work redis`) and `scheduler` (`schedule:work`); local runtime containers đều đang Up.
 - Worker/scheduler được build từ worktree hiện tại và recreate. `schedule:list` trong scheduler container liệt kê expiry, cancellation, release mỗi phút, care-update redaction hằng ngày và heartbeat mỗi phút.
-- Scheduler tick runtime ghi `schedule_run_id` riêng cho từng command; expiry, cancellation và release command kết thúc với exit code 0. Không có operation đến hạn để xử lý trong lần quan sát (`selected: 0`, `processed: 0`).
-- `QueueContextPropagationTest` chạy worker database queue để kiểm request ID, schedule ID, retry, failed job và `queue:retry`; runtime dev `queue:failed` không có job.
-- Pulse không nằm trong `backend/composer.json` và chưa có dashboard/authorization test.
+- Scheduler tick runtime ghi `schedule_run_id` riêng cho từng command; các lệnh expiry, cancellation và release kết thúc với exit code 0. Trong runtime sandbox, booking `1` được tạo qua workflow API (request được gọi qua Laravel HTTP Kernel bên trong container), payment sandbox được authorize, caregiver/owner hoàn tất các bước nghiệp vụ; confirmation tạo release operation `1` ở `PENDING`. Scheduler xử lý operation lúc `2026-11-10 08:27:00 UTC`: operation `COMPLETED`, attempt count `1`, booking `COMPLETED`, payment attempt `RELEASED`, và payment event `RELEASED` đã ghi. Không chèn booking/operation trực tiếp bằng SQL.
+- Giới hạn runtime: release thành công ngay lần đầu nên không xác minh lỗi/retry bằng runtime; retry/failure và `queue:retry` được kiểm tra trong test. `queue:failed` hiện rỗng, do đó không có failed job thật để retry. `QueueContextPropagationTest` đạt 3 tests / 31 assertions, nhưng dùng probe job/route cho cơ chế context; ứng dụng hiện chưa có request-driven business job chạy qua queue.
+- Filament và Pulse đã có trong source; admin/Pulse access tests được báo đạt 4 ca, và Report Resource tests đạt trong lần kiểm tra riêng. Pulse vẫn dùng storage mặc định, không bật Redis ingest dùng chung với queue.
 - OpenAPI Task 2 hiện sinh được 67 operations, 0 `UnknownType`; vẫn provisional cho tới Hào review. `DemoSeeder` lặp lại thành công trong CI test.
 
 ## 6. Blockers, owners và bước tiếp theo
@@ -83,8 +83,7 @@ Pipeline cục bộ ở trên chạy trên worktree dirty bằng command đã gh
 |---|---|---|
 | Worktree dirty, chưa có SHA sạch cho kết quả pipeline | Hoàng điều phối | Người dùng commit phần đã review, ghi SHA và chạy CI trên commit đó. |
 | Pipeline gắn với commit sạch / official CI | Hoàng điều phối | Local full pipeline đã pass trên worktree dirty; sau khi người dùng commit, ghi SHA và đối chiếu GitHub Actions trên đúng commit. |
-| Filament/Pulse theo handoff T06 | Thịnh / nhóm chốt phạm vi | Chưa thấy implementation trong source hiện tại; xác nhận có thuộc Gate BE hay không và đánh dấu đúng trạng thái. |
-| Có candidate booking operation runtime | Hào | Lần chạy lịch hiện không có operation đến hạn; tạo fixture sandbox an toàn nếu cần chứng minh worker thực sự xử lý một operation. |
+| Runtime release failure/retry và failed job thật | Hào | Runtime lần này chứng minh xử lý release thành công; lỗi/retry chỉ có bằng chứng test. Không có failed job runtime để chạy `queue:retry`. Chỉ tạo lỗi sandbox có kiểm soát nếu Gate yêu cầu bằng chứng runtime bổ sung. |
 | Official CI và xác nhận của cả ba trên cùng commit | Hoàng, Thịnh, Hào | GitHub Actions run URL/SHA và sign-off reviewer/owners; local pipeline không thay xác nhận này. |
 
 **Gate BE:** `Blocked`. Không chuyển frontend sang Ready. Có thể hoàn tất các kiểm tra độc lập, nhưng Gate chỉ đổi sau khi hai workflow thiếu module được tích hợp, worker/scheduler/Pulse được xác minh trên source cùng commit, official CI pass và cả ba owner xác nhận.

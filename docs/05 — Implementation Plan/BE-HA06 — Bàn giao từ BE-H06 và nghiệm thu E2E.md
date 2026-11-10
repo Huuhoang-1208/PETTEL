@@ -54,7 +54,8 @@ Chạy trên MySQL test cô lập với migrations/seed hiện tại và sandbox
 
 - Branch hiện tại `be-ha06`, HEAD `b0efd9cf614ddaf01051761cce36a37d79b4c684`; worktree dirty và chưa có SHA sạch bàn giao.
 - `BookingLifecycleEndToEndTest::test_booking_reaches_completed_after_release_retry` hiện kiểm tra luồng booking tới `COMPLETED` sau release/retry. `BookingReportDecisionTest` kiểm tra admin COMPLETE/refund, retry, idempotency và bảo vệ state.
-- Lần runtime gần nhất: worker/scheduler image build và chạy; lịch expiry/cancellation/release chạy với `schedule_run_id`, nhưng không có operation đến hạn (`selected: 0`, `processed: 0`). Đây không phải bằng chứng xử lý một booking operation thật.
+- Runtime sandbox gần nhất chứng minh outbox xử lý một release thật: booking `1` đi qua API workflow tới `AWAITING_CONFIRMATION`; owner confirmation tạo release operation `1` ở `PENDING`; scheduler xử lý operation lúc `2026-11-10 08:27:00 UTC` với `schedule_run_id=2407c88e-4abd-485a-8032-7739deb0b42e`, exit code `0`. Operation hoàn tất ở attempt `1`, booking thành `COMPLETED`, payment attempt thành `RELEASED`, và payment event `RELEASED` được ghi. Request được thực hiện qua Laravel HTTP Kernel trong container; không chèn operation trực tiếp vào DB.
+- Giới hạn runtime: lần này gateway thành công ngay, nên lỗi/retry được chứng minh bằng E2E test chứ chưa mô phỏng trên runtime; `queue:failed` rỗng và không có UUID thật để chạy `queue:retry`.
 - Queue context test đạt 3 tests / 31 assertions; Pint hai file vận hành đạt. Full pipeline local đạt: Pint 220 files, PHPStan 153 files không lỗi, migration/seed đạt và 422 tests / 4.945 assertions; xem Task 3 report để biết command và giới hạn.
 - Các acceptance items về reminder 24h/72h/admin queue và sign-off trên commit chung cần được xác nhận riêng; không đánh dấu Pass chỉ dựa trên booking E2E.
 
