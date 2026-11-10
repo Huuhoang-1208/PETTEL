@@ -51,8 +51,8 @@ WORKDIR /var/www/html
 COPY backend/composer.json backend/composer.lock ./
 RUN composer install --no-interaction --prefer-dist --no-progress --no-scripts
 COPY backend/ ./
-RUN composer dump-autoload --optimize \
-    && mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
+RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
+    && composer dump-autoload --optimize \
     && chown -R www-data:www-data storage bootstrap/cache
 
 FROM nginx:1-alpine AS frontend
