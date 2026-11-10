@@ -294,6 +294,12 @@ class BookingCompletionFollowupTest extends TestCase
             $fixture['booking']->fresh()->status,
         );
 
+        $this->assertNull(
+            DB::table('booking_completion_followups')
+                ->where('booking_id', $fixture['booking']->id)
+                ->value('resolved_at'),
+        );
+
         $this->travel(1)->minutes();
 
         $secondReleaseRun = app(ProcessBookingReleaseOutbox::class)->handle();
@@ -308,9 +314,11 @@ class BookingCompletionFollowupTest extends TestCase
             'status' => 'RELEASED',
         ]);
 
-        $this->assertDatabaseHas('booking_completion_followups', [
-            'booking_id' => $fixture['booking']->id,
-        ]);
+        $this->assertNotNull(
+            DB::table('booking_completion_followups')
+                ->where('booking_id', $fixture['booking']->id)
+                ->value('resolved_at'),
+        );
     }
 
     /**

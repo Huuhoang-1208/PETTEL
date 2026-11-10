@@ -4,7 +4,7 @@ Nền tảng tìm và đặt dịch vụ chăm sóc thú cưng tại Đà Nẵng
 
 ## Trạng thái hiện tại
 
-Backend đã có xác thực Breeze/Sanctum, vai trò OWNER/CAREGIVER/ADMIN và migrations cho schema P0. Docker có MySQL, Redis, worker và scheduler; môi trường test dùng MySQL riêng. Có tài khoản, pet và caregiver profile minh họa. Schema và seed chưa đồng nghĩa các workflow nghiệp vụ đã hoàn thiện. Vue SPA trong `frontend/` chưa được scaffold; Filament, Scramble và Pulse chưa được cài.
+Backend có xác thực Breeze/Sanctum, vai trò OWNER/CAREGIVER/ADMIN, các workflow nghiệp vụ P0, Filament cho quản trị, Scramble cho OpenAPI và Pulse cho quan sát. Docker có MySQL, Redis, worker và scheduler; môi trường test dùng MySQL riêng. Có tài khoản, pet và caregiver profile minh họa. Vue SPA trong `frontend/` chưa được scaffold; các giao diện người dùng vẫn thuộc giai đoạn frontend sau Gate BE.
 
 ## Chạy dịch vụ nền
 

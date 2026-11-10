@@ -248,6 +248,14 @@ class ProcessBookingReleaseOutbox
             $operation->next_retry_at = null;
             $operation->last_error_code = null;
             $operation->save();
+
+            DB::table('booking_completion_followups')
+                ->where('booking_id', $booking->id)
+                ->whereNull('resolved_at')
+                ->update([
+                    'resolved_at' => $now->format('Y-m-d H:i:s.u'),
+                    'updated_at' => $now->format('Y-m-d H:i:s.u'),
+                ]);
         }, 3);
     }
 
