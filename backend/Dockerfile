@@ -1,9 +1,9 @@
 FROM php:8.3-fpm-bookworm AS backend
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends unzip libjpeg62-turbo-dev libpng-dev libwebp-dev \
+    && apt-get install -y --no-install-recommends unzip libjpeg62-turbo-dev libpng-dev libwebp-dev libicu-dev libzip-dev \
     && docker-php-ext-configure gd --with-jpeg --with-webp \
-    && docker-php-ext-install pdo_mysql pcntl opcache gd \
+    && docker-php-ext-install pdo_mysql pcntl opcache gd intl zip \
     && pecl install redis-6.2.0 \
     && docker-php-ext-enable redis \
     && rm -rf /var/lib/apt/lists/*

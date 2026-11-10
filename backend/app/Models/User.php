@@ -10,10 +10,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     protected $attributes = [
         'status' => 'ACTIVE',
@@ -51,5 +53,11 @@ class User extends Authenticatable
     public function caregiverProfile(): HasOne
     {
         return $this->hasOne(CaregiverProfile::class);
+    }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->status === 'ACTIVE'
+            && $this->hasRole('ADMIN');
     }
 }
