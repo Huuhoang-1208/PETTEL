@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AcceptBookingController;
 use App\Http\Controllers\Admin\BookingCancellationQueueController;
+use App\Http\Controllers\Admin\BookingCompletionReviewController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Auth\EnableCaregiverRoleController;
 use App\Http\Controllers\BookingCareLifecycleController;
@@ -121,6 +122,15 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:ADMIN'])->prefix('adm
 
     Route::get('/booking-cancellations', [BookingCancellationQueueController::class, 'index']);
     Route::post('/booking-cancellations/{id}/retry', [BookingCancellationQueueController::class, 'retry'])->whereNumber('id');
+    Route::get(
+        '/booking-completion-reviews',
+        [BookingCompletionReviewController::class, 'index'],
+    );
+
+    Route::post(
+        '/booking-completion-reviews/{id}/complete',
+        [BookingCompletionReviewController::class, 'complete'],
+    )->whereNumber('id');
     Route::get('/listings', [ListingLifecycleController::class, 'adminIndex']);
     Route::get('/listings/{id}', [ListingLifecycleController::class, 'show'])->whereNumber('id');
     Route::post('/listings/{id}/approve', [ListingLifecycleController::class, 'approve'])->whereNumber('id');
