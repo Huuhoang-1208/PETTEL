@@ -2,7 +2,7 @@
 
 **Owner:** Thịnh · **Reviewer theo backlog:** Hoàng · **Bên tích hợp:** Hoàng/BE-H06
 **Phạm vi:** report/moderation/audit, admin panel và vận hành backend theo backlog BE-T06.
-**Trạng thái tại bàn giao:** report intake, reporter scope, admin queue/status/history/evidence/moderation và booking decision API hiện có trong worktree `be-ha06`; Filament Report Resource và Pulse cũng đã được thêm. Dashboard authorization tests được báo đạt 4 ca; Report Resource test đã đạt trong lần chạy riêng. Full pipeline local trước các thay đổi UI đạt trên worktree dirty (422 tests / 4.945 assertions), nhưng chưa có commit/SHA sạch hoặc official CI; không coi số liệu pipeline cũ là kết quả của source mới nhất.
+**Trạng thái tại bàn giao:** report intake, reporter scope, admin queue/status/history/evidence/moderation, booking decision API, Filament Report Resource và Pulse đều có trong source `be-ha06`. Local pipeline mới nhất đạt Pint 234 files, PHPStan 164 files, migration/seed và 441 tests / 5.122 assertions trên worktree có thay đổi chưa commit tại HEAD `f28834b80aa8a784fde870d739f26387fff431ad`. Chưa có official CI cho tested tree này; không dùng kết quả local thay cho CI/reviewer sign-off.
 
 ## 1. Nguồn hợp đồng và hiện trạng
 
@@ -55,11 +55,11 @@ Chạy trên MySQL test cô lập hoặc staging test có dữ liệu giả. E2E
 
 ## 4. Trạng thái hiện có từ BE-H06
 
-- Branch hiện tại `be-ha06`, HEAD `b0efd9cf614ddaf01051761cce36a37d79b4c684`; worktree dirty, chưa có SHA sạch và chưa có official CI result.
+- Branch hiện tại `be-ha06`, HEAD tại lúc chạy pipeline `f28834b80aa8a784fde870d739f26387fff431ad`; tested tree có thay đổi chưa commit, chưa có official CI result trên tested tree.
 - `ReportWorkflowTest` bao phủ report intake, reporter-only list, admin status/history, private evidence, listing/review moderation, booking evidence và `DISMISSED`. `BookingReportDecisionTest` bao phủ COMPLETE/refund operation, retry/idempotency và state guard.
 - API Contracts, Scramble operation notes, route/test matrix và OpenAPI JSON hiện đã có report endpoints. Strict export và `ApiDocumentationAccessTest` đã pass trong lần kiểm tra trước; xem Task 3 report để biết ngày/kết quả.
 - QueueContextPropagationTest đạt 3 tests / 31 assertions; Pint cho `routes/console.php` và test context đạt. Runtime scheduler với `schedule_run_id` đã xử lý release operation thật: booking `1` thành `COMPLETED`, payment attempt `RELEASED`, operation `1` `COMPLETED` trong attempt đầu. Xem Task 3 report để biết timestamp, correlation ID và giới hạn lần chạy.
-- Filament/Pulse đã có trong source. User báo 4 ca dashboard authorization đạt; Report Resource test đạt trong lần chạy riêng. Pulse dùng storage mặc định; không bật Redis ingest. Full pipeline cũ đã pass nhưng chạy trước phần UI mới, nên chưa thay thế pipeline trên source mới nhất, official CI hoặc review trên commit sạch.
+- Filament/Pulse đã có trong source. Full pipeline mới nhất trên tested tree đạt 441 tests / 5.122 assertions, gồm dashboard authorization và 8 test Report Resource; Pint 234 files, PHPStan 164 files, migration/seed đều đạt. Pulse dùng storage mặc định; không bật Redis ingest. Đây là local result trên working tree có thay đổi, chưa thay thế official CI hoặc review trên commit sạch.
 
 ### Tài liệu liên quan
 

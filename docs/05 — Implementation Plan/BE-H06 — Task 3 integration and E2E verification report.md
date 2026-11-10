@@ -2,9 +2,9 @@
 
 - **Ngày cập nhật:** 10/11/2026 (Asia/Ho_Chi_Minh)
 - **Branch:** `be-ha06`
-- **HEAD hiện tại:** `b0efd9cf614ddaf01051761cce36a37d79b4c684`
-- **Base/common ancestor với `origin/main`:** `4c94a473f8c46eea8a144c87c61399a5f3a2e9e5` (theo refs cục bộ hiện có; chưa fetch remote mới)
-- **Trạng thái worktree:** dirty; các thay đổi tích hợp chưa commit. Mọi kết quả trong report này thuộc worktree hiện tại, không thể tái tạo chỉ từ SHA HEAD.
+- **HEAD hiện tại khi chạy kiểm tra:** `f28834b80aa8a784fde870d739f26387fff431ad`
+- **Base/common ancestor với `origin/main`:** `0bea158df902bf744efb8217b19f778898140f7d` (theo refs cục bộ hiện có; chưa fetch remote mới)
+- **Trạng thái worktree:** có thay đổi chưa commit trong release worker, follow-up test và tài liệu. Kết quả dưới đây thuộc worktree `be-ha06` tại HEAD nêu trên cộng các thay đổi đó; không phải CI trên commit sạch.
 
 ## Kết luận
 
@@ -12,8 +12,9 @@
 - Queue context suite đạt 3 tests / 31 assertions, gồm request ID, schedule run ID, exhausted retry và `queue:retry`. Pint hai file vận hành đạt.
 - Worker/scheduler image từ worktree hiện tại build và chạy được. Runtime sandbox đã xử lý booking `1`: release operation `1` chuyển `PENDING → COMPLETED` trong lần gọi đầu, booking chuyển `AWAITING_CONFIRMATION → COMPLETED`, payment attempt thành `RELEASED`, và có payment event `RELEASED`. Scheduler log lúc `2026-11-10 08:27:00 UTC` ghi exit code `0` cùng `schedule_run_id=2407c88e-4abd-485a-8032-7739deb0b42e`. `queue:failed` không có job.
 - Strict Scramble export và OpenAPI access test đã đạt trong lần kiểm tra trước; chi tiết route nằm trong Task 2 matrix.
-- Full pipeline trên worktree hiện tại đã đạt: Pint 220 files, PHPStan 153 files không lỗi, migration/seed và 422 tests / 4.945 assertions đều pass. Đây không phải GitHub Actions result và worktree vẫn chưa commit.
-- **Overall: Gate BE chưa xác nhận.** Cần pipeline pass trên worktree, commit/SHA bàn giao, review và xác nhận của Hoàng, Thịnh, Hào; các gap ngoài phạm vi code đã triển khai cần được giữ rõ.
+- Full pipeline mới nhất trên worktree hiện tại đã đạt: Pint 234 files; PHPStan 164 files không lỗi; migration/seed và 441 tests / 5.122 assertions đều pass. Đây là local Docker pipeline, không phải GitHub Actions result; worktree có thay đổi chưa commit.
+- `BookingCompletionFollowupTest` đạt 7 tests / 66 assertions: reminder một lần sau 24 giờ, admin queue sau 72 giờ, admin completion không cần report và có audit; release lỗi giữ follow-up mở, release thành công đặt `resolved_at` trong cùng transaction.
+- **Overall: Gate BE chưa xác nhận.** Local pipeline trên working tree hiện tại đã pass. Còn cần commit/SHA bàn giao, official CI cho đúng commit, đồng bộ các handoff/review đang chờ và xác nhận của Hoàng, Thịnh, Hào.
 
 ## 1. Bàn giao, nhánh và nguồn
 
@@ -22,11 +23,11 @@
 | Identity, booking creation, discovery, Smart Match, review | Hoàng (BE-H01/H02/H04/H05) | Implementation, feature tests và handoff/review docs; API contracts/modules | Có trong integration base; review/CI evidence có mức độ khác nhau theo issue. Không có xác nhận mới của owner trên SHA Task 3. |
 | Schema, pet, listing, availability, care/report | Thịnh (BE-T01/T02/T03/T05/T06) | Migration/schema, report API/admin controller, policies, Filament/Pulse, feature tests và module/API docs | Report workflow có API coverage; Filament/Pulse đã được thêm, dashboard access và Report Resource có test. Handoff/owner review vẫn cần xác nhận. |
 | Runtime, acceptance/payment sandbox | Hào (BE-HA01/HA02/HA03/HA05/HA06) | Compose, scheduler/worker, completion/release/refund operations, E2E tests | Runtime sandbox đã được scheduler dùng để xử lý release operation thật thành công; chi tiết ở mục 5. Không thử nhánh lỗi/retry trên runtime trong lần này; nhánh đó được test trong suite. |
-| Git integration point | Hoàng điều phối; cả ba xác nhận Gate | `be-ha06` HEAD `b0efd9c`; `origin/main` `36592d9` | Worktree còn dirty, chưa có SHA sạch đại diện cho toàn bộ kết quả kiểm thử. |
+| Git integration point | Hoàng điều phối; cả ba xác nhận Gate | `be-ha06` HEAD `f28834b`; local `origin/main` `9e292ab` | Tested tree có thay đổi chưa commit sau HEAD; refs cục bộ cho thấy HEAD hiện tại chưa nằm trong `origin/main`. Chưa kiểm tra trạng thái PR/remote mới hơn. |
 
 Các tài liệu cũ của T04/HA03 có ghi nhận trạng thái khác nhau giữa thời điểm viết và implementation sau đó. Source hiện tại cùng test mới hơn được dùng làm bằng chứng kỹ thuật; owner nên đồng bộ lại tài liệu bàn giao T04/HA03 trước khi ký Gate. Không tự sửa contract từ các tài liệu mâu thuẫn.
 
-Branch refs có sẵn tại thời điểm audit (không fetch remote mới): local `be-h01`/`be-t01`=`3678041`, `be-h04`=`5840f1a`, `be-t02`=`36d3bb3`, `be-t03`=`d1cecf2`, `be-t05`=`4c94a47`; remote `origin/be-h03`=`bcb0955`, `origin/be-t04`=`c432ade`, `origin/be-ha01`=`9bfa2a5`, `origin/be-ha02`=`eeb242e`, `origin/be-ha03`=`f8a7444`, `origin/main`=`36592d9`. Không có branch ref `BE-T06` hoặc `BE-HA06` trong snapshot; đây là công việc downstream theo backlog, chưa có handoff branch để tích hợp. Các branch refs là trạng thái local đã fetch trước đó, không chứng minh PR/review mới nhất trên GitHub.
+Các branch refs khác trong bảng audit cũ là snapshot lịch sử, chưa fetch mới. Refs cục bộ hiện tại có `origin/be-ha06=f28834b` và `origin/main=9e292ab`; do worktree có thay đổi sau HEAD, cần commit rồi kiểm tra lại ancestry/CI trước khi tuyên bố tích hợp. Refs cục bộ không xác nhận trạng thái PR hoặc remote mới hơn.
 
 ## 2. Kiểm tra tích hợp
 
@@ -43,13 +44,13 @@ Branch refs có sẵn tại thời điểm audit (không fetch remote mới): lo
 
 | Field | Result |
 |---|---|
-| Commit checked out | `b0efd9cf614ddaf01051761cce36a37d79b4c684` (HEAD; worktree có thay đổi chưa commit) |
-| Tested tree | Branch `be-ha06`, full worktree hiện tại; không phải commit sạch |
-| Command | `docker compose -p pettel-beha06-handoff -f compose.test.yaml run --build --rm test` |
+| Commit checked out | `f28834b80aa8a784fde870d739f26387fff431ad` (HEAD; tested tree có thay đổi chưa commit) |
+| Tested tree | Branch `be-ha06`, HEAD trên cộng thay đổi working tree; không phải commit sạch |
+| Command | `docker compose -p pettel-completion-check -f compose.test.yaml run --build --rm test` |
 | Exit code | **0 — PASS** |
-| Pint / PHPStan | **PASS** — Pint 220 files; PHPStan 153 files, không có lỗi |
+| Pint / PHPStan | **PASS** — Pint 234 files; PHPStan 164 files, không có lỗi |
 | Database / migrations / seed | **PASS** — MySQL 8.4 cô lập; `migrate:fresh --seed` và seed lần hai |
-| Feature/unit suite | **PASS** — 422 tests, 4.945 assertions, 56.78 giây |
+| Feature/unit suite | **PASS** — 441 tests, 5.122 assertions, 75.35 giây |
 | GitHub Actions | Chưa có run URL/SHA; local pipeline không được gọi là official CI. |
 | Runtime phụ trợ | QueueContextPropagationTest: 3 tests / 31 assertions; worker/scheduler runtime có schedule IDs; release operation sandbox thật được xử lý thành công; `queue:failed` rỗng. |
 
@@ -71,7 +72,7 @@ Pipeline cục bộ ở trên chạy trên worktree dirty bằng command đã gh
 ## 5. Worker, scheduler, seed, OpenAPI, Pulse
 
 - Compose source defines `backend`, `worker` (`queue:work redis`) and `scheduler` (`schedule:work`); local runtime containers đều đang Up.
-- Worker/scheduler được build từ worktree hiện tại và recreate. `schedule:list` trong scheduler container liệt kê expiry, cancellation, release mỗi phút, care-update redaction hằng ngày và heartbeat mỗi phút.
+- Source scheduler khai báo expiry, cancellation, release và completion follow-up mỗi phút, care-update redaction hằng ngày và heartbeat mỗi phút. Runtime logs đã gửi trước đó chứng minh expiry/cancellation/release và heartbeat chạy; chưa có log xác nhận command completion follow-up chạy trên image chứa các thay đổi mới nhất.
 - Scheduler tick runtime ghi `schedule_run_id` riêng cho từng command; các lệnh expiry, cancellation và release kết thúc với exit code 0. Trong runtime sandbox, booking `1` được tạo qua workflow API (request được gọi qua Laravel HTTP Kernel bên trong container), payment sandbox được authorize, caregiver/owner hoàn tất các bước nghiệp vụ; confirmation tạo release operation `1` ở `PENDING`. Scheduler xử lý operation lúc `2026-11-10 08:27:00 UTC`: operation `COMPLETED`, attempt count `1`, booking `COMPLETED`, payment attempt `RELEASED`, và payment event `RELEASED` đã ghi. Không chèn booking/operation trực tiếp bằng SQL.
 - Giới hạn runtime: release thành công ngay lần đầu nên không xác minh lỗi/retry bằng runtime; retry/failure và `queue:retry` được kiểm tra trong test. `queue:failed` hiện rỗng, do đó không có failed job thật để retry. `QueueContextPropagationTest` đạt 3 tests / 31 assertions, nhưng dùng probe job/route cho cơ chế context; ứng dụng hiện chưa có request-driven business job chạy qua queue.
 - Filament và Pulse đã có trong source; admin/Pulse access tests được báo đạt 4 ca, và Report Resource tests đạt trong lần kiểm tra riêng. Pulse vẫn dùng storage mặc định, không bật Redis ingest dùng chung với queue.
@@ -82,8 +83,9 @@ Pipeline cục bộ ở trên chạy trên worktree dirty bằng command đã gh
 | Blocker | Owner / dependency | Cần có để gỡ |
 |---|---|---|
 | Worktree dirty, chưa có SHA sạch cho kết quả pipeline | Hoàng điều phối | Người dùng commit phần đã review, ghi SHA và chạy CI trên commit đó. |
-| Pipeline gắn với commit sạch / official CI | Hoàng điều phối | Local full pipeline đã pass trên worktree dirty; sau khi người dùng commit, ghi SHA và đối chiếu GitHub Actions trên đúng commit. |
+| Pipeline gắn với commit sạch / official CI | Hoàng điều phối | Local full pipeline đã pass trên tested working tree; sau khi commit, ghi SHA và đối chiếu GitHub Actions trên đúng commit. |
 | Runtime release failure/retry và failed job thật | Hào | Runtime lần này chứng minh xử lý release thành công; lỗi/retry chỉ có bằng chứng test. Không có failed job runtime để chạy `queue:retry`. Chỉ tạo lỗi sandbox có kiểm soát nếu Gate yêu cầu bằng chứng runtime bổ sung. |
 | Official CI và xác nhận của cả ba trên cùng commit | Hoàng, Thịnh, Hào | GitHub Actions run URL/SHA và sign-off reviewer/owners; local pipeline không thay xác nhận này. |
+| Đồng bộ handoff với SHA/source sau pipeline | Hoàng điều phối | Sau khi commit phần đã kiểm tra, cập nhật SHA tested tree và gắn GitHub Actions run của đúng commit. |
 
-**Gate BE:** `Blocked`. Không chuyển frontend sang Ready. Có thể hoàn tất các kiểm tra độc lập, nhưng Gate chỉ đổi sau khi hai workflow thiếu module được tích hợp, worker/scheduler/Pulse được xác minh trên source cùng commit, official CI pass và cả ba owner xác nhận.
+**Gate BE:** Chưa xác nhận; giữ frontend ở `Blocked` theo backlog. Các luồng chính có code/test, nhưng Gate chỉ đổi sau khi tested tree được commit/tích hợp, official CI chạy trên đúng commit, tài liệu/review còn chờ được cập nhật và cả ba owner xác nhận. Runtime completion-follow-up cũng cần được xác minh nếu tiêu chí nghiệm thu yêu cầu bằng chứng chạy trên image mới.

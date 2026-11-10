@@ -2,7 +2,7 @@
 
 **Owner:** Hào · **Reviewer theo backlog:** Thịnh · **Bên tích hợp:** Hoàng/BE-H06
 **Phạm vi:** vòng đời chăm sóc và settlement payment sandbox, từ booking `CONFIRMED` tới kết thúc booking.
-**Trạng thái tại bàn giao:** completion/release và report booking decision đã có trong worktree tích hợp `be-ha06`; full pipeline local đã pass trên worktree dirty (422 tests / 4.945 assertions), nhưng chưa có commit/SHA sạch hoặc official CI. Các bằng chứng hiện có và phần chưa xác minh được ghi tại mục 4 và BE-H06 Task 3 report.
+**Trạng thái tại bàn giao:** completion/release, report booking decision và follow-up 24/72 giờ đã có trong source `be-ha06`. Local pipeline mới nhất đạt Pint 234 files, PHPStan 164 files, migration/seed và 441 tests / 5.122 assertions trên worktree có thay đổi chưa commit tại HEAD `f28834b80aa8a784fde870d739f26387fff431ad`. Chưa có official CI cho tested tree này; xem BE-H06 Task 3 report.
 
 ## 1. Nguồn hợp đồng cần tuân thủ
 
@@ -21,7 +21,7 @@ Nếu API Contracts, BE-HA05, P0 hoặc code hiện tại có mâu thuẫn, ghi 
 - [ ] Gọi sandbox release qua service/gateway dùng chung. Chỉ khi release thành công mới ghi payment `RELEASED`, booking `COMPLETED`, status event và audit tương ứng; lưu kết quả nguyên tử, không giữ DB transaction lock trong khi gọi mạng.
 - [ ] Làm thao tác xác nhận/release idempotent. Request lặp cùng operation không tạo release, payment event, booking event hoặc audit trùng; replay trả kết quả được định nghĩa trong API contract.
 - [ ] Release lỗi giữ booking ở `AWAITING_CONFIRMATION`; ghi nhận lỗi an toàn, enqueue retry với operation/idempotency key ổn định và lịch 1/5/15 phút. Sau ba lần lỗi, dừng retry tự động và đưa vào hàng xử lý admin; admin retry phải dùng cùng operation key.
-- [ ] Thực hiện reminder một lần sau 24 giờ và đưa vào admin queue sau 72 giờ; không tự complete hoặc release theo timeout. Ghi nhận job, idempotency, retry và cách vận hành.
+- [x] Thực hiện reminder một lần sau 24 giờ và đưa vào admin queue sau 72 giờ; không tự complete hoặc release theo timeout. Đã kiểm tra bằng `BookingCompletionFollowupTest::test_reminder_is_sent_once_after_24_hours` và `::test_booking_is_queued_once_after_72_hours_without_changing_booking_or_payment`.
 - [ ] Chặn completion/admin completion khi có report liên quan đang `IN_REVIEW`; phối hợp BE-T06 để dùng report state sau khi tích hợp. Khi chưa có module report, có thể dùng fixture/seed report cho test nhánh này nhưng phải ghi rõ đó chưa phải E2E tích hợp report.
 - [ ] Cung cấp domain/service transition cho admin xác nhận thay owner hoặc giải quyết ngoại lệ theo P0: quyết định có lý do, actor, moderation/action audit, booking event và payment event nhất quán. Phối hợp BE-T06 để panel/Policy gọi service này; không làm trùng Filament UI và không cho admin sửa trực tiếp DB hoặc bypass release/refund.
 - [ ] Hủy/void/refund giữ theo contract hiện tại; không cho cancellation flow thông thường đảo `RELEASED` hoặc trạng thái kết thúc.
@@ -35,7 +35,7 @@ Chạy trên MySQL test cô lập với migrations/seed hiện tại và sandbox
 - [ ] **Quyền/state:** owner khác, caregiver khác, guest/non-active user và sai trạng thái bị từ chối theo API contract; không đổi booking/payment/event khi bị từ chối.
 - [ ] **Replay/race:** gửi xác nhận hoàn tất lặp và request đồng thời; chỉ một release hiệu lực, tổng `RELEASED` mỗi booking không vượt quá một, event/audit không nhân đôi.
 - [ ] **Release failure:** sandbox fail/timeout; booking giữ `AWAITING_CONFIRMATION`, operation bền vững; retry 1/5/15 dùng cùng operation key; chỉ chuyển `COMPLETED` sau khi release thành công; sau ba lần thất bại có thể thấy trong hàng admin.
-- [ ] **Owner không phản hồi:** reminder chạy một lần sau 24 giờ; booking được đưa admin queue sau 72 giờ; scheduler không tự release/complete.
+- [x] **Owner không phản hồi:** reminder chạy một lần sau 24 giờ; booking được đưa admin queue sau 72 giờ; scheduler không tự release/complete. `BookingCompletionFollowupTest` xác nhận idempotency và booking/payment giữ nguyên ở mốc 72 giờ.
 - [ ] **Admin:** admin completion có lý do và audit; admin retry release lỗi an toàn; admin không thể bỏ qua `IN_REVIEW` report hoặc tạo release trùng. Xác minh quyền admin/non-admin.
 - [ ] **Void/refund hồi quy:** test các nhánh cancel/void/refund có liên quan tiếp tục đạt; không làm sống lại booking cancelled, không release/refund lặp.
 - [ ] **Log/an toàn:** log có request/operation ID để truy dấu, không chứa secret, token hoặc dữ liệu nhạy cảm không cần thiết.
@@ -52,12 +52,13 @@ Chạy trên MySQL test cô lập với migrations/seed hiện tại và sandbox
 
 ## 4. Trạng thái hiện có từ BE-H06
 
-- Branch hiện tại `be-ha06`, HEAD `b0efd9cf614ddaf01051761cce36a37d79b4c684`; worktree dirty và chưa có SHA sạch bàn giao.
+- Branch hiện tại `be-ha06`, HEAD lúc chạy pipeline `f28834b80aa8a784fde870d739f26387fff431ad`; tested tree có thay đổi chưa commit và chưa có SHA sạch bàn giao.
 - `BookingLifecycleEndToEndTest::test_booking_reaches_completed_after_release_retry` hiện kiểm tra luồng booking tới `COMPLETED` sau release/retry. `BookingReportDecisionTest` kiểm tra admin COMPLETE/refund, retry, idempotency và bảo vệ state.
+- `BookingCompletionFollowupTest` đạt 7 tests / 66 assertions. `test_admin_completion_uses_one_release_operation_and_waits_for_release_success` xác nhận lỗi release chưa đặt `resolved_at`; retry thành công mới đặt `resolved_at`, đồng thời booking chuyển `COMPLETED`. Admin completion được kiểm tra trên booking không cần report; test riêng xác nhận report `IN_REVIEW` sẽ chặn completion.
 - Runtime sandbox gần nhất chứng minh outbox xử lý một release thật: booking `1` đi qua API workflow tới `AWAITING_CONFIRMATION`; owner confirmation tạo release operation `1` ở `PENDING`; scheduler xử lý operation lúc `2026-11-10 08:27:00 UTC` với `schedule_run_id=2407c88e-4abd-485a-8032-7739deb0b42e`, exit code `0`. Operation hoàn tất ở attempt `1`, booking thành `COMPLETED`, payment attempt thành `RELEASED`, và payment event `RELEASED` được ghi. Request được thực hiện qua Laravel HTTP Kernel trong container; không chèn operation trực tiếp vào DB.
 - Giới hạn runtime: lần này gateway thành công ngay, nên lỗi/retry được chứng minh bằng E2E test chứ chưa mô phỏng trên runtime; `queue:failed` rỗng và không có UUID thật để chạy `queue:retry`.
-- Queue context test đạt 3 tests / 31 assertions; Pint hai file vận hành đạt. Full pipeline local đạt: Pint 220 files, PHPStan 153 files không lỗi, migration/seed đạt và 422 tests / 4.945 assertions; xem Task 3 report để biết command và giới hạn.
-- Các acceptance items về reminder 24h/72h/admin queue và sign-off trên commit chung cần được xác nhận riêng; không đánh dấu Pass chỉ dựa trên booking E2E.
+- Queue context test đạt 3 tests / 31 assertions. Full pipeline local mới nhất đạt: Pint 234 files, PHPStan 164 files không lỗi, migration/seed đạt và 441 tests / 5.122 assertions; đây là kết quả trên worktree có thay đổi chưa commit, không phải official CI.
+- Reminder 24h/72h, admin queue và admin completion đã có test; CI trên commit tích hợp và sign-off reviewer/owners vẫn cần xác nhận riêng.
 
 ### Tài liệu liên quan
 
