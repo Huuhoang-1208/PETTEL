@@ -6,7 +6,27 @@ PETTEL — Architecture & Technical Design \| Hợp đồng JSON cho Vue SPA; Fi
 
 Breeze API scaffold cung cấp route đăng ký/đăng nhập/đăng xuất/khôi phục mật khẩu; Vue lấy `/sanctum/csrf-cookie` trước thao tác auth. Route riêng tư dùng `auth:sanctum`; không phát hành bearer token cho SPA.
 
-GET /api/listings — bộ lọc công khai theo contract M04 bên dưới; `pet_id` thuộc phần mở rộng Smart Match BE-H04. GET /api/listings/{id} — chỉ listing được phép công khai, không có ngoại lệ owner/admin trên route công khai. POST /api/bookings — pet_id, listing_id, start_at, end_at, instructions, Idempotency-Key. POST /api/bookings/{id}/accept — caregiver; POST /api/bookings/{id}/cancel — actor được phép; POST /api/bookings/{id}/sandbox-payments — owner. POST /api/sandbox/callback — chỉ adapter sandbox. POST /api/bookings/{id}/updates và /confirm-completion; POST /api/reports.
+GET /api/listings — bộ lọc công khai theo contract M04 bên dưới; `pet_id` thuộc phần mở rộng Smart Match BE-H04. GET /api/listings/{id} — chỉ listing được phép công khai, không có ngoại lệ owner/admin trên route công khai. POST /api/bookings — pet_id, listing_id, start_at, end_at, instructions; `Idempotency-Key` nằm ở header. POST /api/bookings/{id}/accept — caregiver; POST /api/bookings/{id}/cancel — actor được phép; POST /api/bookings/{id}/sandbox-payments — owner. Callback sandbox hiện hành là `POST /api/sandbox/payment-callback`, ký bằng `X-Payment-Signature` theo [BE-HA05](<../05 — Implementation Plan/BE-HA05 — Contract payment sandbox và callback.md>). Report API và completion confirmation đã được triển khai; xem các mục M09 và M05 bên dưới. Care updates hiện dùng `/api/bookings/{id}/care-updates`.
+
+## M09 — Reports API
+
+Các route report yêu cầu session Sanctum và account ACTIVE. Tạo report và xem `/reports/mine` giới hạn theo người gọi. Admin routes yêu cầu thêm role `ADMIN`. Một report phải trỏ đúng một target trong `listing_id`, `review_id`, `message_id`, `booking_id`; `reason_code` là bắt buộc, `description` tùy chọn tối đa 2.000 ký tự. Người gửi report về booking/message phải là participant; tài nguyên riêng tư không tồn tại và tài nguyên ngoài quyền trả cùng `404 NOT_FOUND`.
+
+| Method / path | Quyền và request | Thành công | Lỗi/quy tắc |
+| --- | --- | --- | --- |
+| `POST /api/reports` | User ACTIVE; đúng một target, `reason_code`, `description?` | `201`, report ở `OPEN` | `401`, `404`, `422` |
+| `GET /api/reports/mine` | User ACTIVE; query phân trang | `200`, chỉ report của caller | `401` |
+| `GET /api/admin/reports` | ADMIN ACTIVE; `status?`, `per_page?` (1–100) | `200`, queue phân trang | `401`, `403`, `422` |
+| `GET /api/admin/reports/{id}` | ADMIN ACTIVE | `200`, metadata report; không gồm evidence riêng tư | `401`, `403`, `404` |
+| `GET /api/admin/reports/{id}/evidence` | ADMIN ACTIVE; policy xác nhận evidence thuộc report | `200`, evidence giới hạn theo target; lượt xem được audit | `401`, `403`, `404` |
+| `POST /api/admin/reports/{id}/status` | ADMIN ACTIVE; `status`, `reason` | `200` | `409 BOOKING_DECISION_REQUIRED` nếu resolve report booking bằng route chung; `401`, `403`, `404`, `409`, `422` |
+| `POST /api/admin/reports/{id}/booking-decision` | ADMIN ACTIVE; `decision` (`COMPLETE` hoặc `CANCEL_REFUND`), `reason` | `202` khi tạo operation; `200` khi replay operation | `401`, `403`, `404`, `409`, `422` |
+| `GET /api/admin/reports/{id}/history` | ADMIN ACTIVE | `200`, status events và moderation actions | `401`, `403`, `404` |
+| `POST /api/admin/reports/{id}/moderation` | ADMIN ACTIVE; `action` (`HIDE` hoặc `RESTORE`), `reason` | `200` | `401`, `403`, `404`, `409`, `422` |
+
+Report có trạng thái `OPEN`, `IN_REVIEW`, `RESOLVED`, `DISMISSED`. Chuyển trạng thái và moderation ghi actor, thời gian, lý do và request ID. Queue/detail không trả nội dung evidence riêng tư; evidence chỉ được xem qua endpoint riêng và policy tương ứng. Booking report đang `IN_REVIEW` giữ booking. `DISMISSED` chỉ đóng report và gỡ hold. `RESOLVED` cho booking phải qua `booking-decision`: `COMPLETE` tạo release operation, `CANCEL_REFUND` tạo cancellation/refund operation. Worker chỉ cập nhật booking sau khi gateway sandbox thành công; report action không trực tiếp đổi booking.
+
+JSON lỗi theo envelope chung `error.code`, `error.message`, `error.details?`, `error.request_id`. Lỗi quyền là `401/403`; lỗi không tồn tại/ngoài phạm vi là `404`; trạng thái không phù hợp là `409`; request không hợp lệ là `422`. Request thay đổi trạng thái dùng session cookie có thể nhận `419` khi CSRF token thiếu/hết hạn; lấy lại `/sanctum/csrf-cookie` rồi gửi lại request.
 
 ## M04 — Public listing search — chốt 02/11/2026
 
@@ -385,6 +405,34 @@ Các route dưới đây dùng `auth:sanctum`, `account.active`, role `CAREGIVER
 Collections trả `data`, `links`, `meta`; single resource bọc `data`; ID trong response là chuỗi. Slot và thời điểm change request trả ISO 8601 UTC có sáu chữ số microsecond. Change request rút có `reviewed_by_user_id`, `reviewed_at`, `decision_reason` bằng null; audit ghi actor/thời điểm. `latest_decision` là object `{action,reason,decided_at}` hoặc null; pending request trả ID chuỗi hoặc null.
 
 Tất cả query/body key lạ trên các route BE-T03 trả `422 VALIDATION_ERROR` theo field. Lỗi nghiệp vụ dùng `error:{code,message,details,request_id}`; child/owner sai scope 404, self-review/quyền restore 403, sai state/version 409 và overlap/coverage 409 `AVAILABILITY_CONFLICT`. Public listing resource chỉ thêm `media:[{media_object_id,sort_order,image_url,thumbnail_url}]`; không trả slot, booking, snapshot, object key hoặc hash. Public image stream dùng `no-store`.
+
+### Admin route request/response contract
+
+Các route admin dưới đây đều yêu cầu `auth:sanctum`, account `ACTIVE`, role `ADMIN`, và CSRF hợp lệ cho request thay đổi dữ liệu. Unauthorized trả `401`; role/account không đủ quyền trả `403`; request lỗi trả `422`; resource nằm ngoài phạm vi nhìn thấy hoặc không tồn tại trả `404`; state/version không hợp lệ trả `409`. Lỗi JSON theo envelope `error:{code,message,details?,request_id}`. Request body/query key ngoài allowlist bị từ chối.
+
+| Method / route | Request | Success response | Resource/state/error rules |
+| --- | --- | --- | --- |
+| `GET /api/admin/listings?status&page&per_page` | `status`: `ALL`, `DRAFT`, `PENDING_REVIEW`, `ACTIVE`, `SUSPENDED`, `ARCHIVED`; page/per_page tùy chọn, per_page tối đa 50 | `200`, paginator `{data,links,meta}`; mặc định lọc `PENDING_REVIEW`, 20 mục/trang | Invalid query `422`; chỉ đọc các listing quản trị được phép xem. |
+| `GET /api/admin/listings/{id}` | Không nhận query/body | `200`, management resource bọc `data` | Listing không tồn tại `404`; admin không được xem bản quản trị listing của chính mình `403`. |
+| `POST /api/admin/listings/{id}/approve` | `{}` hoặc `{reason}` tùy chọn | `200`, listing `ACTIVE`, tăng version; ghi audit | Chỉ `PENDING_REVIEW`; nội dung/media/caregiver được kiểm tra lại; self-review `403`, sai state hoặc dữ liệu listing không còn hợp lệ `409`, listing thiếu `404`. |
+| `POST /api/admin/listings/{id}/reject` | `{reason}` bắt buộc, chuỗi không rỗng, tối đa 1.000 ký tự sau trim/chuẩn hóa | `200`, listing trở lại `DRAFT`, tăng version; ghi audit | Chỉ `PENDING_REVIEW`; sai state `409`, thiếu reason `422`, self-review `403`. |
+| `POST /api/admin/listings/{id}/suspend` | `{reason}` bắt buộc | `200`, listing `SUSPENDED`, `suspension_source=ADMIN`; ghi audit | Listing `ACTIVE` có thể suspend; admin có thể nâng suspension nguồn CAREGIVER thành ADMIN; thao tác lặp/state khác dùng `409` trừ trường hợp nâng nguồn đã nêu. |
+| `POST /api/admin/listings/{id}/restore` | `{reason}` bắt buộc | `200`, listing `ACTIVE`, xóa `suspension_source`, tăng version; ghi audit | Chỉ listing `SUSPENDED`, caregiver phải còn đủ điều kiện; sai state `409`, resource thiếu `404`. |
+| `POST /api/admin/listings/{id}/archive` | `{reason}` bắt buộc | `200`, listing `ARCHIVED`, tăng version; ghi audit | Chỉ `ACTIVE` hoặc `SUSPENDED`; booking còn giữ lịch chặn archive bằng `409 INVALID_STATE`. |
+| `GET /api/admin/listing-change-requests?status&page&per_page` | Status theo queue contract; page/per_page tùy chọn, tối đa 50 | `200`, paginator `{data,links,meta}`; mặc định `PENDING_REVIEW`, 20 mục/trang | Query không hợp lệ `422`. |
+| `GET /api/admin/listings/{id}/change-requests/{requestId}` | Không nhận query/body | `200`, change-request resource bọc `data` | Request phải thuộc listing; resource thiếu/không khớp `404`; admin không review listing của mình `403`. |
+| `POST /api/admin/listings/{id}/change-requests/{requestId}/approve` | `{}` hoặc `{reason}` tùy chọn | `200`, change-request đã `APPROVED` và listing resource/version cập nhật | Chỉ request `PENDING_REVIEW`, base version còn hiện hành; self-review `403`, stale/state conflict `409`, request thiếu hoặc sai listing `404`. |
+| `POST /api/admin/listings/{id}/change-requests/{requestId}/reject` | `{reason}` bắt buộc | `200`, change-request `REJECTED`; listing công khai không đổi | Chỉ request `PENDING_REVIEW`; thiếu reason `422`, stale/state conflict `409`, self-review `403`, request thiếu/sai listing `404`. |
+| `GET /api/admin/listings/{id}/media/{mediaId}/content?variant&change_request_id` | `variant`: `image` hoặc `thumbnail`; `change_request_id` tùy chọn số nguyên dương để xem media của request đang chờ | `200`, stream ảnh; `Cache-Control: no-store` | Listing/media/request phải khớp; self-review `403`, media hoặc request không thuộc listing/không còn pending `404`, query sai `422`. |
+
+### Admin cancellation queue
+
+Queue này vận hành các void/refund cần người xử lý sau khi retry tự động thất bại; không cho admin sửa trực tiếp trạng thái booking hay payment attempt. Cả hai route yêu cầu active ADMIN session; thay đổi POST cần CSRF và tạo audit.
+
+| Method / route | Request | Success response | Resource/state/error rules |
+| --- | --- | --- | --- |
+| `GET /api/admin/booking-cancellations` | Không nhận query/body | `200`, `{data:[...]}` tối đa 100 operation `MANUAL_REVIEW`, sắp xếp thời điểm tạo tăng dần | Mỗi item có `id`, `booking_id`, `operation_type`, `source`, `reason_code`, `attempt_count`, `last_error_code`, `created_at`; không bao gồm thông tin thanh toán nhạy cảm. |
+| `POST /api/admin/booking-cancellations/{id}/retry` | `{reason}` bắt buộc, chuỗi 10–500 ký tự; trim và Unicode NFC | `202`, `{id,status:"CANCELLATION_PENDING",booking_id}` | Chỉ operation `MANUAL_REVIEW` được retry; `PAYMENT_STATE_MISMATCH` cần xử lý trước và trả `409`; operation không tồn tại `404`; validation `422`. Retry đưa operation về `PENDING`, đặt `next_retry_at` hiện tại, reset `attempt_count`, giữ nguyên gateway operation key và ghi audit; không đổi trạng thái booking ngay trong request. |
 
 **Trạng thái:** contract này đã được cài trong working tree và các test API/MySQL tương ứng đạt; commit cuối, CI từ commit đó và nghiệm thu reviewer chưa được ghi nhận trong tài liệu này.
 

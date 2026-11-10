@@ -2,13 +2,16 @@
 
 use App\Http\Controllers\AcceptBookingController;
 use App\Http\Controllers\Admin\BookingCancellationQueueController;
+use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Auth\EnableCaregiverRoleController;
+use App\Http\Controllers\BookingCareLifecycleController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BookingMessageController;
 use App\Http\Controllers\CancelBookingController;
 use App\Http\Controllers\CaregiverListingController;
 use App\Http\Controllers\CaregiverProfileController;
 use App\Http\Controllers\CareUpdateController;
+use App\Http\Controllers\ConfirmBookingCompletionController;
 use App\Http\Controllers\ListingAvailabilityController;
 use App\Http\Controllers\ListingChangeRequestController;
 use App\Http\Controllers\ListingLifecycleController;
@@ -16,6 +19,7 @@ use App\Http\Controllers\ListingMediaController;
 use App\Http\Controllers\PetController;
 use App\Http\Controllers\PublicListingController;
 use App\Http\Controllers\RejectBookingController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SandboxPaymentCallbackController;
 use App\Http\Controllers\SimulateSandboxPaymentController;
 use App\Http\Controllers\StartSandboxPaymentController;
@@ -41,6 +45,11 @@ Route::post('/user/roles/caregiver', EnableCaregiverRoleController::class)
     ->middleware(['auth:sanctum', 'account.active', 'throttle:10,1'])
     ->name('user.roles.caregiver');
 
+Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
+    Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
+    Route::get('/reports/mine', [ReportController::class, 'mine'])->name('reports.mine');
+});
+
 Route::middleware(['auth:sanctum', 'account.active', 'role:OWNER'])->group(function () {
     Route::post('/bookings/quote', [BookingController::class, 'quote'])->name('bookings.quote');
     Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
@@ -50,6 +59,9 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:OWNER'])->group(funct
     Route::post('/bookings/{id}/sandbox-payments/{attemptId}/simulate', SimulateSandboxPaymentController::class)
         ->whereNumber(['id', 'attemptId'])
         ->name('bookings.sandbox-payments.simulate');
+    Route::post('/bookings/{id}/confirm-completion', ConfirmBookingCompletionController::class)
+        ->whereNumber('id')
+        ->name('bookings.confirm-completion');
 
     Route::get('/pets', [PetController::class, 'index'])->name('pets.index');
     Route::post('/pets', [PetController::class, 'store'])->name('pets.store');
@@ -93,6 +105,20 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
     });
 
 Route::middleware(['auth:sanctum', 'account.active', 'role:ADMIN'])->prefix('admin')->group(function () {
+    Route::get('/reports', [AdminReportController::class, 'index'])->name('admin.reports.index');
+    Route::get('/reports/{id}', [AdminReportController::class, 'show'])
+        ->whereNumber('id')->name('admin.reports.show');
+    Route::get('/reports/{id}/evidence', [AdminReportController::class, 'evidence'])
+        ->whereNumber('id')->name('admin.reports.evidence');
+    Route::post('/reports/{id}/status', [AdminReportController::class, 'changeStatus'])
+        ->whereNumber('id')->name('admin.reports.status');
+    Route::post('/reports/{id}/booking-decision', [AdminReportController::class, 'bookingDecision'])
+        ->whereNumber('id')->name('admin.reports.booking-decision');
+    Route::get('/reports/{id}/history', [AdminReportController::class, 'history'])
+        ->whereNumber('id')->name('admin.reports.history');
+    Route::post('/reports/{id}/moderation', [AdminReportController::class, 'moderate'])
+        ->whereNumber('id')->name('admin.reports.moderation');
+
     Route::get('/booking-cancellations', [BookingCancellationQueueController::class, 'index']);
     Route::post('/booking-cancellations/{id}/retry', [BookingCancellationQueueController::class, 'retry'])->whereNumber('id');
     Route::get('/listings', [ListingLifecycleController::class, 'adminIndex']);
@@ -123,6 +149,16 @@ Route::post('/bookings/{id}/accept', AcceptBookingController::class)
     ->middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
     ->whereNumber('id')
     ->name('bookings.accept');
+
+Route::post('/bookings/{id}/start', [BookingCareLifecycleController::class, 'start'])
+    ->middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
+    ->whereNumber('id')
+    ->name('bookings.start');
+
+Route::post('/bookings/{id}/request-completion', [BookingCareLifecycleController::class, 'requestCompletion'])
+    ->middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
+    ->whereNumber('id')
+    ->name('bookings.request-completion');
 
 Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::get('/bookings/{id}/care-updates', [CareUpdateController::class, 'index'])

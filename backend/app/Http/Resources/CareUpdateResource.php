@@ -11,7 +11,12 @@ use Illuminate\Support\Facades\URL;
 /** @mixin CareUpdate */
 class CareUpdateResource extends JsonResource
 {
-    /** @return array<string, mixed> */
+    /**
+     * @return array{
+     *   id: string, booking_id: string, body: string, sender: array{id: string, name: ?string},
+     *   created_at: string, image_url: ?string, redacted: bool
+     * }
+     */
     public function toArray(Request $request): array
     {
         $mediaUrl = null;
@@ -31,9 +36,18 @@ class CareUpdateResource extends JsonResource
                 'id' => (string) $this->sender_id,
                 'name' => $this->sender?->name,
             ],
-            'created_at' => CarbonImmutable::parse($this->created_at)->utc()->format('Y-m-d\\TH:i:s.u\\Z'),
+            'created_at' => self::formatTimestamp($this->created_at),
             'image_url' => $mediaUrl,
             'redacted' => $this->redacted_at !== null,
         ];
+    }
+
+    private static function formatTimestamp(mixed $value): string
+    {
+        $timestamp = $value instanceof \DateTimeInterface
+            ? CarbonImmutable::instance($value)
+            : CarbonImmutable::parse((string) $value);
+
+        return $timestamp->utc()->format('Y-m-d\\TH:i:s.u\\Z');
     }
 }

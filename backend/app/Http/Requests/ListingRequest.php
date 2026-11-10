@@ -55,9 +55,10 @@ class ListingRequest extends FormRequest
         return [
             'title' => [$presence, 'string', 'max:120'],
             'description' => [$presence, 'string', 'max:2000'],
-            'service_type' => [$presence, Rule::in(['DAYCARE', 'BOARDING'])],
+            'service_type' => [$presence, 'string', Rule::in(['DAYCARE', 'BOARDING'])],
             'area_code' => [
                 $presence,
+                'string',
                 Rule::in([
                     'DN_CENTER',
                     'DN_NORTH',
@@ -67,26 +68,13 @@ class ListingRequest extends FormRequest
                 ]),
             ],
             'price_vnd' => [$presence, 'integer:strict', 'min:1', 'max:'.PHP_INT_MAX],
-            'price_unit' => [$presence, Rule::in(['HOUR', 'NIGHT'])],
+            'price_unit' => [$presence, 'string', Rule::in(['HOUR', 'NIGHT'])],
             'acceptance_rules_json' => [$presence, 'array:schema_version,species,sizes'],
             'acceptance_rules_json.schema_version' => [$nested, 'integer:strict', Rule::in([1])],
             'acceptance_rules_json.species' => [$nested, 'array', 'list', 'min:1'],
             'acceptance_rules_json.species.*' => ['string', Rule::in(['DOG', 'CAT', 'OTHER'])],
             'acceptance_rules_json.sizes' => [$nested, 'array', 'list', 'min:1'],
             'acceptance_rules_json.sizes.*' => ['string', Rule::in(['SMALL', 'MEDIUM', 'LARGE'])],
-            'id' => ['missing'],
-            'user_id' => ['missing'],
-            'caregiver_profile_id' => ['missing'],
-            'status' => ['missing'],
-            'capacity' => ['missing'],
-            'version' => ['missing'],
-            'suspension_source' => ['missing'],
-            'published_at' => ['missing'],
-            'created_at' => ['missing'],
-            'updated_at' => ['missing'],
-            'deleted_at' => ['missing'],
-            'listing_media' => ['missing'],
-            'availability_slots' => ['missing'],
         ];
     }
 

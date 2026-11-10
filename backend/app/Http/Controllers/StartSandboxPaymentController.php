@@ -12,6 +12,9 @@ use Illuminate\Support\Str;
 
 class StartSandboxPaymentController extends Controller
 {
+    /**
+     * @response array{data: array{id: string, booking_id: string, attempt_no: int, amount_vnd: int, status: string, provider_ref: string, payment_due_at: ?string, is_sandbox: bool}}
+     */
     public function __invoke(
         Request $request,
         string $id,

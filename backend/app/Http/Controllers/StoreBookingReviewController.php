@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\User;
+use App\Support\PublicReviewCache;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
@@ -14,6 +15,9 @@ use Normalizer;
 
 class StoreBookingReviewController extends Controller
 {
+    /**
+     * @response array{data: array{id: string, booking_id: string, listing_id: string, rating: int, body: ?string, status: string, is_demo: bool, created_at: string}}
+     */
     public function __invoke(Request $request, string $id): JsonResponse
     {
         $owner = $request->user();
@@ -114,6 +118,8 @@ class StoreBookingReviewController extends Controller
 
             $this->fail(409, 'REVIEW_ALREADY_EXISTS', 'This booking already has a review.');
         }
+
+        PublicReviewCache::invalidate($review['listing_id']);
 
         return response()->json(['data' => $review], 201);
     }

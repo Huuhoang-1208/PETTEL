@@ -9,6 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
+ * @property int $id
+ * @property int $caregiver_profile_id
+ * @property array{schema_version: int, species: list<string>, sizes: list<string>} $acceptance_rules_json
+ * @property int $capacity
+ * @property int $version
  * @property-read string|null $latest_decision_action
  * @property-read string|null $latest_decision_reason
  * @property-read string|null $latest_decision_at

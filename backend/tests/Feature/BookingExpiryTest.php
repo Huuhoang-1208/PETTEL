@@ -80,10 +80,11 @@ class BookingExpiryTest extends TestCase
 
     public function test_scheduler_registers_expiry_and_outbox_every_minute(): void
     {
-        $events = app(Schedule::class)->events();
-        $commands = array_map(fn ($event) => $event->command, $events);
+        $events = collect(app(Schedule::class)->events())
+            ->keyBy(fn ($event) => $event->description);
 
-        $this->assertTrue(collect($commands)->contains(fn (?string $command): bool => str_contains((string) $command, 'bookings:process-expiries')));
-        $this->assertTrue(collect($commands)->contains(fn (?string $command): bool => str_contains((string) $command, 'bookings:process-cancellations')));
+        $this->assertSame('* * * * *', $events['bookings:process-expiries']->expression);
+        $this->assertSame('* * * * *', $events['bookings:process-cancellations']->expression);
+        $this->assertSame('* * * * *', $events['bookings:process-releases']->expression);
     }
 }

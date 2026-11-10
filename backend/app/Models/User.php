@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +15,7 @@ use Illuminate\Notifications\Notifiable;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     protected $attributes = [
         'status' => 'ACTIVE',
@@ -51,5 +53,11 @@ class User extends Authenticatable
     public function caregiverProfile(): HasOne
     {
         return $this->hasOne(CaregiverProfile::class);
+    }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->status === 'ACTIVE'
+            && $this->hasRole('ADMIN');
     }
 }

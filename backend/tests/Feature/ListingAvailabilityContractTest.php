@@ -11,6 +11,38 @@ class ListingAvailabilityContractTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_slot_collection_is_paginated_shaped_and_scoped_to_the_listing_owner(): void
+    {
+        $fixture = BookingFixture::make();
+        $otherFixture = BookingFixture::make();
+        $listingId = $fixture['active_listing_id'];
+        $otherListingId = $otherFixture['active_listing_id'];
+
+        $response = $this->actingAs($fixture['caregiver'])
+            ->getJson("/api/caregiver/listings/{$listingId}/availability-slots?per_page=1")
+            ->assertOk()
+            ->assertJsonStructure([
+                'data' => [['id', 'start_at', 'end_at']],
+                'links' => ['first', 'last', 'prev', 'next'],
+                'meta' => ['current_page', 'last_page', 'per_page', 'total'],
+            ])
+            ->assertJsonPath('meta.per_page', 1)
+            ->assertJsonPath('meta.total', 1);
+
+        $expectedSlotId = (string) DB::table('availability_slots')
+            ->where('listing_id', $listingId)
+            ->value('id');
+        $this->assertSame($expectedSlotId, $response->json('data.0.id'));
+
+        $this->getJson("/api/caregiver/listings/{$otherListingId}/availability-slots")
+            ->assertNotFound()
+            ->assertJsonPath('error.code', 'NOT_FOUND');
+
+        $this->getJson("/api/caregiver/listings/{$listingId}/availability-slots?unknown=1")
+            ->assertUnprocessable()
+            ->assertJsonPath('error.code', 'VALIDATION_ERROR');
+    }
+
     public function test_slot_api_preserves_offset_microseconds_and_half_open_boundaries(): void
     {
         $fixture = BookingFixture::make();

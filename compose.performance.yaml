@@ -1,0 +1,72 @@
+services:
+  db-perf:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: pettel_perf
+      MYSQL_USER: pettel_perf
+      MYSQL_PASSWORD: pettel-perf-only
+      MYSQL_ROOT_PASSWORD: pettel-perf-root-only
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  redis-perf:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    tmpfs:
+      - /data
+
+  app-perf:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: backend
+    environment:
+      APP_NAME: PETTEL-Performance
+      APP_ENV: performance
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      APP_DEBUG: "false"
+      APP_URL: http://localhost:18088
+      APP_PERFORMANCE_METRICS: "true"
+      DB_CONNECTION: mysql
+      DB_HOST: db-perf
+      DB_PORT: 3306
+      DB_DATABASE: pettel_perf
+      DB_USERNAME: pettel_perf
+      DB_PASSWORD: pettel-perf-only
+      DB_URL: ""
+      CACHE_STORE: redis
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      REDIS_CLIENT: phpredis
+      REDIS_HOST: redis-perf
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: null
+      BCRYPT_ROUNDS: 4
+      MAIL_MAILER: array
+    depends_on:
+      db-perf:
+        condition: service_healthy
+      redis-perf:
+        condition: service_started
+    networks:
+      default:
+        aliases:
+          - backend
+    command: ["php-fpm", "-F"]
+
+  frontend-perf:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: frontend
+    ports:
+      - "18088:80"
+    depends_on:
+      app-perf:
+        condition: service_started

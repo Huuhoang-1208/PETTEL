@@ -76,10 +76,12 @@ class CancellationCoordinator
             ->lockForUpdate()
             ->first();
         if ($existing !== null) {
-            if ($existing->source === $source
+            if (
+                $existing->source === $source
                 && $existing->reason_code === $reasonCode
                 && $existing->actor_user_id === $actor?->id
-                && $existing->idempotency_key === $idempotencyKey) {
+                && $existing->idempotency_key === $idempotencyKey
+            ) {
                 return $existing;
             }
 
@@ -87,8 +89,10 @@ class CancellationCoordinator
         }
 
         $attemptId = $booking->current_payment_attempt_id;
-        if ($attemptId !== null && ! PaymentAttempt::query()->whereKey($attemptId)
-            ->where('booking_id', $booking->id)->exists()) {
+        if (
+            $attemptId !== null && ! PaymentAttempt::query()->whereKey($attemptId)
+                ->where('booking_id', $booking->id)->exists()
+        ) {
             $attemptId = null;
         }
 
@@ -134,12 +138,31 @@ class CancellationCoordinator
                 return ['booking' => $booking, 'operation' => $operation];
             }
 
+            $isAdminReportRefund = $operation->source === 'ADMIN'
+                && $operation->reason_code === 'ADMIN_REPORT_REFUND_CANCEL'
+                && $operation->operation_type === 'REFUND';
+
             $isLateAuthorizationRefund = $operation->source === 'SYSTEM'
                 && $operation->reason_code === 'PAYMENT_LATE_AUTHORIZED'
                 && $operation->operation_type === 'REFUND';
-            $expectedBookingStatus = $operation->operation_type === 'VOID' ? 'AWAITING_PAYMENT' : 'CONFIRMED';
-            $bookingStatusMatches = $booking->status === $expectedBookingStatus
-                || ($isLateAuthorizationRefund && in_array($booking->status, ['AWAITING_PAYMENT', 'CANCELLED'], true));
+
+            if ($isAdminReportRefund) {
+                $bookingStatusMatches = in_array(
+                    $operation->booking_status_before,
+                    ['IN_PROGRESS', 'AWAITING_CONFIRMATION'],
+                    true,
+                ) && $booking->status === $operation->booking_status_before;
+            } else {
+                $expectedBookingStatus = $operation->operation_type === 'VOID'
+                    ? 'AWAITING_PAYMENT'
+                    : 'CONFIRMED';
+
+                $bookingStatusMatches = $booking->status === $expectedBookingStatus;
+            }
+
+            $bookingStatusMatches = $bookingStatusMatches
+                || ($isLateAuthorizationRefund
+                    && in_array($booking->status, ['AWAITING_PAYMENT', 'CANCELLED'], true));
             if (! $bookingStatusMatches) {
                 $operation->status = 'MANUAL_REVIEW';
                 $operation->last_error_code = 'PAYMENT_STATE_MISMATCH';
@@ -163,6 +186,28 @@ class CancellationCoordinator
             if ($attempt !== null) {
                 $attempt->status = $operation->operation_type === 'VOID' ? 'VOIDED' : 'REFUNDED';
                 $attempt->save();
+            }
+
+            if ($operation->operation_type === 'REFUND' && $attempt !== null) {
+                $externalEventId = 'refund:'.$operation->gateway_operation_key;
+                $payloadHash = hash('sha256', implode('|', [
+                    (string) $booking->id,
+                    (string) $attempt->id,
+                    $operation->gateway_operation_key,
+                    'REFUNDED',
+                ]));
+
+                DB::table('payment_events')->insertOrIgnore([
+                    'payment_attempt_id' => $attempt->id,
+                    'provider' => 'sandbox',
+                    'external_event_id' => $externalEventId,
+                    'event_type' => 'REFUNDED',
+                    'payload_hash' => $payloadHash,
+                    'processing_status' => 'PROCESSED',
+                    'rejection_code' => null,
+                    'received_at' => $now->format('Y-m-d H:i:s.u'),
+                    'processed_at' => $now->format('Y-m-d H:i:s.u'),
+                ]);
             }
 
             $this->finishBookingCancellation($booking, $operation, $now);
@@ -210,6 +255,17 @@ class CancellationCoordinator
     public function markProcessing(BookingCancellationOperation $unlockedOperation): ?BookingCancellationOperation
     {
         return DB::transaction(function () use ($unlockedOperation): ?BookingCancellationOperation {
+            // Match complete(): booking, payment attempt, then cancellation operation.
+            $booking = Booking::query()->whereKey($unlockedOperation->booking_id)
+                ->lockForUpdate()->first();
+            if ($booking === null) {
+                return null;
+            }
+
+            $attempt = $unlockedOperation->payment_attempt_id === null
+                ? null
+                : PaymentAttempt::query()->whereKey($unlockedOperation->payment_attempt_id)
+                    ->where('booking_id', $booking->id)->lockForUpdate()->first();
             $operation = BookingCancellationOperation::query()->whereKey($unlockedOperation->id)
                 ->lockForUpdate()->first();
             if ($operation === null || ! in_array($operation->status, ['PENDING', 'PROCESSING'], true)) {
@@ -222,6 +278,28 @@ class CancellationCoordinator
             }
             if ($operation->lease_expires_at !== null && $operation->lease_expires_at->isFuture()) {
                 return null;
+            }
+
+            $isAdminReportRefund = $operation->source === 'ADMIN'
+                && $operation->reason_code === 'ADMIN_REPORT_REFUND_CANCEL'
+                && $operation->operation_type === 'REFUND';
+
+            if ($isAdminReportRefund) {
+                $bookingStatusMatches = in_array(
+                    $operation->booking_status_before,
+                    ['IN_PROGRESS', 'AWAITING_CONFIRMATION'],
+                    true,
+                ) && $booking->status === $operation->booking_status_before;
+
+                if (! $bookingStatusMatches || $attempt === null || $attempt->status !== 'AUTHORIZED') {
+                    $operation->status = 'MANUAL_REVIEW';
+                    $operation->last_error_code = 'PAYMENT_STATE_MISMATCH';
+                    $operation->lease_expires_at = null;
+                    $operation->next_retry_at = null;
+                    $operation->save();
+
+                    return null;
+                }
             }
 
             $operation->status = 'PROCESSING';

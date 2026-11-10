@@ -159,6 +159,47 @@ class BookingCancellationTest extends TestCase
             ->assertConflict()->assertJsonPath('error.code', 'INVALID_STATE');
     }
 
+    public function test_default_sandbox_gateway_processes_void_and_refund_by_policy(): void
+    {
+        $voidFixture = BookingFixture::requested($this);
+        $voidBooking = $voidFixture['booking'];
+        $voidBooking->update([
+            'status' => 'AWAITING_PAYMENT',
+            'payment_due_at' => now()->addMinutes(10),
+        ]);
+        $voidAttemptId = $this->createAttempt($voidBooking, 'PENDING');
+        $voidBooking->update(['current_payment_attempt_id' => $voidAttemptId]);
+
+        $this->actingAs($voidFixture['owner'])->withHeader('Idempotency-Key', 'sandbox-default-void')
+            ->postJson("/api/bookings/{$voidBooking->id}/cancel")
+            ->assertStatus(202);
+
+        $voidResult = app(ProcessCancellationOutbox::class)->handle();
+
+        $this->assertSame(1, $voidResult['completed']);
+        $this->assertSame('VOIDED', DB::table('payment_attempts')->where('id', $voidAttemptId)->value('status'));
+        $this->assertSame('CANCELLED', $voidBooking->fresh()->status);
+
+        $refundFixture = BookingFixture::requested($this);
+        $refundBooking = $refundFixture['booking'];
+        $refundBooking->update([
+            'status' => 'CONFIRMED',
+            'start_at' => now()->addHour(),
+        ]);
+        $refundAttemptId = $this->createAttempt($refundBooking, 'AUTHORIZED');
+        $refundBooking->update(['current_payment_attempt_id' => $refundAttemptId]);
+
+        $this->actingAs($refundFixture['owner'])->withHeader('Idempotency-Key', 'sandbox-default-refund')
+            ->postJson("/api/bookings/{$refundBooking->id}/cancel")
+            ->assertStatus(202);
+
+        $refundResult = app(ProcessCancellationOutbox::class)->handle();
+
+        $this->assertSame(1, $refundResult['completed']);
+        $this->assertSame('REFUNDED', DB::table('payment_attempts')->where('id', $refundAttemptId)->value('status'));
+        $this->assertSame('CANCELLED', $refundBooking->fresh()->status);
+    }
+
     public function test_attempt_mismatch_does_not_change_booking_or_release_schedule(): void
     {
         $fixture = BookingFixture::requested($this);

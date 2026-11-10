@@ -10,6 +10,7 @@ use App\Http\Requests\SearchListingRequest;
 use App\Http\Resources\PublicListingResource;
 use App\Http\Resources\SearchListingResource;
 use App\Models\Listing;
+use App\Support\PublicReviewCache;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
@@ -17,6 +18,7 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Validator;
@@ -143,6 +145,9 @@ class PublicListingController extends Controller
         return PublicListingResource::make($this->findPublicListing($id));
     }
 
+    /**
+     * @response array{data: list<array{id: string, rating: int, body: ?string, is_demo: bool, created_at: string}>, links: array{first: string, last: string, prev: ?string, next: ?string}, meta: array{current_page: int, last_page: int, per_page: int, total: int}, rating_average: ?float, review_count: int}
+     */
     public function reviews(Request $request, string $id): AnonymousResourceCollection
     {
         $listing = $this->findPublicListing($id);
@@ -182,20 +187,32 @@ class PublicListingController extends Controller
         }
 
         $filters = $validator->validated();
-        $reviews = $this->visibleReviews()
-            ->where('reviews.listing_id', $listing->id)
-            ->select(['reviews.id', 'reviews.rating', 'reviews.body', 'reviews.is_demo', 'reviews.created_at'])
-            ->orderByDesc('reviews.created_at')
-            ->orderByDesc('reviews.id')
-            ->paginate((int) ($filters['per_page'] ?? 20), ['*'], 'page', (int) ($filters['page'] ?? 1))
-            ->appends($filters)
-            ->through(static fn (stdClass $review): array => [
-                'id' => (string) $review->id,
-                'rating' => (int) $review->rating,
-                'body' => $review->body,
-                'is_demo' => (bool) $review->is_demo,
-                'created_at' => CarbonImmutable::parse($review->created_at, 'UTC')->format('Y-m-d\\TH:i:s.u\\Z'),
-            ]);
+        $page = (int) ($filters['page'] ?? 1);
+        $perPage = (int) ($filters['per_page'] ?? 20);
+        $cached = PublicReviewCache::remember((string) $listing->id, $page, $perPage, function () use ($listing, $page, $perPage): array {
+            $reviews = $this->visibleReviews()
+                ->where('reviews.listing_id', $listing->id)
+                ->select(['reviews.id', 'reviews.rating', 'reviews.body', 'reviews.is_demo', 'reviews.created_at'])
+                ->orderByDesc('reviews.created_at')
+                ->orderByDesc('reviews.id')
+                ->paginate($perPage, ['*'], 'page', $page)
+                ->through(static fn (stdClass $review): array => [
+                    'id' => (string) $review->id,
+                    'rating' => (int) $review->rating,
+                    'body' => $review->body,
+                    'is_demo' => (bool) $review->is_demo,
+                    'created_at' => CarbonImmutable::parse($review->created_at, 'UTC')->format('Y-m-d\\TH:i:s.u\\Z'),
+                ]);
+
+            return ['items' => $reviews->items(), 'total' => $reviews->total()];
+        });
+        $reviews = new LengthAwarePaginator(
+            $cached['items'],
+            $cached['total'],
+            $perPage,
+            $page,
+            ['path' => LengthAwarePaginator::resolveCurrentPath(), 'query' => $filters],
+        );
 
         $attributes = $listing->getAttributes();
         $average = $attributes['rating_average'] ?? null;

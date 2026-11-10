@@ -110,6 +110,26 @@ class SandboxPaymentSimulationTest extends TestCase
         $this->assertDatabaseCount('payment_events', 1);
     }
 
+    public function test_payment_start_replay_returns_the_existing_attempt_with_http_200(): void
+    {
+        $fixture = $this->awaitingPaymentFixture();
+        $url = '/api/bookings/'.$fixture['booking']->id.'/sandbox-payments';
+        $key = 'payment-start-replay-1';
+
+        $created = $this->actingAs($fixture['owner'])
+            ->withHeader('Idempotency-Key', $key)
+            ->postJson($url)
+            ->assertCreated();
+
+        $replayed = $this->actingAs($fixture['owner'])
+            ->withHeader('Idempotency-Key', $key)
+            ->postJson($url)
+            ->assertOk();
+
+        $this->assertSame($created->json('data'), $replayed->json('data'));
+        $this->assertDatabaseCount('payment_attempts', 1);
+    }
+
     public function test_failure_can_be_retried_and_timeout_keeps_attempt_pending(): void
     {
         $fixture = $this->awaitingPaymentFixture();
