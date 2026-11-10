@@ -298,7 +298,7 @@ class ReportResourceTest extends TestCase
             'attempt_no' => 1,
             'amount_vnd' => $booking->price_snapshot_vnd,
             'status' => 'AUTHORIZED',
-            'idempotency_key' => 'filament-report-' . $booking->id,
+            'idempotency_key' => 'filament-report-'.$booking->id,
             'request_payload_hash' => str_repeat('f', 64),
             'authorized_at' => now('UTC'),
             'created_at' => now('UTC'),
@@ -410,7 +410,7 @@ class ReportResourceTest extends TestCase
     }
 
     /**
-     * @param array<string, int> $target
+     * @param  array<string, int>  $target
      */
     private function createReport(
         User $reporter,

@@ -76,7 +76,7 @@ class ReportResource extends Resource
 
                 TextColumn::make('target_summary')
                     ->label('Target')
-                    ->state(fn(Report $record): string => self::targetSummary($record)),
+                    ->state(fn (Report $record): string => self::targetSummary($record)),
 
                 TextColumn::make('reporter_user_id')
                     ->label('Reporter ID')
@@ -117,22 +117,22 @@ class ReportResource extends Resource
                 Action::make('history')
                     ->label('History')
                     ->icon(Heroicon::OutlinedClock)
-                    ->url(fn(Report $record): string => route(
+                    ->url(fn (Report $record): string => route(
                         'admin.reports.history',
                         ['id' => $record->getKey()],
                     ))
                     ->openUrlInNewTab()
-                    ->visible(fn(Report $record): bool => Gate::allows('view', $record)),
+                    ->visible(fn (Report $record): bool => Gate::allows('view', $record)),
 
                 Action::make('evidence')
                     ->label('View permitted evidence')
                     ->icon(Heroicon::OutlinedEye)
-                    ->url(fn(Report $record): string => route(
+                    ->url(fn (Report $record): string => route(
                         'admin.reports.evidence',
                         ['id' => $record->getKey()],
                     ))
                     ->openUrlInNewTab()
-                    ->visible(fn(Report $record): bool => Gate::allows('viewEvidence', $record)),
+                    ->visible(fn (Report $record): bool => Gate::allows('viewEvidence', $record)),
             ]);
     }
 
@@ -153,7 +153,7 @@ class ReportResource extends Resource
             'booking_id' => 'BOOKING',
         ] as $field => $type) {
             if ($record->{$field} !== null) {
-                return $type . ' #' . $record->{$field};
+                return $type.' #'.$record->{$field};
             }
         }
 
@@ -173,8 +173,8 @@ class ReportResource extends Resource
                     ->required()
                     ->maxLength(1000),
             ])
-            ->visible(fn(Report $record): bool => self::canChangeTo($record, $toStatus))
-            ->action(function (Report $record, array $data, ChangeReportStatus $changeReportStatus, ) use ($toStatus): void {
+            ->visible(fn (Report $record): bool => self::canChangeTo($record, $toStatus))
+            ->action(function (Report $record, array $data, ChangeReportStatus $changeReportStatus) use ($toStatus): void {
                 Gate::authorize('changeStatus', $record);
 
                 // Booking report chỉ được RESOLVED qua booking decision.
@@ -203,7 +203,7 @@ class ReportResource extends Resource
 
     private static function canChangeTo(Report $record, string $toStatus): bool
     {
-        if (!Gate::allows('changeStatus', $record)) {
+        if (! Gate::allows('changeStatus', $record)) {
             return false;
         }
 
@@ -230,8 +230,8 @@ class ReportResource extends Resource
                     ->required()
                     ->maxLength(1000),
             ])
-            ->visible(fn(Report $record): bool => Gate::allows('moderate', $record))
-            ->action(function (Report $record, array $data, ModerateReportedTarget $moderateReportedTarget, ) use ($moderationAction): void {
+            ->visible(fn (Report $record): bool => Gate::allows('moderate', $record))
+            ->action(function (Report $record, array $data, ModerateReportedTarget $moderateReportedTarget) use ($moderationAction): void {
                 Gate::authorize('moderate', $record);
 
                 $moderateReportedTarget->handle(
@@ -267,12 +267,11 @@ class ReportResource extends Resource
                     ->maxLength(1000),
             ])
             ->visible(
-                fn(Report $record): bool =>
-                    $record->booking_id !== null
+                fn (Report $record): bool => $record->booking_id !== null
                     && $record->status === 'IN_REVIEW'
                     && Gate::allows('view', $record)
             )
-            ->action(function (Report $record, array $data, DecideBookingReport $decideBookingReport, ): void {
+            ->action(function (Report $record, array $data, DecideBookingReport $decideBookingReport): void {
                 Gate::authorize('view', $record);
 
                 $result = $decideBookingReport->handle(
@@ -286,7 +285,7 @@ class ReportResource extends Resource
                 Notification::make()
                     ->title('Booking decision submitted')
                     ->body(
-                        $result['operation_type'] . ' operation: ' . $result['operation_status'],
+                        $result['operation_type'].' operation: '.$result['operation_status'],
                     )
                     ->success()
                     ->send();
