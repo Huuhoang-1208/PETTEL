@@ -39,7 +39,7 @@ class ApiDocumentationAccessTest extends TestCase
             'assigned_at' => now(),
         ]);
 
-        $this->actingAs($admin)
+        $specification = $this->actingAs($admin)
             ->getJson('/docs/api.json')
             ->assertOk()
             ->assertJsonPath('openapi', fn (string $version): bool => str_starts_with($version, '3.'))
@@ -50,6 +50,37 @@ class ApiDocumentationAccessTest extends TestCase
             ->assertJsonPath('security.0.sanctumSession', [])
             ->assertJsonPath('paths./listings.get.security', [])
             ->assertJsonMissingPath('components.securitySchemes.bearerAuth');
+
+        $paths = $specification->json('paths');
+        $reportOperations = [
+            '/reports' => ['post'],
+            '/reports/mine' => ['get'],
+            '/admin/reports' => ['get'],
+            '/admin/reports/{id}' => ['get'],
+            '/admin/reports/{id}/evidence' => ['get'],
+            '/admin/reports/{id}/status' => ['post'],
+            '/admin/reports/{id}/booking-decision' => ['post'],
+            '/admin/reports/{id}/history' => ['get'],
+            '/admin/reports/{id}/moderation' => ['post'],
+        ];
+
+        foreach ($reportOperations as $path => $methods) {
+            $this->assertArrayHasKey($path, $paths, "OpenAPI is missing {$path}.");
+            foreach ($methods as $method) {
+                $this->assertArrayHasKey($method, $paths[$path], "OpenAPI is missing {$method} {$path}.");
+            }
+        }
+
+        $this->assertStringContainsString(
+            'exactly one target',
+            $paths['/reports']['post']['description'],
+        );
+        $this->assertStringContainsString(
+            'booking-decision endpoint',
+            $paths['/admin/reports/{id}/status']['post']['description'],
+        );
+        $this->assertArrayHasKey('200', $paths['/admin/reports/{id}/booking-decision']['post']['responses']);
+        $this->assertArrayHasKey('202', $paths['/admin/reports/{id}/booking-decision']['post']['responses']);
 
         $this->actingAs($admin)->get('/docs/api')->assertOk();
     }

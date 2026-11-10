@@ -2,7 +2,7 @@
 
 **Owner:** Hào · **Reviewer theo backlog:** Thịnh · **Bên tích hợp:** Hoàng/BE-H06
 **Phạm vi:** vòng đời chăm sóc và settlement payment sandbox, từ booking `CONFIRMED` tới kết thúc booking.
-**Trạng thái tại bàn giao:** chưa triển khai completion/release workflow; cần triển khai trên branch/commit BE-HA06 rồi chạy E2E của task trước khi bàn giao tích hợp.
+**Trạng thái tại bàn giao:** completion/release và report booking decision đã có trong worktree tích hợp `be-ha06`; full pipeline local đã pass trên worktree dirty (422 tests / 4.945 assertions), nhưng chưa có commit/SHA sạch hoặc official CI. Các bằng chứng hiện có và phần chưa xác minh được ghi tại mục 4 và BE-H06 Task 3 report.
 
 ## 1. Nguồn hợp đồng cần tuân thủ
 
@@ -10,7 +10,7 @@
 - [P0 Decision Contract §4](<../02 — Domain Documentation/05 — P0 Decision Contract.md>): caregiver báo hoàn tất; owner xác nhận; chỉ release thành công mới chuyển `COMPLETED`; nhắc sau 24 giờ, đưa vào admin queue sau 72 giờ; không tự complete/release theo thời gian; report `IN_REVIEW` giữ booking chờ xử lý; admin action phải có actor/lý do/audit; retry release cùng key ở mốc 1/5/15 phút và sau ba lần lỗi chuyển admin.
 - [M06 Payment Sandbox](<../03 — Modules Documentation/M06 — Payment Sandbox.md>) và [Payment Sandbox Integration](<../08 — Architecture & Technical Design/07 — Payment Sandbox Integration.md>): payment chỉ mô phỏng, không thu dữ liệu/thanh toán thật; không phát sinh release hai lần.
 - [BE-HA05 contract](<BE-HA05 — Contract payment sandbox và callback.md>): giữ tương thích với gateway, idempotency, event và lock order payment đã chốt.
-- [BE-H06 Task 3 report](<BE-H06 — Task 3 integration and E2E verification report.md>): hiện chưa có completion route/action; các test hiện có dùng booking `COMPLETED` làm fixture nên chưa chứng minh lifecycle.
+- [BE-H06 Task 3 report](<BE-H06 — Task 3 integration and E2E verification report.md>): đã cập nhật route/action, E2E lifecycle và giới hạn runtime; kết quả full pipeline được ghi theo lần chạy hiện tại.
 
 Nếu API Contracts, BE-HA05, P0 hoặc code hiện tại có mâu thuẫn, ghi bất đồng và xin Hoàng chốt trước khi coi đó là contract; không thay đổi hành vi payment/cancel đã có chỉ để làm E2E pass.
 
@@ -52,9 +52,11 @@ Chạy trên MySQL test cô lập với migrations/seed hiện tại và sandbox
 
 ## 4. Trạng thái hiện có từ BE-H06
 
-- CI-equivalent trên branch `be-h06`, HEAD `09b41732608e75dca65edf5ce93ac5dc1a321e1b` cộng worktree dirty: Pint 188 files, PHPStan 131 files không lỗi, migrations/seed và 389 tests / 4.490 assertions pass. Đây không phải CI result gắn SHA sạch.
-- Đã có booking create/accept, sandbox attempt/callback, expiry/cancel/retry test và care update API. Chưa có API/action lifecycle đưa booking tới `COMPLETED` sau owner confirmation + release thật.
-- Hãy chạy lại test trên branch/commit BE-HA06 của Hào; số liệu baseline này chỉ để tham khảo, không thay nghiệm thu code mới.
+- Branch hiện tại `be-ha06`, HEAD `b0efd9cf614ddaf01051761cce36a37d79b4c684`; worktree dirty và chưa có SHA sạch bàn giao.
+- `BookingLifecycleEndToEndTest::test_booking_reaches_completed_after_release_retry` hiện kiểm tra luồng booking tới `COMPLETED` sau release/retry. `BookingReportDecisionTest` kiểm tra admin COMPLETE/refund, retry, idempotency và bảo vệ state.
+- Lần runtime gần nhất: worker/scheduler image build và chạy; lịch expiry/cancellation/release chạy với `schedule_run_id`, nhưng không có operation đến hạn (`selected: 0`, `processed: 0`). Đây không phải bằng chứng xử lý một booking operation thật.
+- Queue context test đạt 3 tests / 31 assertions; Pint hai file vận hành đạt. Full pipeline local đạt: Pint 220 files, PHPStan 153 files không lỗi, migration/seed đạt và 422 tests / 4.945 assertions; xem Task 3 report để biết command và giới hạn.
+- Các acceptance items về reminder 24h/72h/admin queue và sign-off trên commit chung cần được xác nhận riêng; không đánh dấu Pass chỉ dựa trên booking E2E.
 
 ### Tài liệu liên quan
 

@@ -5,6 +5,7 @@ namespace App\Jobs;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class InfrastructureHeartbeat implements ShouldQueue
 {
@@ -17,5 +18,7 @@ class InfrastructureHeartbeat implements ShouldQueue
             now()->toIso8601String(),
             180,
         );
+
+        Log::info('Infrastructure heartbeat updated');
     }
 }

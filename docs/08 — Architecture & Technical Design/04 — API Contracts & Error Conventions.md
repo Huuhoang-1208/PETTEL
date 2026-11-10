@@ -6,7 +6,27 @@ PETTEL — Architecture & Technical Design \| Hợp đồng JSON cho Vue SPA; Fi
 
 Breeze API scaffold cung cấp route đăng ký/đăng nhập/đăng xuất/khôi phục mật khẩu; Vue lấy `/sanctum/csrf-cookie` trước thao tác auth. Route riêng tư dùng `auth:sanctum`; không phát hành bearer token cho SPA.
 
-GET /api/listings — bộ lọc công khai theo contract M04 bên dưới; `pet_id` thuộc phần mở rộng Smart Match BE-H04. GET /api/listings/{id} — chỉ listing được phép công khai, không có ngoại lệ owner/admin trên route công khai. POST /api/bookings — pet_id, listing_id, start_at, end_at, instructions; `Idempotency-Key` nằm ở header. POST /api/bookings/{id}/accept — caregiver; POST /api/bookings/{id}/cancel — actor được phép; POST /api/bookings/{id}/sandbox-payments — owner. Callback sandbox hiện hành là `POST /api/sandbox/payment-callback`, ký bằng `X-Payment-Signature` theo [BE-HA05](<../05 — Implementation Plan/BE-HA05 — Contract payment sandbox và callback.md>). Các route report (`/api/reports`), booking updates (`/api/bookings/{id}/updates`) và completion confirmation (`/api/bookings/{id}/confirm-completion`) là scope phase sau; chúng chưa được triển khai và không thuộc inventory API hiện tại.
+GET /api/listings — bộ lọc công khai theo contract M04 bên dưới; `pet_id` thuộc phần mở rộng Smart Match BE-H04. GET /api/listings/{id} — chỉ listing được phép công khai, không có ngoại lệ owner/admin trên route công khai. POST /api/bookings — pet_id, listing_id, start_at, end_at, instructions; `Idempotency-Key` nằm ở header. POST /api/bookings/{id}/accept — caregiver; POST /api/bookings/{id}/cancel — actor được phép; POST /api/bookings/{id}/sandbox-payments — owner. Callback sandbox hiện hành là `POST /api/sandbox/payment-callback`, ký bằng `X-Payment-Signature` theo [BE-HA05](<../05 — Implementation Plan/BE-HA05 — Contract payment sandbox và callback.md>). Report API và completion confirmation đã được triển khai; xem các mục M09 và M05 bên dưới. Care updates hiện dùng `/api/bookings/{id}/care-updates`.
+
+## M09 — Reports API
+
+Các route report yêu cầu session Sanctum và account ACTIVE. Tạo report và xem `/reports/mine` giới hạn theo người gọi. Admin routes yêu cầu thêm role `ADMIN`. Một report phải trỏ đúng một target trong `listing_id`, `review_id`, `message_id`, `booking_id`; `reason_code` là bắt buộc, `description` tùy chọn tối đa 2.000 ký tự. Người gửi report về booking/message phải là participant; tài nguyên riêng tư không tồn tại và tài nguyên ngoài quyền trả cùng `404 NOT_FOUND`.
+
+| Method / path | Quyền và request | Thành công | Lỗi/quy tắc |
+| --- | --- | --- | --- |
+| `POST /api/reports` | User ACTIVE; đúng một target, `reason_code`, `description?` | `201`, report ở `OPEN` | `401`, `404`, `422` |
+| `GET /api/reports/mine` | User ACTIVE; query phân trang | `200`, chỉ report của caller | `401` |
+| `GET /api/admin/reports` | ADMIN ACTIVE; `status?`, `per_page?` (1–100) | `200`, queue phân trang | `401`, `403`, `422` |
+| `GET /api/admin/reports/{id}` | ADMIN ACTIVE | `200`, metadata report; không gồm evidence riêng tư | `401`, `403`, `404` |
+| `GET /api/admin/reports/{id}/evidence` | ADMIN ACTIVE; policy xác nhận evidence thuộc report | `200`, evidence giới hạn theo target; lượt xem được audit | `401`, `403`, `404` |
+| `POST /api/admin/reports/{id}/status` | ADMIN ACTIVE; `status`, `reason` | `200` | `409 BOOKING_DECISION_REQUIRED` nếu resolve report booking bằng route chung; `401`, `403`, `404`, `409`, `422` |
+| `POST /api/admin/reports/{id}/booking-decision` | ADMIN ACTIVE; `decision` (`COMPLETE` hoặc `CANCEL_REFUND`), `reason` | `202` khi tạo operation; `200` khi replay operation | `401`, `403`, `404`, `409`, `422` |
+| `GET /api/admin/reports/{id}/history` | ADMIN ACTIVE | `200`, status events và moderation actions | `401`, `403`, `404` |
+| `POST /api/admin/reports/{id}/moderation` | ADMIN ACTIVE; `action` (`HIDE` hoặc `RESTORE`), `reason` | `200` | `401`, `403`, `404`, `409`, `422` |
+
+Report có trạng thái `OPEN`, `IN_REVIEW`, `RESOLVED`, `DISMISSED`. Chuyển trạng thái và moderation ghi actor, thời gian, lý do và request ID. Queue/detail không trả nội dung evidence riêng tư; evidence chỉ được xem qua endpoint riêng và policy tương ứng. Booking report đang `IN_REVIEW` giữ booking. `DISMISSED` chỉ đóng report và gỡ hold. `RESOLVED` cho booking phải qua `booking-decision`: `COMPLETE` tạo release operation, `CANCEL_REFUND` tạo cancellation/refund operation. Worker chỉ cập nhật booking sau khi gateway sandbox thành công; report action không trực tiếp đổi booking.
+
+JSON lỗi theo envelope chung `error.code`, `error.message`, `error.details?`, `error.request_id`. Lỗi quyền là `401/403`; lỗi không tồn tại/ngoài phạm vi là `404`; trạng thái không phù hợp là `409`; request không hợp lệ là `422`. Request thay đổi trạng thái dùng session cookie có thể nhận `419` khi CSRF token thiếu/hết hạn; lấy lại `/sanctum/csrf-cookie` rồi gửi lại request.
 
 ## M04 — Public listing search — chốt 02/11/2026
 

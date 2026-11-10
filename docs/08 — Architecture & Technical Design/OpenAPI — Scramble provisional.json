@@ -7,7 +7,7 @@
     },
     "servers": [
         {
-            "url": "http://localhost:8000/api"
+            "url": "http://localhost:8080/api"
         }
     ],
     "security": [
@@ -1047,8 +1047,7 @@
                                             "type": "string"
                                         },
                                         "status": {
-                                            "type": "string",
-                                            "const": "CANCELLATION_PENDING"
+                                            "type": "string"
                                         },
                                         "booking_id": {
                                             "type": "string"
@@ -1142,6 +1141,516 @@
                     },
                     "404": {
                         "description": "The resource does not exist or is outside the caller\u2019s visible scope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "The session CSRF token is missing or expired; obtain a fresh token before retrying the state-changing request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/bookings/{id}/start": {
+            "post": {
+                "operationId": "bookings.start",
+                "description": "**Module:** M05 Booking & Availability. Booking operations are scoped to the owner and caregiver participants. Booking state and availability are checked server-side; create/cancel/payment operations use the documented `Idempotency-Key` where applicable.\n\nOnly the assigned caregiver can transition a CONFIRMED booking to IN_PROGRESS; the booking and its status event are committed together.\n\nJSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.",
+                "summary": "Create Bookings Id Start",
+                "tags": [
+                    "BookingCareLifecycle"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The operation completed successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {}
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentication is required or the session is no longer valid.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The authenticated caller does not have permission for this operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The resource does not exist or is outside the caller\u2019s visible scope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "The requested operation conflicts with the current resource state or idempotency record.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "One or more request fields failed validation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "The session CSRF token is missing or expired; obtain a fresh token before retrying the state-changing request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/bookings/{id}/request-completion": {
+            "post": {
+                "operationId": "bookings.request-completion",
+                "description": "**Module:** M05 Booking & Availability. Booking operations are scoped to the owner and caregiver participants. Booking state and availability are checked server-side; create/cancel/payment operations use the documented `Idempotency-Key` where applicable.\n\nOnly the assigned caregiver can report completion from IN_PROGRESS, transitioning the booking to AWAITING_CONFIRMATION; this does not complete or release payment.\n\nJSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.",
+                "summary": "Create Bookings Id Request-completion",
+                "tags": [
+                    "BookingCareLifecycle"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The operation completed successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {}
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentication is required or the session is no longer valid.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The authenticated caller does not have permission for this operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The resource does not exist or is outside the caller\u2019s visible scope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "The requested operation conflicts with the current resource state or idempotency record.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "One or more request fields failed validation.",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1879,7 +2388,10 @@
                                                     ]
                                                 },
                                                 "request_id": {
-                                                    "type": "string"
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
                                                 }
                                             },
                                             "required": [
@@ -1952,8 +2464,7 @@
                                                     "type": "string"
                                                 },
                                                 "status": {
-                                                    "type": "string",
-                                                    "const": "CANCELLATION_PENDING"
+                                                    "type": "string"
                                                 }
                                             },
                                             "required": [
@@ -3790,7 +4301,7 @@
                 }
             },
             "get": {
-                "operationId": "listingLifecycle.show_24",
+                "operationId": "listingLifecycle.show_27",
                 "description": "**Module:** M03 Caregiver & Listings. Requires an active CAREGIVER session; listing IDs are scoped to the authenticated caregiver. Listing edits are draft-only unless the operation is an explicit lifecycle action.\n\nJSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.",
                 "summary": "Get Caregiver Listings Id",
                 "tags": [
@@ -4340,6 +4851,266 @@
                     },
                     "403": {
                         "description": "The authenticated caller does not have permission for this operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "The session CSRF token is missing or expired; obtain a fresh token before retrying the state-changing request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/bookings/{id}/confirm-completion": {
+            "post": {
+                "operationId": "bookings.confirm-completion",
+                "description": "**Module:** M05 Booking & Availability. Booking operations are scoped to the owner and caregiver participants. Booking state and availability are checked server-side; create/cancel/payment operations use the documented `Idempotency-Key` where applicable.\n\nOnly the booking owner may confirm completion. The request creates or reuses one durable release operation; the booking remains AWAITING_CONFIRMATION until sandbox release succeeds.\n\nJSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.",
+                "summary": "Create Bookings Id Confirm-completion",
+                "tags": [
+                    "ConfirmBookingCompletion"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "The request was accepted for asynchronous processing.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "booking": {
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "release": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "replayed": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "status",
+                                                "replayed"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "booking",
+                                        "release"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "The operation completed successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {}
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "The authenticated caller does not have permission for this operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The resource does not exist or is outside the caller\u2019s visible scope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "The requested operation conflicts with the current resource state or idempotency record.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "One or more request fields failed validation.",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -7371,7 +8142,9 @@
                                                     "type": "integer"
                                                 },
                                                 "proposed_data_json": {},
-                                                "status": {},
+                                                "status": {
+                                                    "type": "string"
+                                                },
                                                 "requested_by_user_id": {
                                                     "type": "string"
                                                 },
@@ -8251,7 +9024,7 @@
         },
         "/caregiver/listings/{id}/suspend": {
             "post": {
-                "operationId": "listingLifecycle.suspend_28",
+                "operationId": "listingLifecycle.suspend_31",
                 "description": "**Module:** M03 Caregiver & Listings. Requires an active CAREGIVER session; listing IDs are scoped to the authenticated caregiver. Listing edits are draft-only unless the operation is an explicit lifecycle action.\n\nJSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.",
                 "summary": "Suspend Caregiver Listings Id Suspend",
                 "tags": [
@@ -8513,7 +9286,7 @@
         },
         "/caregiver/listings/{id}/restore": {
             "post": {
-                "operationId": "listingLifecycle.restore_29",
+                "operationId": "listingLifecycle.restore_32",
                 "description": "**Module:** M03 Caregiver & Listings. Requires an active CAREGIVER session; listing IDs are scoped to the authenticated caregiver. Listing edits are draft-only unless the operation is an explicit lifecycle action.\n\nRestores a caregiver-owned archived listing only when its state and caregiver eligibility permit it.\n\nJSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.",
                 "summary": "Restore Caregiver Listings Id Restore",
                 "tags": [
@@ -8775,7 +9548,7 @@
         },
         "/caregiver/listings/{id}/archive": {
             "post": {
-                "operationId": "listingLifecycle.archive_30",
+                "operationId": "listingLifecycle.archive_33",
                 "description": "**Module:** M03 Caregiver & Listings. Requires an active CAREGIVER session; listing IDs are scoped to the authenticated caregiver. Listing edits are draft-only unless the operation is an explicit lifecycle action.\n\nArchives an eligible caregiver-owned listing while preserving booking history and enforcing active booking constraints.\n\nJSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.",
                 "summary": "Archive Caregiver Listings Id Archive",
                 "tags": [
@@ -9299,7 +10072,7 @@
         },
         "/admin/listings/{id}": {
             "get": {
-                "operationId": "listingLifecycle.show_46",
+                "operationId": "listingLifecycle.show_56",
                 "description": "**Module:** M09 Reports & Admin. Requires an active ADMIN session. Administrative actions are subject to resource scope, current state, and audit rules.\n\nJSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.",
                 "summary": "Get Admin Listings Id",
                 "tags": [
@@ -9974,7 +10747,7 @@
         },
         "/admin/listings/{id}/suspend": {
             "post": {
-                "operationId": "listingLifecycle.suspend_49",
+                "operationId": "listingLifecycle.suspend_59",
                 "description": "**Module:** M09 Reports & Admin. Requires an active ADMIN session. Administrative actions are subject to resource scope, current state, and audit rules.\n\nSuspends the listing through an audited administrative state transition; restore rights depend on the suspension source.\n\nJSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.",
                 "summary": "Suspend Admin Listings Id Suspend",
                 "tags": [
@@ -10236,7 +11009,7 @@
         },
         "/admin/listings/{id}/restore": {
             "post": {
-                "operationId": "listingLifecycle.restore_50",
+                "operationId": "listingLifecycle.restore_60",
                 "description": "**Module:** M09 Reports & Admin. Requires an active ADMIN session. Administrative actions are subject to resource scope, current state, and audit rules.\n\nJSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.",
                 "summary": "Restore Admin Listings Id Restore",
                 "tags": [
@@ -10498,7 +11271,7 @@
         },
         "/admin/listings/{id}/archive": {
             "post": {
-                "operationId": "listingLifecycle.archive_51",
+                "operationId": "listingLifecycle.archive_61",
                 "description": "**Module:** M09 Reports & Admin. Requires an active ADMIN session. Administrative actions are subject to resource scope, current state, and audit rules.\n\nJSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.",
                 "summary": "Archive Admin Listings Id Archive",
                 "tags": [
@@ -14214,6 +14987,1958 @@
                 }
             }
         },
+        "/reports": {
+            "post": {
+                "operationId": "reports.store",
+                "description": "**Module:** API. Authentication and visibility follow this operation\u2019s route middleware and resource policy.\n\nCreates a report for exactly one target. Booking and message targets are available only to a booking participant; the response does not expose private evidence.\n\nJSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.",
+                "summary": "Create Reports",
+                "tags": [
+                    "Report"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "listing_id": {
+                                        "type": [
+                                            "integer",
+                                            "null"
+                                        ],
+                                        "minimum": 1
+                                    },
+                                    "review_id": {
+                                        "type": [
+                                            "integer",
+                                            "null"
+                                        ],
+                                        "minimum": 1
+                                    },
+                                    "message_id": {
+                                        "type": [
+                                            "integer",
+                                            "null"
+                                        ],
+                                        "minimum": 1
+                                    },
+                                    "booking_id": {
+                                        "type": [
+                                            "integer",
+                                            "null"
+                                        ],
+                                        "minimum": 1
+                                    },
+                                    "reason_code": {
+                                        "type": "string",
+                                        "maxLength": 64
+                                    },
+                                    "description": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 2000
+                                    }
+                                },
+                                "required": [
+                                    "reason_code"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "The resource was created successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "status",
+                                                "created_at"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "description": "One or more request fields failed validation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            }
+        },
+        "/reports/mine": {
+            "get": {
+                "operationId": "reports.mine",
+                "description": "**Module:** API. Authentication and visibility follow this operation\u2019s route middleware and resource policy.\n\nReturns only reports filed by the authenticated caller.\n\nJSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.",
+                "summary": "Get Reports Mine",
+                "tags": [
+                    "Report"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The operation completed successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "target": {
+                                                        "type": [
+                                                            "object",
+                                                            "null"
+                                                        ],
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string"
+                                                            },
+                                                            "id": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "type",
+                                                            "id"
+                                                        ]
+                                                    },
+                                                    "reason_code": {
+                                                        "type": "string"
+                                                    },
+                                                    "status": {
+                                                        "type": "string"
+                                                    },
+                                                    "resolved_at": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "target",
+                                                    "reason_code",
+                                                    "status",
+                                                    "resolved_at",
+                                                    "created_at"
+                                                ]
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object",
+                                            "properties": {
+                                                "first": {
+                                                    "type": "string"
+                                                },
+                                                "last": {
+                                                    "type": "string"
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer"
+                                                },
+                                                "last_page": {
+                                                    "type": "integer"
+                                                },
+                                                "per_page": {
+                                                    "type": "integer"
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "last_page",
+                                                "per_page",
+                                                "total"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "links",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/reports": {
+            "get": {
+                "operationId": "admin.reports.index",
+                "description": "**Module:** M09 Reports & Admin. Requires an active ADMIN session. Administrative actions are subject to resource scope, current state, and audit rules.\n\nReturns the paginated administrative report queue; status filtering is supported.\n\nJSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.",
+                "summary": "Get Admin Reports",
+                "tags": [
+                    "Report"
+                ],
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "OPEN",
+                                "IN_REVIEW",
+                                "RESOLVED",
+                                "DISMISSED"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The operation completed successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "reporter_user_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "target": {
+                                                        "type": [
+                                                            "object",
+                                                            "null"
+                                                        ],
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string"
+                                                            },
+                                                            "id": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "type",
+                                                            "id"
+                                                        ]
+                                                    },
+                                                    "reason_code": {
+                                                        "type": "string"
+                                                    },
+                                                    "status": {
+                                                        "type": "string"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "reporter_user_id",
+                                                    "target",
+                                                    "reason_code",
+                                                    "status",
+                                                    "created_at"
+                                                ]
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object",
+                                            "properties": {
+                                                "first": {
+                                                    "type": "string"
+                                                },
+                                                "last": {
+                                                    "type": "string"
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer"
+                                                },
+                                                "last_page": {
+                                                    "type": "integer"
+                                                },
+                                                "per_page": {
+                                                    "type": "integer"
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "last_page",
+                                                "per_page",
+                                                "total"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "links",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The authenticated caller does not have permission for this operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "description": "Authentication is required or the session is no longer valid.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/reports/{id}": {
+            "get": {
+                "operationId": "admin.reports.show",
+                "description": "**Module:** M09 Reports & Admin. Requires an active ADMIN session. Administrative actions are subject to resource scope, current state, and audit rules.\n\nReturns report metadata only; private booking/message evidence is excluded.\n\nJSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.",
+                "summary": "Get Admin Reports Id",
+                "tags": [
+                    "Report"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The operation completed successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "reporter_user_id": {
+                                                    "type": "string"
+                                                },
+                                                "target": {
+                                                    "type": [
+                                                        "object",
+                                                        "null"
+                                                    ],
+                                                    "properties": {
+                                                        "type": {
+                                                            "type": "string"
+                                                        },
+                                                        "id": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "type",
+                                                        "id"
+                                                    ]
+                                                },
+                                                "reason_code": {
+                                                    "type": "string"
+                                                },
+                                                "description": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "resolved_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "reporter_user_id",
+                                                "target",
+                                                "reason_code",
+                                                "description",
+                                                "status",
+                                                "resolved_at",
+                                                "created_at"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The authenticated caller does not have permission for this operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The resource does not exist or is outside the caller\u2019s visible scope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentication is required or the session is no longer valid.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/reports/{id}/evidence": {
+            "get": {
+                "operationId": "admin.reports.evidence",
+                "description": "**Module:** M09 Reports & Admin. Requires an active ADMIN session. Administrative actions are subject to resource scope, current state, and audit rules.\n\nReturns policy-authorized evidence for this report and records the admin access in the audit log.\n\nJSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.",
+                "summary": "Get Admin Reports Id Evidence",
+                "tags": [
+                    "Report"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The operation completed successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "type": {
+                                                    "type": "string"
+                                                },
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "booking_id": {
+                                                    "type": "string"
+                                                },
+                                                "sender_id": {
+                                                    "type": "string"
+                                                },
+                                                "body": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "listing_id": {
+                                                    "type": "string"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "start_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "end_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "required": [
+                                                "type",
+                                                "id",
+                                                "created_at"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "The authenticated caller does not have permission for this operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The resource does not exist or is outside the caller\u2019s visible scope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/reports/{id}/status": {
+            "post": {
+                "operationId": "admin.reports.status",
+                "description": "**Module:** M09 Reports & Admin. Requires an active ADMIN session. Administrative actions are subject to resource scope, current state, and audit rules.\n\nChanges report status with a required reason. A booking report must use the booking-decision endpoint to become RESOLVED.\n\nJSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.",
+                "summary": "Create Admin Reports Id Status",
+                "tags": [
+                    "Report"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "status": {
+                                        "type": "string"
+                                    },
+                                    "reason": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "status",
+                                    "reason"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The operation completed successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "resolved_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "status",
+                                                "resolved_at"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "The requested operation conflicts with the current resource state or idempotency record.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string",
+                                                    "const": "BOOKING_DECISION_REQUIRED"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Resolve a booking report through the booking-decision endpoint."
+                                                },
+                                                "details": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "minItems": 0,
+                                                    "maxItems": 0
+                                                },
+                                                "request_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "details",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "description": "One or more request fields failed validation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The authenticated caller does not have permission for this operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The resource does not exist or is outside the caller\u2019s visible scope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "The session CSRF token is missing or expired; obtain a fresh token before retrying the state-changing request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/reports/{id}/booking-decision": {
+            "post": {
+                "operationId": "admin.reports.booking-decision",
+                "description": "**Module:** M09 Reports & Admin. Requires an active ADMIN session. Administrative actions are subject to resource scope, current state, and audit rules.\n\nResolves a booking report through COMPLETE or CANCEL_REFUND and creates the matching durable booking/payment operation; retries reuse the existing operation.\n\nJSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.",
+                "summary": "Create Admin Reports Id Booking-decision",
+                "tags": [
+                    "Report"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "decision": {
+                                        "type": "string",
+                                        "enum": [
+                                            "COMPLETE",
+                                            "CANCEL_REFUND"
+                                        ]
+                                    },
+                                    "reason": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "decision",
+                                    "reason"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The operation completed successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_id": {
+                                                    "type": "string"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "decision": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "COMPLETE",
+                                                        "CANCEL_REFUND"
+                                                    ]
+                                                },
+                                                "operation_type": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "RELEASE",
+                                                        "REFUND"
+                                                    ]
+                                                },
+                                                "operation_id": {
+                                                    "type": "string"
+                                                },
+                                                "operation_status": {
+                                                    "type": "string"
+                                                },
+                                                "replayed": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "report_id",
+                                                "status",
+                                                "decision",
+                                                "operation_type",
+                                                "operation_id",
+                                                "operation_status",
+                                                "replayed"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "description": "One or more request fields failed validation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The authenticated caller does not have permission for this operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The resource does not exist or is outside the caller\u2019s visible scope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "202": {
+                        "description": "The request was accepted for asynchronous processing.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_id": {
+                                                    "type": "string"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "decision": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "COMPLETE",
+                                                        "CANCEL_REFUND"
+                                                    ]
+                                                },
+                                                "operation_type": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "RELEASE",
+                                                        "REFUND"
+                                                    ]
+                                                },
+                                                "operation_id": {
+                                                    "type": "string"
+                                                },
+                                                "operation_status": {
+                                                    "type": "string"
+                                                },
+                                                "replayed": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "report_id",
+                                                "status",
+                                                "decision",
+                                                "operation_type",
+                                                "operation_id",
+                                                "operation_status",
+                                                "replayed"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "The session CSRF token is missing or expired; obtain a fresh token before retrying the state-changing request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/reports/{id}/history": {
+            "get": {
+                "operationId": "admin.reports.history",
+                "description": "**Module:** M09 Reports & Admin. Requires an active ADMIN session. Administrative actions are subject to resource scope, current state, and audit rules.\n\nReturns report status events and moderation actions with actor, reason, and timestamps.\n\nJSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.",
+                "summary": "Get Admin Reports Id History",
+                "tags": [
+                    "Report"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The operation completed successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "actor_user_id": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "from_status": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "to_status": {
+                                                        "type": "string"
+                                                    },
+                                                    "reason": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "request_id": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "actor_user_id",
+                                                    "from_status",
+                                                    "to_status",
+                                                    "reason",
+                                                    "request_id",
+                                                    "created_at"
+                                                ]
+                                            }
+                                        },
+                                        "moderation_actions": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "actor_user_id": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "action": {
+                                                        "type": "string"
+                                                    },
+                                                    "target_type": {
+                                                        "type": "string"
+                                                    },
+                                                    "target_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "reason": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "actor_user_id",
+                                                    "action",
+                                                    "target_type",
+                                                    "target_id",
+                                                    "reason",
+                                                    "created_at"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "moderation_actions"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The authenticated caller does not have permission for this operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The resource does not exist or is outside the caller\u2019s visible scope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentication is required or the session is no longer valid.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/reports/{id}/moderation": {
+            "post": {
+                "operationId": "admin.reports.moderation",
+                "description": "**Module:** M09 Reports & Admin. Requires an active ADMIN session. Administrative actions are subject to resource scope, current state, and audit rules.\n\nHides or restores the reported listing/review through the shared moderation action and audit policy.\n\nJSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.",
+                "summary": "Create Admin Reports Id Moderation",
+                "tags": [
+                    "Report"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "action": {
+                                        "type": "string"
+                                    },
+                                    "reason": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "action",
+                                    "reason"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The operation completed successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_id": {
+                                                    "type": "string"
+                                                },
+                                                "action": {
+                                                    "type": "string"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "report_id",
+                                                "action",
+                                                "status"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "description": "One or more request fields failed validation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The authenticated caller does not have permission for this operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The resource does not exist or is outside the caller\u2019s visible scope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "The session CSRF token is missing or expired; obtain a fresh token before retrying the state-changing request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "details": {
+                                                    "type": "object"
+                                                },
+                                                "request_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "code",
+                                                "message",
+                                                "request_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/sandbox/payment-callback": {
             "post": {
                 "operationId": "sandbox.payment-callback",
@@ -14655,8 +17380,7 @@
                                                     "type": "string"
                                                 },
                                                 "status": {
-                                                    "type": "string",
-                                                    "const": "PENDING"
+                                                    "type": "string"
                                                 },
                                                 "result": {
                                                     "type": "string",
@@ -16555,9 +19279,10 @@
                 "type": "object",
                 "properties": {
                     "reason": {
-                        "type": "string",
-                        "minLength": 10,
-                        "maxLength": 500
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     }
                 },
                 "required": [

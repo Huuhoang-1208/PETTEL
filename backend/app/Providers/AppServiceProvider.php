@@ -382,6 +382,55 @@ class AppServiceProvider extends ServiceProvider
                     ], ['data']);
                 }
 
+                $bookingReportDecision = $object([
+                    'data' => $object([
+                        'report_id' => $string(),
+                        'status' => $string('', ['RESOLVED']),
+                        'decision' => $string('', ['COMPLETE', 'CANCEL_REFUND']),
+                        'operation_type' => $string('', ['RELEASE', 'REFUND']),
+                        'operation_id' => $string(),
+                        'operation_status' => $string(),
+                        'replayed' => new BooleanType,
+                    ], [
+                        'report_id',
+                        'status',
+                        'decision',
+                        'operation_type',
+                        'operation_id',
+                        'operation_status',
+                        'replayed',
+                    ]),
+                ], ['data']);
+                foreach ($openApi->paths as $path) {
+                    if (trim($path->path, '/') !== 'admin/reports/{id}/booking-decision') {
+                        continue;
+                    }
+
+                    $operation = $path->operations['post'] ?? null;
+                    if ($operation === null || collect($operation->responses ?? [])->contains(
+                        fn ($response): bool => $response instanceof Response && (string) $response->code === '202',
+                    )) {
+                        break;
+                    }
+
+                    foreach ($operation->responses ?? [] as $response) {
+                        if ($response instanceof Response && (string) $response->code === '200') {
+                            $accepted = clone $response;
+                            $accepted->setCode('202')->setDescription('A new booking decision operation was accepted for asynchronous processing. Replays return HTTP 200.');
+                            $operation->addResponse($accepted);
+
+                            break;
+                        }
+                    }
+
+                    break;
+                }
+                foreach (['200', '202'] as $status) {
+                    if ($schema = $schemaFor('admin/reports/{id}/booking-decision', 'post', $status)) {
+                        $schema->type = clone $bookingReportDecision;
+                    }
+                }
+
                 $setUnknownTypes = static function ($type, string $route = '', string $method = '') use (&$setUnknownTypes, $string, $object): void {
                     if ($type instanceof ObjectType) {
                         foreach ($type->properties as $name => $property) {
@@ -404,6 +453,13 @@ class AppServiceProvider extends ServiceProvider
                                     'thumbnail_url',
                                     'body',
                                     'result',
+                                    'status',
+                                    'from_status',
+                                    'to_status',
+                                    'reason',
+                                    'request_id',
+                                    'action',
+                                    'target_type',
                                 ], true)
                             ) {
                                 $replacement = match ($name) {
@@ -421,6 +477,9 @@ class AppServiceProvider extends ServiceProvider
                                     'body' => $string('', [], true),
                                     'result' => $string('', $route === 'sandbox/payment-callback'
                                         ? ['AUTHORIZED', 'FAILED'] : ['SUCCESS', 'FAILURE', 'TIMEOUT']),
+                                    'status' => $string(),
+                                    'from_status', 'request_id', 'reason' => $string('', [], true),
+                                    'to_status', 'action', 'target_type' => $string(),
                                     default => $property,
                                 };
                                 $type->properties[$name] = $replacement;
@@ -522,6 +581,15 @@ class AppServiceProvider extends ServiceProvider
                     'sandbox/payment-callback' => ['M06 Payment Sandbox', 'Public callback endpoint. A valid `X-Payment-Signature` is required; callback replay is processed idempotently against the payment attempt and event.'],
                 ];
                 $operationNotes = [
+                    'reports|post' => 'Creates a report for exactly one target. Booking and message targets are available only to a booking participant; the response does not expose private evidence.',
+                    'reports/mine|get' => 'Returns only reports filed by the authenticated caller.',
+                    'admin/reports|get' => 'Returns the paginated administrative report queue; status filtering is supported.',
+                    'admin/reports/{id}|get' => 'Returns report metadata only; private booking/message evidence is excluded.',
+                    'admin/reports/{id}/evidence|get' => 'Returns policy-authorized evidence for this report and records the admin access in the audit log.',
+                    'admin/reports/{id}/status|post' => 'Changes report status with a required reason. A booking report must use the booking-decision endpoint to become RESOLVED.',
+                    'admin/reports/{id}/booking-decision|post' => 'Resolves a booking report through COMPLETE or CANCEL_REFUND and creates the matching durable booking/payment operation; retries reuse the existing operation.',
+                    'admin/reports/{id}/history|get' => 'Returns report status events and moderation actions with actor, reason, and timestamps.',
+                    'admin/reports/{id}/moderation|post' => 'Hides or restores the reported listing/review through the shared moderation action and audit policy.',
                     'bookings|post' => 'Creates a REQUESTED booking from server-owned price and caller identity. A matching idempotency key replays the prior result; a key reused with changed business data conflicts.',
                     'bookings/quote|post' => 'Calculates the current quote without creating a booking or requiring an idempotency key.',
                     'bookings/{id}/accept|post' => 'Transitions an eligible REQUESTED booking to AWAITING_PAYMENT and creates one calendar hold; invalid state, expiry, or unavailable calendar is rejected.',

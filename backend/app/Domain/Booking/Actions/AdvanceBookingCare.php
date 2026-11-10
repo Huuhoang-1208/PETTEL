@@ -40,6 +40,22 @@ class AdvanceBookingCare
                 $this->fail(404, 'NOT_FOUND', 'Booking not found.');
             }
 
+            $adminRefundInProgress = DB::table('booking_cancellation_operations')
+                ->where('booking_id', $booking->id)
+                ->where('source', 'ADMIN')
+                ->where('reason_code', 'ADMIN_REPORT_REFUND_CANCEL')
+                ->where('operation_type', 'REFUND')
+                ->whereIn('status', ['PENDING', 'PROCESSING', 'MANUAL_REVIEW'])
+                ->exists();
+
+            if ($adminRefundInProgress) {
+                $this->fail(
+                    409,
+                    'CANCELLATION_IN_PROGRESS',
+                    'Booking is locked while an admin refund decision is being processed.',
+                );
+            }
+
             if ($booking->status !== $states['from']) {
                 $this->fail(409, 'INVALID_STATE', 'Booking is not in the state required for this action.');
             }

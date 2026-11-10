@@ -216,9 +216,9 @@ class ProcessBookingReleaseOutbox
                 'from_status' => 'AWAITING_CONFIRMATION',
                 'to_status' => 'COMPLETED',
                 'actor_user_id' => $operation->actor_user_id,
-                'source' => 'USER',
-                'reason_code' => 'OWNER_CONFIRMED',
-                'reason_text' => null,
+                'source' => $operation->source,
+                'reason_code' => $operation->reason_code,
+                'reason_text' => $operation->reason_note,
                 'created_at' => $now->format('Y-m-d H:i:s.u'),
             ]);
 

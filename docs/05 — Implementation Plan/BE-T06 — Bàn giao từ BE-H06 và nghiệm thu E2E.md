@@ -2,14 +2,14 @@
 
 **Owner:** Thịnh · **Reviewer theo backlog:** Hoàng · **Bên tích hợp:** Hoàng/BE-H06
 **Phạm vi:** report/moderation/audit, admin panel và vận hành backend theo backlog BE-T06.
-**Trạng thái tại bàn giao:** schema và một action moderation review có; report API/intake, report queue/admin triage, Filament/Pulse và xác minh worker/scheduler runtime chưa hoàn thiện theo báo cáo BE-H06.
+**Trạng thái tại bàn giao:** report intake, reporter scope, admin queue/status/history/evidence/moderation và booking decision API hiện có trong worktree `be-ha06`; report/booking feature tests đã được bổ sung. Full pipeline local đạt trên worktree dirty (422 tests / 4.945 assertions), nhưng chưa có commit/SHA sạch hoặc official CI. Filament/Pulse chưa thấy trong source hiện tại; xác nhận riêng nếu chúng vẫn thuộc phạm vi nghiệm thu.
 
 ## 1. Nguồn hợp đồng và hiện trạng
 
 - [Backlog BE-T06](<../PETTEL — Task 4 tuần (A, B, C)/Chia task.md>): tạo/xem/xử lý report `OPEN → IN_REVIEW → RESOLVED|DISMISSED`; dùng action/policy chung để ẩn listing/review; actor/thời gian/lý do; giới hạn đọc chứng cứ riêng tư; Filament auth/Policy; Pulse admin-only; kiểm tra worker/scheduler, failed jobs và request ID.
 - [M09 Reports & Admin](<../03 — Modules Documentation/M09 — Reports & Admin.md>): target hiện được liệt kê là listing, review, message hoặc booking; một target FK; admin xử lý có lý do/audit; ẩn listing phải loại khỏi search và chặn booking mới; report riêng tư không làm lộ evidence; dismiss phải có lý do.
 - [P0 Decision Contract §4, §6](<../02 — Domain Documentation/05 — P0 Decision Contract.md>): report `IN_REVIEW` giữ booking `AWAITING_CONFIRMATION`; admin quyết định hoàn tất/release hoặc hủy ngoại lệ/refund; report đang mở và thời hạn retention ảnh hưởng dữ liệu booking/care update.
-- [BE-H06 Task 3 report](<BE-H06 — Task 3 integration and E2E verification report.md>): migration có `reports`, `moderation_actions`; `ReviewModerationTest` gọi action bằng fixture DB. Chưa có API tạo report, admin queue/triage route hoặc panel. `SetReviewVisibility` hiện là action cho review, không phải report workflow đầy đủ. Filament và Pulse chưa có trong `backend/composer.json`.
+- [BE-H06 Task 3 report](<BE-H06 — Task 3 integration and E2E verification report.md>): ghi các report/admin routes, booking decisions, test workflow, strict OpenAPI export và runtime worker/scheduler mới nhất. Report API không đồng nghĩa với Filament/Pulse; hai phần đó chưa thấy trong `backend/composer.json`.
 
 Nguồn có thể chưa thống nhất về target, khả năng reporter xem trạng thái, duplicate report, reopen, quyền xem message/care update và hành động moderation cho từng target. Ghi từng bất đồng, đưa ra đề xuất, xin Hoàng chốt trước khi biến thành contract hoặc schema/API mới. Không suy luận quyền mở evidence riêng tư chỉ từ quyền admin chung.
 
@@ -55,10 +55,11 @@ Chạy trên MySQL test cô lập hoặc staging test có dữ liệu giả. E2E
 
 ## 4. Trạng thái hiện có từ BE-H06
 
-- CI-equivalent trên branch `be-h06`, HEAD `09b41732608e75dca65edf5ce93ac5dc1a321e1b` cộng worktree dirty: Pint 188 files, PHPStan 131 files không lỗi, migrations/seed và 389 tests / 4.490 assertions pass. Đây không phải CI result gắn SHA sạch.
-- Migration `2026_10_28_000004_create_booking_content_and_moderation_schema.php` đã tạo report/status/target FK và `moderation_actions`. `ReviewModerationTest` xác nhận action ẩn/restore review, public rating/cache và audit ở mức action/service; fixture report được insert trực tiếp.
-- Chưa có report intake API, queue/triage API hoặc Filament, Pulse chưa được cài. Runtime dev hiện đang dùng image cũ; scheduler/worker chưa được nghiệm thu trên source mới.
-- Dùng số liệu trên làm baseline tham khảo; mọi implementation trên branch BE-T06 cần chạy lại pipeline phù hợp với dependency mới.
+- Branch hiện tại `be-ha06`, HEAD `b0efd9cf614ddaf01051761cce36a37d79b4c684`; worktree dirty, chưa có SHA sạch và chưa có official CI result.
+- `ReportWorkflowTest` bao phủ report intake, reporter-only list, admin status/history, private evidence, listing/review moderation, booking evidence và `DISMISSED`. `BookingReportDecisionTest` bao phủ COMPLETE/refund operation, retry/idempotency và state guard.
+- API Contracts, Scramble operation notes, route/test matrix và OpenAPI JSON hiện đã có report endpoints. Strict export và `ApiDocumentationAccessTest` đã pass trong lần kiểm tra trước; xem Task 3 report để biết ngày/kết quả.
+- QueueContextPropagationTest đạt 3 tests / 31 assertions; Pint cho `routes/console.php` và test context đạt. Worker/scheduler runtime chạy với `schedule_run_id`; booking commands không tìm thấy operation đến hạn. `queue:failed` rỗng.
+- Filament/Pulse chưa thấy trong source; nếu chúng thuộc phạm vi Gate, để mục này Blocked/Not implemented cho tới khi có implementation và tests. Full pipeline local đã pass; chưa thay thế official CI hoặc review trên commit sạch (xem Task 3 report).
 
 ### Tài liệu liên quan
 

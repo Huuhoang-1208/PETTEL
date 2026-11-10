@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AcceptBookingController;
 use App\Http\Controllers\Admin\BookingCancellationQueueController;
+use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Auth\EnableCaregiverRoleController;
 use App\Http\Controllers\BookingCareLifecycleController;
 use App\Http\Controllers\BookingController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\ListingMediaController;
 use App\Http\Controllers\PetController;
 use App\Http\Controllers\PublicListingController;
 use App\Http\Controllers\RejectBookingController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SandboxPaymentCallbackController;
 use App\Http\Controllers\SimulateSandboxPaymentController;
 use App\Http\Controllers\StartSandboxPaymentController;
@@ -42,6 +44,11 @@ Route::middleware(['auth:sanctum', 'account.active'])->get('/user', function (Re
 Route::post('/user/roles/caregiver', EnableCaregiverRoleController::class)
     ->middleware(['auth:sanctum', 'account.active', 'throttle:10,1'])
     ->name('user.roles.caregiver');
+
+Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
+    Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
+    Route::get('/reports/mine', [ReportController::class, 'mine'])->name('reports.mine');
+});
 
 Route::middleware(['auth:sanctum', 'account.active', 'role:OWNER'])->group(function () {
     Route::post('/bookings/quote', [BookingController::class, 'quote'])->name('bookings.quote');
@@ -98,6 +105,20 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
     });
 
 Route::middleware(['auth:sanctum', 'account.active', 'role:ADMIN'])->prefix('admin')->group(function () {
+    Route::get('/reports', [AdminReportController::class, 'index'])->name('admin.reports.index');
+    Route::get('/reports/{id}', [AdminReportController::class, 'show'])
+        ->whereNumber('id')->name('admin.reports.show');
+    Route::get('/reports/{id}/evidence', [AdminReportController::class, 'evidence'])
+        ->whereNumber('id')->name('admin.reports.evidence');
+    Route::post('/reports/{id}/status', [AdminReportController::class, 'changeStatus'])
+        ->whereNumber('id')->name('admin.reports.status');
+    Route::post('/reports/{id}/booking-decision', [AdminReportController::class, 'bookingDecision'])
+        ->whereNumber('id')->name('admin.reports.booking-decision');
+    Route::get('/reports/{id}/history', [AdminReportController::class, 'history'])
+        ->whereNumber('id')->name('admin.reports.history');
+    Route::post('/reports/{id}/moderation', [AdminReportController::class, 'moderate'])
+        ->whereNumber('id')->name('admin.reports.moderation');
+
     Route::get('/booking-cancellations', [BookingCancellationQueueController::class, 'index']);
     Route::post('/booking-cancellations/{id}/retry', [BookingCancellationQueueController::class, 'retry'])->whereNumber('id');
     Route::get('/listings', [ListingLifecycleController::class, 'adminIndex']);

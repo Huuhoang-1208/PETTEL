@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\EnsureActiveAccount;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\RecordPerformanceQueryMetrics;
@@ -21,7 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
             EnsureFrontendRequestsAreStateful::class,
         ]);
 
-        $middleware->api(append: [RecordPerformanceQueryMetrics::class]);
+        $middleware->api(append: [
+            RecordPerformanceQueryMetrics::class,
+            AssignRequestId::class,
+        ]);
 
         $middleware->alias([
             'account.active' => EnsureActiveAccount::class,

@@ -32,7 +32,12 @@ class ProcessCancellationOutbox
                 $unlocked = BookingCancellationOperation::query()->whereKey($id)->first();
                 $operation = $unlocked === null ? null : app(CancellationCoordinator::class)->markProcessing($unlocked);
                 if ($operation === null) {
-                    $counts['skipped']++;
+                    $final = BookingCancellationOperation::query()->whereKey($id)->first();
+                    if ($final?->status === 'MANUAL_REVIEW') {
+                        $counts['manual_review']++;
+                    } else {
+                        $counts['skipped']++;
+                    }
 
                     continue;
                 }
