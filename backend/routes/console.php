@@ -58,6 +58,11 @@ Schedule::call(fn () => $runScheduledCommand(
     ['--batch' => 100],
 ))->name('bookings:process-releases')->everyMinute();
 
+Schedule::call(fn () => $runScheduledCommand(
+    'bookings:process-completion-followups',
+    ['--batch' => 100],
+))->name('bookings:process-completion-followups')->everyMinute();
+
 if (app()->environment('local')) {
     Schedule::job(new InfrastructureHeartbeat)
         ->everyMinute()
