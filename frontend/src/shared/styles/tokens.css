@@ -1,0 +1,64 @@
+/* PETTEL tokens mapped from prototype/css/tokens.css (Petty-inspired style guide). */
+:root {
+  color-scheme: light;
+
+  --brand-900: #353454;
+  --brand-700: #474672;
+  --brand-600: #5a5a83;
+  --brand-100: #efedf7;
+  --accent-700: #c48590;
+  --accent-100: #fbedec;
+
+  --text-950: #010911;
+  --text-700: #263948;
+  --text-600: #697681;
+  --canvas: #fbedec;
+  --surface: #ffffff;
+  --border: #eadde3;
+  --border-strong: #d7c7d0;
+
+  --success: #287767;
+  --success-bg: #e8f5f1;
+  --warning: #8a5700;
+  --warning-bg: #fff4d8;
+  --danger: #d42323;
+  --danger-bg: #fff0ef;
+  --info: #474672;
+  --info-bg: #efedf7;
+  --focus: #918bdb;
+
+  --petty-pink: #fbedec;
+  --petty-mauve: #c48590;
+  --petty-indigo: #474672;
+  --petty-neutral: #263948;
+  --petty-sky: #abdcfc;
+  --petty-mint: #b1e0d8;
+  --petty-lavender: #bbb7ea;
+  --petty-peach: #fdd2a4;
+  --petty-coral: #fbae9e;
+
+  --shadow-sm: 0 5px 18px rgb(71 70 114 / 8%);
+  --shadow-md: 0 18px 44px rgb(71 70 114 / 15%);
+  --shadow-inset: inset 0 -3px 5px rgb(1 9 17 / 12%);
+
+  --r-sm: 12px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --r-xl: 30px;
+  --pill: 999px;
+
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 20px;
+  --s6: 24px;
+  --s8: 32px;
+  --s10: 40px;
+  --s12: 48px;
+  --s16: 64px;
+
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  --content: 1200px;
+  --header-content: 1260px;
+}
