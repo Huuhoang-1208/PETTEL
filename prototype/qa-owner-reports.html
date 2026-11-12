@@ -1,0 +1,23 @@
+<!doctype html><meta charset="utf-8"><title>Temporary report-list QA</title><script type="module">
+import { seed } from './js/data/fixtures.js';
+const key = 'pettel-prototype-v1';
+if (new URLSearchParams(location.search).has('restore')) {
+  const saved = sessionStorage.getItem('pettel-qa-original-state');
+  if (saved) localStorage.setItem(key, saved);
+  location.replace('./index.html#/admin');
+} else {
+  sessionStorage.setItem('pettel-qa-original-state', localStorage.getItem(key) || '');
+  const state = JSON.parse(JSON.stringify(seed));
+  state.persona = 'owner';
+  state.reports = Array.from({ length: 100 }, (_, i) => ({
+    ...JSON.parse(JSON.stringify(seed.reports[i % seed.reports.length])),
+    id: `report-qa-${String(i + 1).padStart(3, '0')}`,
+    reporterId: 'owner-01', createdAt: new Date(Date.UTC(2026, 10, 18, 8, i)).toISOString(),
+    status: ['OPEN','IN_REVIEW','RESOLVED','DISMISSED'][i % 4],
+    targetId: `target-${i + 1}`
+  }));
+  state.ui.ownerReportPage = 1;
+  localStorage.setItem(key, JSON.stringify({ version: 1, state }));
+  location.replace('./index.html#/owner/reports');
+}
+</script>
