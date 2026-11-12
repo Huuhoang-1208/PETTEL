@@ -1,3 +1,12 @@
+FROM node:22-bookworm-slim AS owner-build
+WORKDIR /app
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
+FROM composer:2 AS composer-bin
+
 FROM php:8.3-fpm-bookworm AS backend
 
 RUN apt-get update \
@@ -45,7 +54,7 @@ RUN printf '%s\n' \
     'env[BCRYPT_ROUNDS] = $BCRYPT_ROUNDS' \
     > /usr/local/etc/php-fpm.d/zz-pettel-env.conf
 
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=composer-bin /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 COPY backend/composer.json backend/composer.lock ./
@@ -58,3 +67,4 @@ RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/fra
 FROM nginx:1-alpine AS frontend
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY --from=backend /var/www/html/public /var/www/html/public
+COPY --from=owner-build /app/dist /var/www/html/public/owner
