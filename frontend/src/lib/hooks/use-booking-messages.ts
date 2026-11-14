@@ -2,31 +2,27 @@
 
 import { api } from "@/lib/api/client";
 import type { ChannelAuthorizationCallback } from "pusher-js";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { errorText, type Message, type Page } from "@/lib/api/pettel";
 
 type ChannelAuthorizationResponse = NonNullable<
   Parameters<ChannelAuthorizationCallback>[1]
 >;
 
-type BookingMessage = {
-  id: string;
-  sender_id: string;
-  body: string | null;
-  created_at: string;
-};
-
 export function useBookingMessages(bookingId: string) {
-  const [messages, setMessages] = useState<BookingMessage[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [nextPage, setNextPage] = useState<string | null>(null);
+  const refreshRef = useRef<() => Promise<void>>(async () => {});
 
   useEffect(() => {
     let active = true;
     let requestVersion = 0;
     let disconnect = () => {};
 
-    const reportError = () => {
+    const reportError = (failure: unknown) => {
       if (active) {
-        setError("Không kết nối được chat. Kiểm tra phiên đăng nhập và Reverb.");
+        setError(errorText(failure));
       }
     };
 
@@ -34,16 +30,17 @@ export function useBookingMessages(bookingId: string) {
       const version = ++requestVersion;
 
       try {
-        const { data } = await api.get<{ data: BookingMessage[] }>(
-          `/api/bookings/${bookingId}/messages`,
+        const { data } = await api.get<Page<Message>>(
+          `/api/bookings/${bookingId}/messages?per_page=50`,
         );
 
         if (active && version === requestVersion) {
           setMessages([...data.data].reverse());
+          setNextPage(data.links?.next ?? null);
           setError(null);
         }
-      } catch {
-        reportError();
+      } catch (failure) {
+        reportError(failure);
       }
     }
 
@@ -84,16 +81,22 @@ export function useBookingMessages(bookingId: string) {
       echo.private(`bookings.${bookingId}`)
         .subscribed(() => void refreshMessages())
         .listen(".booking.message.sent", () => void refreshMessages())
-        .error(reportError);
+        .error(() => void refreshMessages());
     }
 
-    void connect().catch(reportError);
+    refreshRef.current = refreshMessages;
+    void refreshMessages();
+    // Polling preserves delivery if the socket is temporarily unavailable.
+    const timer = window.setInterval(() => { if (!document.hidden) void refreshMessages(); }, 5000);
+    if (process.env.NEXT_PUBLIC_REVERB_APP_KEY) void connect().catch(() => {});
 
     return () => {
       active = false;
+      window.clearInterval(timer);
+      refreshRef.current = async () => {};
       disconnect();
     };
   }, [bookingId]);
 
-  return { messages, error };
+  return { messages, error, nextPage, refresh: () => refreshRef.current() };
 }

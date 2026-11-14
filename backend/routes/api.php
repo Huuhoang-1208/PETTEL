@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\EnableCaregiverRoleController;
 use App\Http\Controllers\BookingCareLifecycleController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BookingMessageController;
+use App\Http\Controllers\BookingQueryController;
 use App\Http\Controllers\CancelBookingController;
 use App\Http\Controllers\CaregiverListingController;
 use App\Http\Controllers\CaregiverProfileController;
@@ -39,7 +40,7 @@ Route::post('/sandbox/payment-callback', SandboxPaymentCallbackController::class
     ->name('sandbox.payment-callback');
 
 Route::middleware(['auth:sanctum', 'account.active'])->get('/user', function (Request $request) {
-    return $request->user();
+    return $request->user()->load('roles');
 });
 
 Route::post('/user/roles/caregiver', EnableCaregiverRoleController::class)
@@ -47,6 +48,8 @@ Route::post('/user/roles/caregiver', EnableCaregiverRoleController::class)
     ->name('user.roles.caregiver');
 
 Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
+    Route::get('/bookings', [BookingQueryController::class, 'index']);
+    Route::get('/bookings/{id}', [BookingQueryController::class, 'show'])->whereNumber('id');
     Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
     Route::get('/reports/mine', [ReportController::class, 'mine'])->name('reports.mine');
 });

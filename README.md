@@ -1,10 +1,10 @@
 # PETTEL
 
-Nền tảng tìm và đặt dịch vụ chăm sóc thú cưng tại Đà Nẵng. Stack đích: Laravel 13/PHP 8.3 cho JSON API, Vue 3 SPA trong `frontend/`, Sanctum stateful cookie/CSRF, MySQL 8.4, Redis 7 và Docker Compose. Breeze API cung cấp scaffold xác thực; Filament dành cho admin, Scramble cho OpenAPI, Pulse cho quan sát. Chi tiết stack và các ràng buộc nằm trong [Technology & Tools](<docs/08 — Architecture & Technical Design/10 — Technology & Tools — Responsibilities & Constraints.md>).
+Nền tảng tìm và đặt dịch vụ chăm sóc thú cưng tại Đà Nẵng. Stack đích: Laravel 13/PHP 8.3 cho JSON API, Next.js App Router trong `frontend/`, Sanctum stateful cookie/CSRF, MySQL 8.4, Redis 7 và Docker Compose. Breeze API cung cấp scaffold xác thực; Filament dành cho admin, Scramble cho OpenAPI, Pulse cho quan sát. Chi tiết stack và các ràng buộc nằm trong [Technology & Tools](<docs/08 — Architecture & Technical Design/10 — Technology & Tools — Responsibilities & Constraints.md>).
 
 ## Trạng thái hiện tại
 
-Backend có xác thực Breeze/Sanctum, vai trò OWNER/CAREGIVER/ADMIN, các workflow nghiệp vụ P0, Filament cho quản trị, Scramble cho OpenAPI và Pulse cho quan sát. Docker có MySQL, Redis, worker và scheduler; môi trường test dùng MySQL riêng. Có tài khoản, pet và caregiver profile minh họa. Vue SPA trong `frontend/` chưa được scaffold; các giao diện người dùng vẫn thuộc giai đoạn frontend sau Gate BE.
+Backend có xác thực Breeze/Sanctum, vai trò OWNER/CAREGIVER/ADMIN, các workflow nghiệp vụ P0, Filament cho quản trị, Scramble cho OpenAPI và Pulse cho quan sát. Docker có MySQL, Redis, worker và scheduler; môi trường test dùng MySQL riêng. Có tài khoản, pet và caregiver profile minh họa. Frontend Next.js trong `frontend/` đã kết nối các luồng tài khoản, tìm dịch vụ, thú cưng, đặt lịch, thanh toán sandbox, chat, chăm sóc và duyệt dịch vụ. Xem [hướng dẫn frontend](frontend/README.md) và [danh mục tích hợp](docs/frontend-backend-integration.md).
 
 ## Chạy dịch vụ nền
 
@@ -44,7 +44,7 @@ Invoke-WebRequest -Uri http://localhost:8080/up -UseBasicParsing | Select-Object
 docker compose exec -T redis redis-cli ping
 ```
 
-Kết quả mong đợi: `/` trả JSON trạng thái API, `/up` trả HTTP 200, Redis trả `PONG`; `frontend`, `db` và `redis` có trạng thái `healthy`. Worker/scheduler phải ở trạng thái chạy. Vue SPA chưa được scaffold nên các trang người dùng chưa khả dụng.
+Kết quả mong đợi: `/` trả JSON trạng thái API, `/up` trả HTTP 200, Redis trả `PONG`; `frontend`, `db` và `redis` có trạng thái `healthy`. Worker/scheduler phải ở trạng thái chạy. Next.js chạy riêng tại http://localhost:3000 bằng `npm run dev` trong `frontend/`; cổng 8080 là Nginx/API Laravel.
 
 Nếu thay `APP_PORT`, cập nhật đồng bộ `APP_URL`, `FRONTEND_URL`, `SANCTUM_STATEFUL_DOMAINS` trong `.env` và dùng cổng mới trong các lệnh kiểm tra.
 

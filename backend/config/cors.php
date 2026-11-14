@@ -31,7 +31,7 @@ return [
 
     'allowed_origins_patterns' => [],
 
-    'allowed_headers' => ['Accept', 'Content-Type', 'Origin', 'X-Requested-With', 'X-XSRF-TOKEN', 'X-CSRF-TOKEN'],
+    'allowed_headers' => ['Accept', 'Content-Type', 'Origin', 'X-Requested-With', 'X-XSRF-TOKEN', 'X-CSRF-TOKEN', 'Idempotency-Key'],
 
     'exposed_headers' => [],
 
