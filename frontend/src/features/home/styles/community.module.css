@@ -1,0 +1,83 @@
+.eyebrow {
+  color: var(--home-teal);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+}
+.community h2 {
+  font-weight: 800;
+  font-size: clamp(25px, 2.5vw, 34px);
+  letter-spacing: -1px;
+  line-height: 1.3;
+  margin: 13px 0;
+}
+.community {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+  max-width: 1060px;
+  padding: 36px;
+  margin: 0 auto 60px;
+  border-radius: 28px;
+  background: #eff8f8;
+  scroll-margin-top: 25px;
+}
+.communityPaw {
+  color: #90cbcc;
+  flex-shrink: 0;
+}
+.communityPaw svg {
+  width: 72px;
+  height: 72px;
+  transform: rotate(-12deg);
+}
+.community h2 {
+  font-size: 25px;
+}
+.community p {
+  max-width: 610px;
+  font-size: 13px;
+  color: var(--home-muted);
+  line-height: 1.85;
+}
+.communityButton {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  padding: 13px 18px;
+  margin-left: auto;
+  border-radius: 30px;
+  color: white;
+  background: var(--home-teal);
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
+}
+.communityButton svg {
+  width: 16px;
+  height: 16px;
+}
+@media (max-width: 950px) {
+  .community {
+    margin-left: 24px;
+    margin-right: 24px;
+    padding: 28px;
+    flex-wrap: wrap;
+  }
+  .communityPaw {
+    display: none;
+  }
+  .communityButton {
+    margin-left: 0;
+  }
+}
+@media (max-width: 600px) {
+  .community {
+    margin: 0 16px 32px;
+    padding: 25px;
+    gap: 20px;
+  }
+  .community h2 {
+    font-size: 24px;
+  }
+}

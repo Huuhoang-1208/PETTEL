@@ -1,3 +1,9 @@
+import { LoginPage } from "@/features/auth/login-page";
 import { Suspense } from "react";
-import { LiveAuth } from "@/components/pettel/live-auth";
-export default function Page() { return <Suspense fallback={<p>Đang tải...</p>}><LiveAuth /></Suspense>; }
+export default function Page() {
+  return (
+    <Suspense fallback={<p>Đang tải...</p>}>
+      <LoginPage />
+    </Suspense>
+  );
+}

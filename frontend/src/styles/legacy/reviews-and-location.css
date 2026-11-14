@@ -1,0 +1,350 @@
+/* ============================
+   REVIEWS
+   ============================ */
+.detail-reviews {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.reviews-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  font-size: 15px;
+}
+
+.reviews-summary .star {
+  color: var(--color-gold);
+  font-size: 18px;
+}
+
+.reviews-summary .score {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.review-card {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.review-card:last-child {
+  border-bottom: none;
+}
+
+.review-card__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.review-card__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--color-bg-gray);
+  flex-shrink: 0;
+}
+
+.review-card__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.review-card__photo {
+  margin-top: 14px;
+  width: 100%;
+  max-width: 240px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.review-card__photo img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+.facebook-review-link {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #1877f2;
+  color: white;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.facebook-review-link:hover {
+  background: #145db2;
+}
+
+.facebook-review-link i {
+  font-size: 16px;
+}
+
+.facebook-account-link {
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+
+.facebook-account-link:hover .review-card__avatar {
+  box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.18);
+}
+
+.facebook-account-label {
+  display: block;
+  margin-top: 6px;
+  color: #1877f2;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.review-card__info .name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-dark);
+}
+
+.review-card__info .date {
+  font-size: 13px;
+  color: var(--color-text-light);
+}
+
+.review-card__content {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-text);
+}
+
+.facebook-review-summary {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.facebook-review-summary .reviews-summary-text {
+  font-size: 14px;
+  color: var(--color-text-light);
+}
+
+.facebook-review-link {
+  margin-left: auto;
+  color: #1877f2;
+  font-size: 20px;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.facebook-review-link:hover {
+  color: #145db2;
+}
+
+.review-card__show-more {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-dark);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  cursor: pointer;
+}
+
+.review-card__show-more:hover {
+  text-decoration: underline;
+}
+
+.btn-all-reviews {
+  display: inline-block;
+  padding: 12px 24px;
+  border: 1px solid var(--color-text-dark);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-dark);
+  margin-top: 16px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-all-reviews:hover {
+  background: var(--color-bg-gray);
+}
+
+/* ============================
+   LOCATION
+   ============================ */
+.detail-location {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.location-map {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 12px;
+  height: 300px;
+  background: var(--color-bg-gray);
+}
+
+.location-map img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.location-address {
+  font-size: 14px;
+  color: var(--color-text);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.location-show-more {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-dark);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.location-show-more:hover {
+  text-decoration: underline;
+}
+
+/* ============================
+   SUGGESTIONS
+   ============================ */
+.detail-suggestions {
+  margin-bottom: 24px;
+}
+
+.suggestions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.suggestion-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: var(--transition);
+}
+
+.suggestion-card:hover {
+  opacity: 0.85;
+}
+
+.suggestion-card__image {
+  width: 100%;
+  height: 160px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.suggestion-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.suggestion-card__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-dark);
+}
+
+.suggestion-card__price {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+/* ============================
+   BOTTOM NAVIGATION (Detail)
+   ============================ */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--color-bg);
+  border-top: 1px solid var(--color-border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  padding: 10px 0 14px;
+  z-index: 100;
+}
+
+.bottom-nav__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-light);
+  cursor: pointer;
+  transition: var(--transition);
+  text-decoration: none;
+}
+
+.bottom-nav__item--active {
+  color: var(--color-primary);
+}
+
+.bottom-nav__item:hover {
+  color: var(--color-primary);
+}
+
+.bottom-nav__item svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* ============================
+   MAP PRICE MARKERS (overlay)
+   ============================ */
+.map-marker {
+  position: absolute;
+  background: var(--color-bg);
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: var(--transition);
+  z-index: 10;
+}
+
+.map-marker:hover {
+  transform: scale(1.08);
+  z-index: 20;
+}
+
+.map-marker--active {
+  background: var(--color-text-dark);
+  color: white;
+}

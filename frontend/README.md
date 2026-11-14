@@ -28,18 +28,18 @@ Nếu gặp lỗi quyền ghi storage, kiểm tra volume có cho `www-data` ghi 
 
 ## Các trang
 
-| Trang | Chức năng |
-| --- | --- |
-| `/` | Homepage giới thiệu PETTEL, thanh tìm sitter và điều hướng |
-| `/services` | Tìm kiếm, lọc, lịch trống, tổng giá và Smart Match |
-| `/login` | Đăng ký, đăng nhập, yêu cầu đặt lại mật khẩu |
-| `/reset-password?token=...&email=...` | Đặt lại mật khẩu theo liên kết email |
-| `/pet-profile` | Thêm/sửa/xóa, lưu trữ/kích hoạt thú cưng theo tài khoản |
-| `/detail?id={listingId}` | Chi tiết dịch vụ, đánh giá, báo giá và tạo đơn thật |
-| `/bookings` | Đơn của chủ/người chăm, trạng thái, thanh toán sandbox, cập nhật chăm sóc, đánh giá, báo cáo |
-| `/chat?booking={bookingId}` | Chat theo đơn, gửi ảnh, tải lịch sử, Reverb và polling dự phòng |
-| `/caregiver` | Hồ sơ người chăm, dịch vụ, ảnh, lịch trống, gửi duyệt và đề xuất sửa |
-| `/admin` | Duyệt dịch vụ/đề xuất sửa, tạm ngưng/khôi phục và liên kết công cụ báo cáo |
+| Trang                                 | Chức năng                                                                                    |
+| ------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `/`                                   | Homepage giới thiệu PETTEL, thanh tìm sitter và điều hướng                                   |
+| `/services`                           | Tìm kiếm, lọc, lịch trống, tổng giá và Smart Match                                           |
+| `/login`                              | Đăng ký, đăng nhập, yêu cầu đặt lại mật khẩu                                                 |
+| `/reset-password?token=...&email=...` | Đặt lại mật khẩu theo liên kết email                                                         |
+| `/pet-profile`                        | Thêm/sửa/xóa, lưu trữ/kích hoạt thú cưng theo tài khoản                                      |
+| `/detail?id={listingId}`              | Chi tiết dịch vụ, đánh giá, báo giá và tạo đơn thật                                          |
+| `/bookings`                           | Đơn của chủ/người chăm, trạng thái, thanh toán sandbox, cập nhật chăm sóc, đánh giá, báo cáo |
+| `/chat?booking={bookingId}`           | Chat theo đơn, gửi ảnh, tải lịch sử, Reverb và polling dự phòng                              |
+| `/caregiver`                          | Hồ sơ người chăm, dịch vụ, ảnh, lịch trống, gửi duyệt và đề xuất sửa                         |
+| `/admin`                              | Duyệt dịch vụ/đề xuất sửa, tạm ngưng/khôi phục và liên kết công cụ báo cáo                   |
 
 `/videocall` và `/livecam` vẫn là video mô phỏng và có thông báo rõ trên trang.
 Backend chưa có signaling hoặc luồng camera thật. Thanh toán chỉ dùng sandbox,
@@ -49,19 +49,31 @@ tìm kiếm để tránh nhầm ID mẫu với listing thật.
 
 ## Mã nguồn và kiểm tra
 
-- `src/lib/api/pettel.ts`: kiểu dữ liệu, gọi API, CSRF, hiển thị lỗi và tải dữ liệu.
-- `src/components/pettel/live-*.tsx`: các màn hình nối API.
-- `src/components/pettel/session.tsx`: phiên đăng nhập và điều hướng theo vai trò.
-- `src/lib/hooks/use-booking-messages.ts`: chat Reverb, polling và phân trang.
+- `src/app`: route, metadata, layout và entry CSS của Next.js.
+- `src/features`: mã nguồn theo chức năng; mỗi chức năng có màn hình, component,
+  hook, kiểu dữ liệu và style riêng khi cần.
+- `src/components/layout`: header và điều hướng dùng chung.
+- `src/components/ui`: icon, thông báo lỗi, bộ lọc select, hộp xác nhận.
+- `src/providers`: quản lý phiên đăng nhập dùng chung.
+- `src/hooks`: hook tải API dùng chung.
+- `src/lib/api`: HTTP client, kiểu dữ liệu API, CSRF và xử lý lỗi.
+- `src/lib/constants.ts`, `date.ts`, `format.ts`: nhãn, chuyển múi giờ và định dạng.
+- `src/styles`: CSS toàn cục, được import theo thứ tự tại `src/app/globals.css`.
+- `src/legacy`: giao diện, script và dữ liệu demo từ bản HTML ban đầu.
 - `public`: 59 ảnh/video gốc giữ nguyên nội dung.
 - Component/logic prototype còn được giữ để tham khảo; dữ liệu demo không được
   dùng cho các trang nghiệp vụ chính.
 
 ```powershell
 npm run lint
+npm run typecheck
+npm run format:check
 npm run build
 npm start
 ```
+
+Chạy `npm run format` để định dạng mã nguồn. Xem [ARCHITECTURE.md](./ARCHITECTURE.md)
+để biết vị trí thêm màn hình, component hoặc hook mới.
 
 Danh mục API, giới hạn và thay đổi backend:
 [frontend-backend-integration.md](../docs/frontend-backend-integration.md).

@@ -1,0 +1,151 @@
+/* ============================
+   ICON COLORS
+   ============================ */
+
+/* Trust Badge Icons */
+.trust-badge--pro .fa-medal {
+  color: #ffd700;
+}
+
+.trust-badge--verified .fa-shield-check {
+  color: #10b981;
+}
+
+.trust-badge--new .fa-user {
+  color: #6b7280;
+}
+
+/* Pet Type Icons */
+.fa-cat {
+  color: #f97316;
+}
+
+.fa-dog {
+  color: #8b5cf6;
+}
+
+/* Action Icons */
+.fa-video,
+.fa-camera {
+  color: #3b82f6;
+}
+
+.fa-paper-plane {
+  color: #10b981;
+}
+
+/* Send button icon should be white */
+.chat-send-btn .fa-paper-plane {
+  color: white !important;
+}
+
+.fa-image {
+  color: #8b5cf6;
+}
+
+.fa-comment {
+  color: #3b82f6;
+}
+
+/* Status Icons */
+.fa-check-circle {
+  color: #10b981;
+}
+
+.fa-times-circle {
+  color: #ef4444;
+}
+
+.fa-exclamation-triangle {
+  color: #f59e0b;
+}
+
+/* Edit/Delete Icons */
+.pet-edit-btn .fa-edit {
+  color: #3b82f6;
+}
+
+.pet-delete-btn .fa-trash {
+  color: #ef4444;
+}
+
+/* Location & Time Icons */
+.fa-map-marker-alt {
+  color: #ef4444;
+}
+
+.fa-clock {
+  color: #3b82f6;
+}
+
+/* Service Icons */
+.fa-broom {
+  color: #8b5cf6;
+}
+
+.fa-bed {
+  color: #ec4899;
+}
+
+.fa-gamepad {
+  color: #f97316;
+}
+
+.fa-scissors {
+  color: #6b7280;
+}
+
+.fa-wind {
+  color: #06b6d4;
+}
+
+.fa-snowflake {
+  color: #3b82f6;
+}
+
+.fa-gift {
+  color: #ef4444;
+}
+
+.fa-star {
+  color: #f59e0b;
+}
+
+.fa-medal {
+  color: #f59e0b;
+}
+
+.fa-bullseye {
+  color: #ef4444;
+}
+
+/* Video Call Icons */
+.fa-microphone {
+  color: #10b981;
+}
+
+.fa-microphone-slash {
+  color: #ef4444;
+}
+
+.videocall-control-btn .fa-video {
+  color: #3b82f6;
+}
+
+.videocall-control-btn .fa-video-slash {
+  color: #ef4444;
+}
+
+.fa-phone-slash {
+  color: white;
+}
+
+/* Smart Match Icon */
+.fa-wand-magic-sparkles {
+  color: white !important;
+}
+
+/* Lock Icon */
+.fa-lock {
+  color: #10b981;
+}

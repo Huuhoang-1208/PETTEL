@@ -1,0 +1,317 @@
+.searchArea {
+  position: relative;
+  margin: 29px auto 21px;
+  max-width: 1160px;
+  text-align: left;
+}
+.searchBar {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr)) minmax(145px, 0.58fr)
+    minmax(170px, 0.68fr);
+  gap: 12px;
+  align-items: center;
+  min-height: 126px;
+  padding: 22px;
+  border-radius: 65px;
+  background: #fff;
+  box-shadow:
+    0 14px 20px -12px #1423364f,
+    0 4px 9px #34314a06;
+}
+.field {
+  min-width: 0;
+  position: relative;
+}
+.fieldButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 51px;
+  padding: 8px 9px;
+  border: 1px solid transparent;
+  border-radius: 30px;
+  background: #f2f1ff;
+  text-align: left;
+  color: var(--home-ink);
+  cursor: pointer;
+  font: inherit;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.fieldButton:hover,
+.fieldActive {
+  border-color: #9ccdd1;
+  background: #edf8f8;
+}
+.fieldIcon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.fieldIcon svg {
+  width: 18px;
+  height: 18px;
+}
+.blue {
+  background: #dce9f1;
+  color: #008198;
+}
+.orange {
+  background: #fae7cb;
+  color: #aa6800;
+}
+.purple {
+  background: #e9ddff;
+  color: #8e42fb;
+}
+.teal {
+  background: #c2eff2;
+  color: #008392;
+}
+.fieldText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+.fieldLabel {
+  font-size: 8.5px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.16px;
+}
+.fieldValue {
+  font-size: 11.5px;
+  font-weight: 650;
+  line-height: 1.35;
+  overflow-wrap: normal;
+}
+.fieldChevron {
+  width: 12px;
+  height: 12px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.compactField .fieldButton {
+  min-height: 82px;
+  gap: 8px;
+  padding: 9px 10px;
+  border-radius: 36px;
+}
+.compactField .fieldIcon {
+  width: 36px;
+  height: 36px;
+}
+.compactField .fieldIcon svg {
+  width: 19px;
+  height: 19px;
+}
+.compactField .fieldLabel {
+  text-transform: none;
+  font-size: 8px;
+}
+.compactField .fieldValue {
+  font-size: 11px;
+  font-weight: 600;
+}
+.searchButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 51px;
+  border: 0;
+  border-radius: 30px;
+  background: var(--home-teal);
+  color: white;
+  font: inherit;
+  font-weight: 750;
+  font-size: 14px;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 3px 4px #004c5b18;
+  transition:
+    background 0.2s,
+    transform 0.2s;
+}
+.searchButton svg {
+  width: 18px;
+  height: 18px;
+}
+.searchButton:hover {
+  background: #005963;
+  transform: translateY(-1px);
+}
+.fieldPanel {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 14px);
+  left: 0;
+  display: grid;
+  gap: 13px;
+  min-width: 280px;
+  max-width: calc(100vw - 40px);
+  padding: 20px;
+  background: white;
+  border: 1px solid #e5e9f0;
+  border-radius: 20px;
+  box-shadow: 0 16px 45px #24344b26;
+  color: var(--home-ink);
+}
+.compactField .fieldPanel {
+  left: auto;
+  right: 0;
+  min-width: 300px;
+}
+.fieldPanel label {
+  display: grid;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 650;
+}
+.fieldPanel input,
+.fieldPanel select {
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+  font-size: 13px;
+  padding: 10px;
+  border: 1px solid #dce4ec;
+  border-radius: 9px;
+  background: white;
+  color: var(--home-ink);
+}
+.fieldPanel p {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--home-muted);
+}
+.panelActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.panelActions button {
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  background: #eaf6f6;
+  color: var(--home-teal);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+.panelActions a {
+  color: var(--home-teal);
+  font-size: 11px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.searchError {
+  margin: 14px 20px 0;
+  color: #a33735;
+  font-size: 13px;
+  text-align: center;
+}
+
+@media (min-width: 1300px) {
+  .searchArea {
+    margin-top: 36px;
+  }
+}
+@media (max-width: 950px) {
+  .searchBar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-radius: 32px;
+    gap: 12px;
+    padding: 20px;
+  }
+  .searchButton {
+    grid-column: 1 / -1;
+    min-height: 48px;
+  }
+  .compactField .fieldButton {
+    min-height: 55px;
+    padding: 8px 10px;
+  }
+  .compactField .fieldLabel {
+    font-size: 8.5px;
+  }
+  .compactField .fieldValue {
+    font-size: 12px;
+  }
+  .compactField .fieldIcon {
+    width: 36px;
+    height: 36px;
+  }
+  .fieldValue {
+    font-size: 12px;
+  }
+  .fieldPanel {
+    min-width: 270px;
+  }
+  .field:nth-child(even) .fieldPanel {
+    left: auto;
+    right: 0;
+  }
+}
+@media (max-width: 600px) {
+  .searchArea {
+    margin-top: 25px;
+  }
+  .searchBar {
+    padding: 15px;
+    border-radius: 25px;
+    gap: 10px;
+  }
+  .fieldButton,
+  .compactField .fieldButton {
+    gap: 6px;
+    min-height: 63px;
+    padding: 8px;
+    border-radius: 18px;
+  }
+  .fieldIcon,
+  .compactField .fieldIcon {
+    width: 28px;
+    height: 28px;
+  }
+  .fieldIcon svg {
+    width: 16px;
+    height: 16px;
+  }
+  .fieldLabel,
+  .compactField .fieldLabel {
+    font-size: 8px;
+  }
+  .fieldValue,
+  .compactField .fieldValue {
+    font-size: 11px;
+  }
+  .fieldChevron {
+    display: none;
+  }
+  .fieldPanel,
+  .compactField .fieldPanel {
+    min-width: 260px;
+    max-width: calc(100vw - 50px);
+    padding: 16px;
+  }
+  .compactField .fieldPanel {
+    right: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .searchButton,
+  .fieldButton {
+    transition: none;
+  }
+}

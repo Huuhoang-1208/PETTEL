@@ -1,2 +1,4 @@
-import { LiveAdmin } from "@/components/pettel/live-admin";
-export default function Page() { return <LiveAdmin />; }
+import { AdminPage } from "@/features/admin/admin-page";
+export default function Page() {
+  return <AdminPage />;
+}

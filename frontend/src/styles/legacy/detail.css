@@ -1,0 +1,432 @@
+/* ============================
+   DETAIL PAGE
+   ============================ */
+.detail-page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 24px 100px;
+}
+
+/* Detail 2-column layout */
+.detail-body {
+  display: flex;
+  gap: 48px;
+  align-items: flex-start;
+}
+
+.detail-content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ============================
+   BOOKING WIDGET (Sidebar)
+   ============================ */
+.booking-widget {
+  width: 340px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 80px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: 0 4px 16px var(--color-shadow);
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for booking widget */
+.booking-widget::-webkit-scrollbar {
+  width: 0px;
+  display: none;
+}
+
+.booking-widget::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.booking-widget::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+.booking-widget::-webkit-scrollbar-thumb:hover {
+  background: transparent;
+}
+
+/* Hide scrollbar for Firefox */
+.booking-widget {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.booking-widget__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.booking-widget__price {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+}
+
+.booking-widget__price span {
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+.booking-widget__rating {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.booking-widget__rating-top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.booking-widget__rating-top .star {
+  color: var(--color-gold);
+}
+
+.booking-widget__rating-count {
+  font-size: 12px;
+  color: var(--color-text-light);
+}
+
+/* Date Inputs */
+.booking-widget__dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.booking-widget__date-field {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.booking-widget__date-field:first-child {
+  border-right: 1px solid var(--color-border);
+}
+
+.booking-widget__date-field label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-dark);
+  margin-bottom: 2px;
+}
+
+.booking-widget__date-field span {
+  font-size: 14px;
+  color: var(--color-text);
+}
+
+/* Pet field */
+.booking-widget__pet-field {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.booking-widget__pet-field label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-dark);
+  margin-bottom: 2px;
+}
+
+.booking-widget__pet-field span {
+  font-size: 14px;
+  color: var(--color-text);
+}
+
+/* CTA Button */
+.booking-widget__cta {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #00bcd4, #0097a7);
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.booking-widget__cta:hover {
+  background: linear-gradient(135deg, #0097a7, #00838f);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 188, 212, 0.35);
+}
+
+.booking-widget__cta:active {
+  transform: translateY(0);
+}
+
+/* Payment note */
+.booking-widget__note {
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-bottom: 20px;
+}
+
+/* Price Breakdown */
+.booking-widget__breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border-light);
+  margin-bottom: 16px;
+}
+
+.booking-widget__line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: var(--color-text);
+}
+
+.booking-widget__line span:first-child {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Total */
+.booking-widget__total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+  margin-bottom: 20px;
+}
+
+/* Report link */
+.booking-widget__report {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.booking-widget__report:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+
+.booking-widget__report svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+/* Detail Header */
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  max-width: 1080px;
+  margin: 0 auto;
+  position: sticky;
+  top: 0;
+  background: var(--color-bg);
+  z-index: 100;
+}
+
+.detail-header__back {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.detail-header__back:hover {
+  background: var(--color-bg-gray);
+}
+
+.detail-header__back svg {
+  width: 20px;
+  height: 20px;
+  fill: var(--color-text);
+}
+
+.detail-header__actions {
+  display: flex;
+  gap: 12px;
+}
+
+.detail-header__action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+
+.detail-header__action-btn:hover {
+  background: var(--color-bg-gray);
+}
+
+.detail-header__action-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Hero Images */
+.detail-hero {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 24px;
+  max-height: 420px;
+}
+
+.detail-hero img {
+  width: 100%;
+  height: 420px;
+  object-fit: cover;
+}
+
+/* Title Section */
+.detail-title {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.detail-title h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+  margin-bottom: 8px;
+}
+
+.detail-title__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  flex-wrap: wrap;
+}
+
+.detail-title__meta .star {
+  color: var(--color-gold);
+}
+
+.detail-title__meta a {
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.detail-title__meta .dot {
+  color: var(--color-text-light);
+}
+
+.detail-title__subtitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.detail-title__subtitle .badge {
+  font-size: 16px;
+}
+
+/* Description */
+.detail-description {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.detail-description p {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--color-text);
+}
+
+/* Amenities */
+.detail-amenities {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.detail-amenities h2,
+.detail-reviews h2,
+.detail-location h2,
+.detail-suggestions h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--color-text-dark);
+}
+
+.amenities-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px 24px;
+}
+
+.amenity-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  font-size: 14px;
+  color: var(--color-text);
+}
+
+.amenity-item .icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}

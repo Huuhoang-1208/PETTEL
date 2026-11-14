@@ -1,3 +1,9 @@
+import { BookingsPage } from "@/features/bookings/bookings-page";
 import { Suspense } from "react";
-import { LiveBookings } from "@/components/pettel/live-bookings";
-export default function Page() { return <Suspense fallback={<p>Đang tải...</p>}><LiveBookings /></Suspense>; }
+export default function Page() {
+  return (
+    <Suspense fallback={<p>Đang tải...</p>}>
+      <BookingsPage />
+    </Suspense>
+  );
+}

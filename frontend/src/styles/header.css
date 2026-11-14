@@ -1,0 +1,319 @@
+/* Shared navigation for the homepage and connected application pages. */
+.pettel-header {
+  position: relative;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 82px;
+  padding: 16px 20px;
+  border-top: 3px solid #7b6cb5;
+  border-bottom: 1px solid #eeedf6;
+  background: #fcfbff;
+  color: #17333e;
+  font-family: "Manrope", "Inter", sans-serif;
+}
+.pettel-header svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.pettel-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #006d77;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  white-space: nowrap;
+}
+.pettel-brand-mark {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: white;
+  background: #00a1ac;
+}
+.pettel-brand-mark svg {
+  width: 22px;
+  height: 22px;
+}
+.pettel-nav {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(4px, 1.1vw, 17px);
+  min-width: 0;
+  margin: 0 auto;
+}
+.pettel-nav a {
+  padding: 7px 10px;
+  border-radius: 22px;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+  color: #36444c;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.pettel-nav a:hover {
+  color: #006d77;
+  background: #edf5f5;
+}
+.pettel-nav a.is-active {
+  color: #006d77;
+  background: #e7e8fa;
+}
+.pettel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  flex-shrink: 0;
+}
+.pettel-book-link {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 19px;
+  border-radius: 30px;
+  background: #006d77;
+  color: white;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.pettel-book-link svg {
+  width: 14px;
+  height: 14px;
+}
+.pettel-book-link:hover {
+  background: #00535d;
+}
+.pettel-language {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 7px;
+  font-size: 9px;
+  font-weight: 800;
+  background: #f1f1f9;
+  border-radius: 20px;
+}
+.pettel-language svg {
+  width: 15px;
+  height: 15px;
+  color: #007d87;
+}
+.pettel-icon-link {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 33px;
+  height: 33px;
+  border-radius: 50%;
+  color: #52636c;
+  background: #f0f1f9;
+  position: relative;
+}
+.pettel-icon-link svg {
+  width: 17px;
+  height: 17px;
+}
+.pettel-attention-dot {
+  position: absolute;
+  right: 5px;
+  top: 3px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f6ad2a;
+  border: 1px solid #fcfbff;
+}
+.pettel-account {
+  position: relative;
+}
+.pettel-account > summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  list-style: none;
+  padding: 3px;
+  border-radius: 24px;
+  background: #f0f1f9;
+}
+.pettel-account > summary::-webkit-details-marker,
+.pettel-mobile-nav > summary::-webkit-details-marker {
+  display: none;
+}
+.pettel-account > summary > svg {
+  width: 12px;
+  height: 12px;
+  margin-right: 3px;
+}
+.pettel-avatar {
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  border-radius: 50%;
+  background: #007581;
+  color: white;
+}
+.pettel-avatar svg {
+  width: 16px;
+  height: 16px;
+}
+.pettel-account-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 13px);
+  display: grid;
+  gap: 3px;
+  min-width: 245px;
+  padding: 10px;
+  border: 1px solid #e8edf1;
+  border-radius: 17px;
+  background: white;
+  box-shadow: 0 16px 45px #24344b26;
+}
+.pettel-account-menu a,
+.pettel-account-menu button {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  color: #29434e;
+  text-align: left;
+  cursor: pointer;
+}
+.pettel-account-menu a:hover,
+.pettel-account-menu button:hover {
+  background: #edf7f7;
+  color: #006d77;
+}
+.pettel-account-info {
+  display: grid;
+  gap: 5px;
+  padding: 9px 12px 14px;
+  margin-bottom: 5px;
+  border-bottom: 1px solid #edf0f4;
+}
+.pettel-account-info strong {
+  font-size: 13px;
+}
+.pettel-account-info span {
+  font-size: 11px;
+  color: #77848d;
+  overflow-wrap: anywhere;
+}
+.pettel-mobile-nav {
+  display: none;
+}
+.pettel-header a:focus-visible,
+.pettel-header button:focus-visible,
+.pettel-header summary:focus-visible {
+  outline: 3px solid #89ccd5;
+  outline-offset: 3px;
+}
+@media (max-width: 1100px) {
+  .pettel-nav {
+    display: none;
+  }
+  .pettel-header {
+    justify-content: space-between;
+  }
+  .pettel-mobile-nav {
+    display: block;
+  }
+  .pettel-mobile-nav > summary {
+    display: grid;
+    place-items: center;
+    width: 33px;
+    height: 33px;
+    border-radius: 50%;
+    list-style: none;
+    cursor: pointer;
+    background: #edf1f8;
+  }
+  .pettel-mobile-nav > nav {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 16px;
+    width: min(300px, calc(100vw - 32px));
+    display: grid;
+    gap: 4px;
+    padding: 12px;
+    border: 1px solid #e8edf1;
+    border-radius: 17px;
+    background: white;
+    box-shadow: 0 16px 45px #24344b26;
+  }
+  .pettel-mobile-nav nav a {
+    font-size: 13px;
+    padding: 11px 12px;
+    border-radius: 9px;
+  }
+  .pettel-mobile-nav nav a[aria-current="page"] {
+    color: #006d77;
+    background: #edf7f7;
+  }
+}
+@media (max-width: 600px) {
+  .pettel-header {
+    min-height: 72px;
+    padding: 13px 16px;
+    gap: 10px;
+  }
+  .pettel-brand {
+    font-size: 20px;
+  }
+  .pettel-brand-mark {
+    width: 32px;
+    height: 32px;
+  }
+  .pettel-brand-mark svg {
+    width: 20px;
+    height: 20px;
+  }
+  .pettel-header-actions {
+    gap: 8px;
+  }
+  .pettel-book-link {
+    font-size: 10px;
+    padding: 9px 11px;
+  }
+  .pettel-book-link svg {
+    width: 12px;
+    height: 12px;
+  }
+  .pettel-language,
+  .pettel-bookings-link {
+    display: none;
+  }
+  .pettel-account > summary {
+    gap: 3px;
+  }
+}
+@media (max-width: 370px) {
+  .pettel-book-link {
+    padding: 9px;
+  }
+  .pettel-book-link > span {
+    display: none;
+  }
+  .pettel-book-link svg {
+    width: 17px;
+    height: 17px;
+  }
+}
