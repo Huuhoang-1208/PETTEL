@@ -36,7 +36,6 @@ export function SiteHeader() {
       active: pathname === "/caregiver",
     },
     { href: "/#ve-pettel", label: "Về PETTEL", active: false },
-    { href: "/#cong-dong", label: "Cộng đồng", active: false },
     {
       href: "/pet-profile",
       label: "Hồ sơ thú cưng",

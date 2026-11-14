@@ -95,15 +95,6 @@
 .icon.blue {
   background: #dbe1ff;
 }
-.comingSoon {
-  font-size: 9px;
-  line-height: 1.4;
-  color: #6b6c83;
-  padding: 4px 7px;
-  border-radius: 20px;
-  background: #f5f3fa;
-  white-space: nowrap;
-}
 .card h3 {
   margin: 0 0 6px;
   font-size: 16px;

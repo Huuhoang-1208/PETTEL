@@ -99,10 +99,10 @@
   flex-shrink: 0;
 }
 .compactField .fieldButton {
-  min-height: 82px;
+  min-height: 51px;
   gap: 8px;
-  padding: 9px 10px;
-  border-radius: 36px;
+  padding: 8px 9px;
+  border-radius: 30px;
 }
 .compactField .fieldIcon {
   width: 36px;

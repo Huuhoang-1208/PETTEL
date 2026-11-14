@@ -19,7 +19,11 @@ export type PettelIconName =
   | "arrow"
   | "check"
   | "walk"
-  | "clock";
+  | "clock"
+  | "mail"
+  | "key"
+  | "eye"
+  | "eye-off";
 
 export function PettelIcon({
   name,
@@ -31,6 +35,29 @@ export function PettelIcon({
   style?: CSSProperties;
 }) {
   const paths: Record<Exclude<PettelIconName, "paw">, React.ReactNode> = {
+    mail: (
+      <>
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <path d="m3 6 9 7 9-7" />
+      </>
+    ),
+    key: (
+      <>
+        <circle cx="7" cy="12" r="4" />
+        <path d="M11 12h10m-4 0v3m-3-3v2" />
+      </>
+    ),
+    eye: (
+      <>
+        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+        <circle cx="12" cy="12" r="3" />
+      </>
+    ),
+    "eye-off": (
+      <>
+        <path d="m3 3 18 18M10 5.2c.6-.1 1.3-.2 2-.2 6.5 0 10 7 10 7a19 19 0 0 1-3 4M6 6.5A20 20 0 0 0 2 12s3.5 7 10 7c1.7 0 3.2-.5 4.5-1.2M10 10a3 3 0 0 0 4 4" />
+      </>
+    ),
     pin: (
       <>
         <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" />

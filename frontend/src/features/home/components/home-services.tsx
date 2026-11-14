@@ -66,7 +66,6 @@ export function HomeServices() {
                   <span className={`${styles.icon} ${styles[service.tone]}`}>
                     <PettelIcon name={service.icon} />
                   </span>
-                  {!service.href && <span className={styles.comingSoon}>Sắp ra mắt</span>}
                 </div>
                 <h3>{service.title}</h3>
                 <p className={styles.description}>{service.description}</p>
@@ -92,9 +91,6 @@ export function HomeServices() {
             );
           })}
         </div>
-        <p className={styles.note}>
-          Mức giá tham khảo. Giá đặt lịch được hiển thị theo từng người chăm sóc.
-        </p>
       </div>
     </section>
   );

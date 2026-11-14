@@ -1,4 +1,5 @@
 import { SessionProvider } from "@/providers/session-provider";
+import { SiteFooter } from "@/components/layout/site-footer";
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -17,7 +18,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         />
       </head>
       <body>
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          {children}
+          <SiteFooter />
+        </SessionProvider>
       </body>
     </html>
   );

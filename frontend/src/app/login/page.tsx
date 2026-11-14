@@ -1,9 +1,9 @@
-import { LoginPage } from "@/features/auth/login-page";
+import { AuthPage } from "@/features/auth/auth-page";
 import { Suspense } from "react";
 export default function Page() {
   return (
     <Suspense fallback={<p>Đang tải...</p>}>
-      <LoginPage />
+      <AuthPage />
     </Suspense>
   );
 }
