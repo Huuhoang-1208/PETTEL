@@ -30,8 +30,8 @@ x-laravel: &laravel
     REDIS_PORT: 6379
     REDIS_PASSWORD: ${REDIS_PASSWORD:-null}
     MAIL_MAILER: log
-    FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8080}
-    SANCTUM_STATEFUL_DOMAINS: ${SANCTUM_STATEFUL_DOMAINS:-localhost:8080,127.0.0.1:8080}
+    FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+    SANCTUM_STATEFUL_DOMAINS: ${SANCTUM_STATEFUL_DOMAINS:-localhost:3000,localhost:8080,127.0.0.1:8080}
     SESSION_DOMAIN: ${SESSION_DOMAIN:-null}
     SESSION_SECURE_COOKIE: ${SESSION_SECURE_COOKIE:-false}
     BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
@@ -53,6 +53,28 @@ x-laravel: &laravel
     - app_storage:/var/www/html/storage
 
 services:
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+        NEXT_PUBLIC_REVERB_APP_KEY: ${REVERB_APP_KEY:-}
+        NEXT_PUBLIC_REVERB_HOST: ${NEXT_PUBLIC_REVERB_HOST:-localhost}
+        NEXT_PUBLIC_REVERB_PORT: ${NEXT_PUBLIC_REVERB_PORT:-8081}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      frontend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
   backend:
     <<: *laravel
     command: ["php-fpm", "-F"]
@@ -91,6 +113,8 @@ services:
   db:
     image: mysql:8.4
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:3307:3306"
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-pettel}
       MYSQL_USER: ${DB_USERNAME:-pettel}

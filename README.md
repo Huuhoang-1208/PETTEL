@@ -27,7 +27,7 @@ Compose đọc `.env` gốc để thay biến trong `compose.yaml`, sau đó tru
 ### 2. Khởi động, migrate và seed
 
 ```powershell
-docker compose up -d db redis backend frontend
+docker compose up -d db redis backend frontend web
 docker compose exec -T backend php artisan migrate --force
 docker compose exec -T backend php artisan db:seed --force
 docker compose up -d worker scheduler
@@ -44,7 +44,11 @@ Invoke-WebRequest -Uri http://localhost:8080/up -UseBasicParsing | Select-Object
 docker compose exec -T redis redis-cli ping
 ```
 
-Kết quả mong đợi: `/` trả JSON trạng thái API, `/up` trả HTTP 200, Redis trả `PONG`; `frontend`, `db` và `redis` có trạng thái `healthy`. Worker/scheduler phải ở trạng thái chạy. Next.js chạy riêng tại http://localhost:3000 bằng `npm run dev` trong `frontend/`; cổng 8080 là Nginx/API Laravel.
+Kết quả mong đợi: `/` trên cổng 8080 trả JSON trạng thái API, `/up` trả HTTP 200, Redis trả `PONG`; `web`, `frontend`, `db` và `redis` có trạng thái `healthy`. Worker/scheduler phải ở trạng thái chạy. Next.js được build sẵn trong service `web` tại http://localhost:3000; service `frontend` là Nginx/API Laravel ở cổng 8080.
+
+Sau khi thiết lập lần đầu, chạy `docker compose up -d` hoặc Start các container của project PETTEL trong Docker Desktop để mở toàn bộ ứng dụng. Không cần chạy `npm run dev` riêng. Các service dùng `restart: unless-stopped`, nên Docker tự khởi động lại container khi engine khởi động nếu container chưa bị Stop thủ công.
+
+Sau khi sửa frontend, chạy `docker compose up -d --build web` để cập nhật bản chạy trong Docker. Các biến `NEXT_PUBLIC_*` được đưa vào bundle lúc build; Compose lấy API URL và địa chỉ socket từ `.env` gốc, public Reverb key từ `REVERB_APP_KEY`. Không đưa Reverb secret vào frontend. Dừng Next.js chạy bằng `npm run dev` trên Windows trước khi bật `web` để tránh trùng cổng 3000.
 
 Nếu thay `APP_PORT`, cập nhật đồng bộ `APP_URL`, `FRONTEND_URL`, `SANCTUM_STATEFUL_DOMAINS` trong `.env` và dùng cổng mới trong các lệnh kiểm tra.
 

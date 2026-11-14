@@ -4,7 +4,34 @@ Giao diện HTML/CSS/JavaScript đã được chuyển sang Next.js App Router v
 với Laravel/Sanctum. Các trang chính dùng dữ liệu từ API, không dùng bộ sitter
 mẫu hoặc hồ sơ thú cưng trong localStorage.
 
-## Chạy local
+## Chạy bằng Docker
+
+Tại thư mục gốc repo:
+
+```powershell
+docker compose up -d --build
+```
+
+Mở http://localhost:3000. Service `web` chạy bản build Next.js standalone;
+service `frontend` vẫn là Nginx cho Laravel API ở cổng 8080. Không cần mở
+terminal `npm run dev`. Sau lần build đầu, chỉ cần `docker compose up -d`
+hoặc Start các container PETTEL trong Docker Desktop. Container tự chạy lại
+khi Docker khởi động nếu chưa bị Stop thủ công.
+
+Khi sửa frontend hoặc đổi cấu hình public, cập nhật bằng:
+
+```powershell
+docker compose up -d --build web
+```
+
+Docker build dùng `.env` gốc repo: `NEXT_PUBLIC_API_URL` mặc định là
+`http://localhost:8080`, `NEXT_PUBLIC_REVERB_HOST` mặc định `localhost`,
+`NEXT_PUBLIC_REVERB_PORT` mặc định `8081`, public app key lấy từ
+`REVERB_APP_KEY`. `frontend/.env.local` không được copy vào image.
+`FRONTEND_PORT` chọn cổng Next.js trên máy host, mặc định `3000`; nếu đổi
+cổng, cập nhật `FRONTEND_URL` và `SANCTUM_STATEFUL_DOMAINS` tương ứng.
+
+## Phát triển với hot reload
 
 Từ thư mục gốc repo, bật Docker backend và các dịch vụ phụ thuộc:
 
@@ -15,6 +42,10 @@ Copy-Item .env.example .env.local # Chỉ khi chưa có .env.local
 npm install
 npm run dev
 ```
+
+Trước khi chạy `npm run dev`, dừng service `web` bằng `docker compose stop web`
+để tránh trùng cổng 3000. Ngược lại, dừng dev server bằng Ctrl+C trước khi
+chuyển về `docker compose up -d web`.
 
 Mở http://localhost:3000. API dùng http://localhost:8080 và Reverb cổng 8081.
 Điền `NEXT_PUBLIC_REVERB_APP_KEY` bằng public app key của backend để bật socket;
