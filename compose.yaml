@@ -35,6 +35,14 @@ x-laravel: &laravel
     SESSION_DOMAIN: ${SESSION_DOMAIN:-null}
     SESSION_SECURE_COOKIE: ${SESSION_SECURE_COOKIE:-false}
     REDIS_QUEUE_RETRY_AFTER: ${REDIS_QUEUE_RETRY_AFTER:-90}
+    BROADCAST_CONNECTION: reverb
+    REVERB_APP_ID: ${REVERB_APP_ID}
+    REVERB_APP_KEY: ${REVERB_APP_KEY}
+    REVERB_APP_SECRET: ${REVERB_APP_SECRET}
+    REVERB_HOST: reverb
+    REVERB_PORT: 8080
+    REVERB_SCHEME: http
+    TELESCOPE_ENABLED: ${TELESCOPE_ENABLED:-false}
   depends_on:
     db:
       condition: service_healthy
@@ -55,6 +63,11 @@ services:
   scheduler:
     <<: *laravel
     command: ["php", "artisan", "schedule:work"]
+  reverb:
+    <<: *laravel
+    command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8080"]
+    ports:
+      - "127.0.0.1:8081:8080"
 
   frontend:
     build:

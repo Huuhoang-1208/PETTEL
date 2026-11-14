@@ -16,10 +16,13 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Normalizer;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use App\Events\BookingMessageSent;
 
 class BookingMessageController extends Controller
 {
-    public function __construct(private BookingMessageAccess $access) {}
+    public function __construct(private BookingMessageAccess $access)
+    {
+    }
 
     public function index(Request $request, string $id): AnonymousResourceCollection
     {
@@ -70,6 +73,11 @@ class BookingMessageController extends Controller
         $attachments = $data['attachments'] ?? [];
         $message = $storeMessage->handle($actor, $id, $data['body'] ?? null, $attachments);
 
+        BookingMessageSent::dispatch(
+            (string) $message->booking_id,
+            (string) $message->getKey(),
+        );
+
         return BookingMessageResource::make($message->load('attachments'))->response()->setStatusCode(201);
     }
 
@@ -107,11 +115,13 @@ class BookingMessageController extends Controller
         $cursor = Cursor::fromEncoded($encoded);
         $parameters = $cursor?->toArray() ?? [];
 
-        if ($cursor === null || ! is_bool($parameters['_pointsToNextItems'] ?? null)
+        if (
+            $cursor === null || !is_bool($parameters['_pointsToNextItems'] ?? null)
             || validator($parameters, [
                 'created_at' => ['required', 'date_format:Y-m-d H:i:s.u,Y-m-d H:i:s'],
                 'id' => ['required', 'regex:/\A[1-9][0-9]{0,19}\z/'],
-            ])->fails()) {
+            ])->fails()
+        ) {
             throw ValidationException::withMessages(['cursor' => ['The pagination cursor is invalid.']]);
         }
 

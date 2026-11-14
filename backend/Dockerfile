@@ -43,6 +43,14 @@ RUN printf '%s\n' \
     'env[SESSION_DOMAIN] = $SESSION_DOMAIN' \
     'env[SESSION_SECURE_COOKIE] = $SESSION_SECURE_COOKIE' \
     'env[BCRYPT_ROUNDS] = $BCRYPT_ROUNDS' \
+    'env[BROADCAST_CONNECTION] = $BROADCAST_CONNECTION' \
+    'env[REVERB_APP_ID] = $REVERB_APP_ID' \
+    'env[REVERB_APP_KEY] = $REVERB_APP_KEY' \
+    'env[REVERB_APP_SECRET] = $REVERB_APP_SECRET' \
+    'env[REVERB_HOST] = $REVERB_HOST' \
+    'env[REVERB_PORT] = $REVERB_PORT' \
+    'env[REVERB_SCHEME] = $REVERB_SCHEME' \
+    'env[TELESCOPE_ENABLED] = $TELESCOPE_ENABLED' \
     > /usr/local/etc/php-fpm.d/zz-pettel-env.conf
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer

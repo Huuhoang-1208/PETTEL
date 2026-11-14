@@ -42,6 +42,14 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(PaymentCancellationGateway::class, SandboxPaymentCancellationGateway::class);
         $this->app->bind(PaymentReleaseGateway::class, SandboxPaymentReleaseGateway::class);
+
+        if (
+            $this->app->environment('local')
+            && class_exists(\Laravel\Telescope\TelescopeServiceProvider::class)
+        ) {
+            $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
+            $this->app->register(\App\Providers\TelescopeServiceProvider::class);
+        }
     }
 
     /**
@@ -106,7 +114,7 @@ class AppServiceProvider extends ServiceProvider
                             [$idempotencyPath, 'Idempotency-Key', '^[a-z0-9._:-]{1,128}$', 'Required request replay key.'],
                             [$callbackPath, 'X-Payment-Signature', null, 'Required HMAC signature of the callback payload.'],
                         ] as [$applies, $name, $pattern, $description]) {
-                            if (! $applies) {
+                            if (!$applies) {
                                 continue;
                             }
 
@@ -133,10 +141,10 @@ class AppServiceProvider extends ServiceProvider
 
                     $firstAttachmentOperation = clone $attachmentOperation;
                     $firstAttachmentOperation->setOperationId('bookings.messages.attachment.first');
-                    $firstAttachmentOperation->description = trim($firstAttachmentOperation->description."\n\nWhen `mediaId` is omitted, the API streams the first visible attachment on this message.");
+                    $firstAttachmentOperation->description = trim($firstAttachmentOperation->description . "\n\nWhen `mediaId` is omitted, the API streams the first visible attachment on this message.");
                     $firstAttachmentOperation->parameters = array_values(array_filter(
                         $firstAttachmentOperation->parameters,
-                        fn ($parameter): bool => ! ($parameter instanceof Parameter && $parameter->in === 'path' && $parameter->name === 'mediaId'),
+                        fn($parameter): bool => !($parameter instanceof Parameter && $parameter->in === 'path' && $parameter->name === 'mediaId'),
                     ));
 
                     $openApi->addPath(
@@ -209,9 +217,9 @@ class AppServiceProvider extends ServiceProvider
                         }
                         foreach ($operation->responses ?? [] as $response) {
                             if (
-                                ! $response instanceof Response
+                                !$response instanceof Response
                                 || (string) $response->code !== $status
-                                || ! array_key_exists('application/json', $response->content)
+                                || !array_key_exists('application/json', $response->content)
                             ) {
                                 continue;
                             }
@@ -233,7 +241,7 @@ class AppServiceProvider extends ServiceProvider
                         $operation = $path->operations[strtolower($method)] ?? null;
                         if (
                             $operation === null || collect($operation->responses ?? [])->contains(
-                                fn ($response): bool => $response instanceof Response && (string) $response->code === '201',
+                                fn($response): bool => $response instanceof Response && (string) $response->code === '201',
                             )
                         ) {
                             return;
@@ -262,7 +270,7 @@ class AppServiceProvider extends ServiceProvider
                     if (trim($path->path, '/') === 'bookings/{id}/reviews' && isset($path->operations['post'])) {
                         $path->operations['post']->responses = array_values(array_filter(
                             $path->operations['post']->responses ?? [],
-                            fn ($response): bool => ! ($response instanceof Response && (string) $response->code === '200'),
+                            fn($response): bool => !($response instanceof Response && (string) $response->code === '200'),
                         ));
                     }
                 }
@@ -409,7 +417,7 @@ class AppServiceProvider extends ServiceProvider
                     $operation = $path->operations['post'] ?? null;
                     if (
                         $operation === null || collect($operation->responses ?? [])->contains(
-                            fn ($response): bool => $response instanceof Response && (string) $response->code === '202',
+                            fn($response): bool => $response instanceof Response && (string) $response->code === '202',
                         )
                     ) {
                         break;
@@ -552,8 +560,8 @@ class AppServiceProvider extends ServiceProvider
                         }
                         foreach ($operation->responses ?? [] as $response) {
                             if (
-                                ! $response instanceof Response
-                                || ! array_key_exists('application/json', $response->content)
+                                !$response instanceof Response
+                                || !array_key_exists('application/json', $response->content)
                             ) {
                                 continue;
                             }
@@ -669,7 +677,7 @@ class AppServiceProvider extends ServiceProvider
                         $method = strtolower($method);
                         $group = null;
                         foreach ($moduleByPath as $prefix => $details) {
-                            if ($route === $prefix || str_starts_with($route, rtrim($prefix, '/').'/')) {
+                            if ($route === $prefix || str_starts_with($route, rtrim($prefix, '/') . '/')) {
                                 $group = $details;
                                 break;
                             }
@@ -683,10 +691,10 @@ class AppServiceProvider extends ServiceProvider
                         } elseif ($method === 'post' && preg_match('/\/quote$/', $route)) {
                             $action = 'Quote';
                         }
-                        $operation->summary = $action.' '.ucwords(str_replace('/', ' ', $humanPath));
+                        $operation->summary = $action . ' ' . ucwords(str_replace('/', ' ', $humanPath));
                         $operation->description = trim(implode("\n\n", array_filter([
-                            '**Module:** '.$group[0].'. '.$group[1],
-                            $operationNotes[$route.'|'.$method] ?? null,
+                            '**Module:** ' . $group[0] . '. ' . $group[1],
+                            $operationNotes[$route . '|' . $method] ?? null,
                             'JSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.',
                         ])));
 
@@ -757,10 +765,10 @@ class AppServiceProvider extends ServiceProvider
             });
         });
 
-        Gate::define('viewApiDocs', fn (User $user): bool => $user->status === 'ACTIVE' && $user->hasRole('ADMIN'));
+        Gate::define('viewApiDocs', fn(User $user): bool => $user->status === 'ACTIVE' && $user->hasRole('ADMIN'));
         Gate::define(
             'viewPulse',
-            static fn (User $user): bool => $user->status === 'ACTIVE'
+            static fn(User $user): bool => $user->status === 'ACTIVE'
                 && $user->hasRole('ADMIN')
         );
 
@@ -772,14 +780,14 @@ class AppServiceProvider extends ServiceProvider
 
         DB::prohibitDestructiveCommands(app()->isProduction());
 
-        ResetPassword::createUrlUsing(fn (CanResetPassword $notifiable, string $token): string => rtrim(config('app.frontend_url'), '/')
-            .'/reset-password?'.http_build_query([
+        ResetPassword::createUrlUsing(fn(CanResetPassword $notifiable, string $token): string => rtrim(config('app.frontend_url'), '/')
+            . '/reset-password?' . http_build_query([
                 'token' => $token,
                 'email' => $notifiable->getEmailForPasswordReset(),
             ]));
 
         Password::defaults(
-            fn (): ?Password => app()->isProduction()
+            fn(): ?Password => app()->isProduction()
                 ? Password::min(12)
                     ->mixedCase()
                     ->letters()
