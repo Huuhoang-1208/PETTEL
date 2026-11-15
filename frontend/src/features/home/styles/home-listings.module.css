@@ -67,6 +67,11 @@
     background 0.18s;
 }
 
+.moreFilters svg {
+  width: 16px;
+  height: 16px;
+}
+
 .filter:hover,
 .moreFilters:hover {
   border-color: #8bdfe9;
@@ -153,6 +158,14 @@
   color: #087568;
   font-size: 9px;
   font-weight: 750;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.verified svg {
+  width: 12px;
+  height: 12px;
 }
 
 .favorite {
@@ -164,6 +177,13 @@
   color: #00a5b5;
   font-size: 20px;
   line-height: 1;
+}
+
+.favorite svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
 }
 
 .cardContent {
@@ -199,6 +219,18 @@
   line-height: 1.45;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.acceptance svg {
+  width: 13px;
+  height: 13px;
+}
+
+.acceptance span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 9px;
 }
 
 .acceptance {

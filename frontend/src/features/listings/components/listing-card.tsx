@@ -4,36 +4,66 @@
 import { type Listing } from "@/lib/api/types";
 import { areas, services, species } from "@/lib/constants";
 import { apiUrl, money } from "@/lib/format";
+import { PettelIcon } from "@/components/ui/pettel-icon";
 import Link from "next/link";
 
 export function ListingCard({ item }: { item: Listing }) {
+  const demo = item.caregiver?.demo;
+  const sitterName = item.caregiver?.display_name ?? item.title;
+  const homeType =
+    demo?.home_type ?? (item.caregiver?.type === "FACILITY" ? "Khách sạn thú cưng" : "Nhà riêng");
+  const demoPhoto = demo?.photo_file
+    ? `/images/pet-sitters/${encodeURIComponent(demo.photo_file)}`
+    : null;
   return (
     <Link className="listing-card" key={item.id} href={`/detail?id=${item.id}`}>
       <div className="listing-card__image">
         <img
           src={
-            item.media?.[0] ? apiUrl(item.media[0].thumbnail_url) : "/images/pet_hotel_building.png"
+            demoPhoto ??
+            (item.media?.[0] ? apiUrl(item.media[0].thumbnail_url) : "/images/pet_hotel_building.png")
           }
-          alt={item.media?.[0] ? item.title : "Ảnh minh họa dịch vụ"}
+          alt={demoPhoto ? sitterName : item.media?.[0] ? item.title : "Ảnh minh họa dịch vụ"}
         />
+        {demo?.confidence_score != null && (
+          <span className="listing-card__score">Score {demo.confidence_score}</span>
+        )}
+        <span className="listing-card__service">{services[item.service_type]}</span>
       </div>
       <div className="listing-card__content">
         <div>
           <div className="listing-card__type">
-            {services[item.service_type]} · {areas[item.area_code]}
+            {homeType} · {areas[item.area_code]}
           </div>
-          <h2 className="listing-card__name">{item.title}</h2>
-          <p>{item.description.slice(0, 150)}</p>
-          <p className="app-muted">
-            {item.acceptance_rules_json.species.map((value) => species[value]).join(" · ")}
+          <h2 className="listing-card__name">
+            {sitterName}
+            {demo?.trust_level === "pro" && (
+              <span className="listing-card__pro"><PettelIcon name="award" /> PETTEL Pro</span>
+            )}
+          </h2>
+          <span className="listing-card__favorite" aria-hidden="true">
+            <PettelIcon name="heart" />
+          </span>
+          {demo?.status && <p className="listing-card__status">{demo.status}</p>}
+          <p className="listing-card__amenities">
+            {demo?.amenities?.slice(0, 2).join(" · ") || item.description.slice(0, 150)}
+          </p>
+          <p className="listing-card__pets">
+            {item.acceptance_rules_json.species.map((value) => (
+              <span key={value}>
+                <PettelIcon name={value === "DOG" ? "dog" : value === "CAT" ? "cat" : "paw"} />
+                {species[value]}
+              </span>
+            ))}
           </p>
           {!!item.match_reasons?.length && (
             <p className="app-success">Phù hợp với hồ sơ thú cưng</p>
           )}
         </div>
         <div className="listing-card__bottom">
-          <span>
-            ★ {item.rating_average ?? "Chưa có đánh giá"} ({item.review_count})
+          <span className="listing-card__rating">
+            <span className="star">★</span> {item.rating_average ?? "Chưa có đánh giá"}
+            <span className="count">({item.review_count} đánh giá)</span>
           </span>
           <strong>
             {money(item.price_vnd)} / {item.price_unit === "HOUR" ? "giờ" : "đêm"}

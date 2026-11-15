@@ -15,6 +15,7 @@ class CaregiverProfile extends Model
         'type',
         'display_name',
         'bio',
+        'demo_profile_json',
         'area_code',
     ];
 
@@ -28,5 +29,11 @@ class CaregiverProfile extends Model
     public function listings(): HasMany
     {
         return $this->hasMany(Listing::class);
+    }
+
+    /** @return array{demo_profile_json: 'array'} */
+    protected function casts(): array
+    {
+        return ['demo_profile_json' => 'array'];
     }
 }

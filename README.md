@@ -60,9 +60,17 @@ Nếu thay `APP_PORT`, cập nhật đồng bộ `APP_URL`, `FRONTEND_URL`, `SAN
 | `caregiver@example.test` | OWNER, CAREGIVER | `DemoOnly123!` |
 | `admin@example.test` | ADMIN | `DemoOnly123!` |
 
-Seed còn tạo pet `Demo Mochi` thuộc owner và caregiver profile `Demo Pet Care` ở vùng `DN_CENTER`. Đây là dữ liệu minh họa, không chứa thông tin cá nhân thật; bộ seed hiện chưa tạo listing hoặc booking.
+Seed còn tạo pet `Demo Mochi`, `Demo Mèo Nấm`, `Demo Corgi Bắp` thuộc owner; 52 tài khoản sitter `sitter-001@example.test` đến `sitter-052@example.test`; 52 hồ sơ và listing đang hoạt động cùng lịch nhận đặt trong 6 tháng. Ảnh hồ sơ lấy từ `Pet sister/` của giao diện cũ, lưu thành media của listing và có thumbnail WebP. Dữ liệu điểm tin cậy, tiện ích, đánh giá hiển thị đều được đánh dấu là demo; seed không tạo booking hoặc đánh giá giao dịch.
 
-Có thể chạy lại `db:seed`: trên bộ demo chưa chỉnh sửa, seed không tạo trùng tài khoản, role, pet hoặc profile. Seed không đặt lại mật khẩu tài khoản đã tồn tại. Pet được nhận diện bằng owner và tên; nếu đổi tên pet demo, lần seed sau có thể tạo lại `Demo Mochi`. Thông tin đăng nhập mẫu chỉ dành cho local/test, không dùng cho môi trường public.
+Mật khẩu khởi tạo cho tài khoản sitter và tài khoản demo hiện có là `DemoOnly123!`. Tài khoản owner có thể đăng nhập để thử bộ lọc theo hồ sơ thú cưng; tài khoản sitter để thử các chức năng caregiver. Có thể chạy lại `db:seed`: seeder giữ nguyên mật khẩu tài khoản đã tồn tại, cập nhật dữ liệu catalog và không nhân bản listing/media/lịch demo. Thông tin đăng nhập chỉ dành cho local/test, không dùng cho môi trường public.
+
+Khi cập nhật code hoặc fixture seed, áp dụng migration và nạp dữ liệu bằng:
+
+```powershell
+docker compose exec -T backend php artisan migrate --force
+docker compose exec -T backend php artisan db:seed --force
+docker compose up -d --build backend web
+```
 
 ## Worker và scheduler
 

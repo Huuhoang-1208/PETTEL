@@ -145,6 +145,50 @@ class PublicListingController extends Controller
         return PublicListingResource::make($this->findPublicListing($id));
     }
 
+    public function services(string $id): AnonymousResourceCollection
+    {
+        $listing = $this->findPublicListing($id);
+        $services = $this->publicListings()
+            ->where('listings.caregiver_profile_id', $listing->caregiver_profile_id)
+            ->orderBy('listings.service_type')
+            ->orderBy('listings.id')
+            ->get();
+
+        return PublicListingResource::collection($services);
+    }
+
+    public function availability(Request $request, string $id, ApplyListingAvailability $availability): mixed
+    {
+        $filters = validator($request->query(), [
+            'month' => ['sometimes', 'required', 'date_format:Y-m'],
+        ])->validate();
+        $listing = $this->findPublicListing($id);
+        $timezone = 'Asia/Ho_Chi_Minh';
+        $month = CarbonImmutable::parse(($filters['month'] ?? now($timezone)->format('Y-m')).'-01', $timezone)
+            ->startOfMonth();
+        $today = CarbonImmutable::now($timezone)->startOfDay();
+        $now = CarbonImmutable::now($timezone);
+        $days = [];
+
+        for ($day = 1; $day <= $month->daysInMonth; $day++) {
+            $date = $month->day($day);
+            $dateKey = $date->format('Y-m-d');
+            if ($date->lessThan($today)) {
+                $days[] = ['date' => $dateKey, 'status' => 'FULL'];
+                continue;
+            }
+
+            $start = $date->isSameDay($today) ? $now->addHour() : $date->setTime(9, 0);
+            $durationHours = $listing->service_type === 'DAYCARE' ? 2 : 24;
+            $end = $start->addHours($durationHours);
+            $query = Listing::query()->whereKey($listing->id);
+            $isAvailable = $availability->apply($query, $start->utc(), $end->utc())->exists();
+            $days[] = ['date' => $dateKey, 'status' => $isAvailable ? 'AVAILABLE' : 'FULL'];
+        }
+
+        return response()->json(['data' => $days, 'month' => $month->format('Y-m')]);
+    }
+
     /**
      * @response array{data: list<array{id: string, rating: int, body: ?string, is_demo: bool, created_at: string}>, links: array{first: string, last: string, prev: ?string, next: ?string}, meta: array{current_page: int, last_page: int, per_page: int, total: int}, rating_average: ?float, review_count: int}
      */
@@ -298,7 +342,7 @@ class PublicListingController extends Controller
 
         return Listing::query()
             ->fromSub($priced, 'listings')
-            ->with('media')
+            ->with(['media', 'caregiverProfile.user'])
             ->whereNotNull('listings.price_total_vnd');
     }
 
@@ -314,7 +358,7 @@ class PublicListingController extends Controller
         return Listing::query()
             ->select('listings.*', 'review_ratings.rating_average', 'review_ratings.review_count')
             ->leftJoinSub($ratings, 'review_ratings', 'review_ratings.listing_id', '=', 'listings.id')
-            ->with('media')
+            ->with(['media', 'caregiverProfile.user'])
             ->where('listings.status', 'ACTIVE')
             ->whereRelation('caregiverProfile.user', 'status', 'ACTIVE')
             ->whereRelation('caregiverProfile.user.roles', 'role', 'CAREGIVER');

@@ -6,6 +6,7 @@ import styles from "@/features/home/styles/home-listings.module.css";
 import { useApi } from "@/hooks/use-api";
 import type { Listing, Page } from "@/lib/api/types";
 import Link from "next/link";
+import { PettelIcon } from "@/components/ui/pettel-icon";
 
 const filters = [
   { label: "Tất cả", href: "/services", active: true },
@@ -45,7 +46,7 @@ export function HomeListings() {
             </Link>
           ))}
           <Link className={styles.moreFilters} href="/services" aria-label="Tất cả bộ lọc">
-            ☷
+            <PettelIcon name="sliders" />
           </Link>
         </nav>
 

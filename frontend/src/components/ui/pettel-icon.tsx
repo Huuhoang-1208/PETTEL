@@ -23,7 +23,12 @@ export type PettelIconName =
   | "mail"
   | "key"
   | "eye"
-  | "eye-off";
+  | "eye-off"
+  | "award"
+  | "sliders"
+  | "dog"
+  | "cat"
+  | "share";
 
 export function PettelIcon({
   name,
@@ -56,6 +61,40 @@ export function PettelIcon({
     "eye-off": (
       <>
         <path d="m3 3 18 18M10 5.2c.6-.1 1.3-.2 2-.2 6.5 0 10 7 10 7a19 19 0 0 1-3 4M6 6.5A20 20 0 0 0 2 12s3.5 7 10 7c1.7 0 3.2-.5 4.5-1.2M10 10a3 3 0 0 0 4 4" />
+      </>
+    ),
+    award: (
+      <>
+        <circle cx="12" cy="9" r="6.5" />
+        <path d="m8.5 14.5-1 7 4.5-2.5 4.5 2.5-1-7M12 5.5l1.1 2.2 2.4.4-1.8 1.7.4 2.4-2.1-1.1-2.1 1.1.4-2.4-1.8-1.7 2.4-.4L12 5.5Z" />
+      </>
+    ),
+    sliders: (
+      <>
+        <path d="M4 6h16M4 12h16M4 18h16" />
+        <circle cx="8" cy="6" r="2" fill="currentColor" />
+        <circle cx="15" cy="12" r="2" fill="currentColor" />
+        <circle cx="10" cy="18" r="2" fill="currentColor" />
+      </>
+    ),
+    dog: (
+      <>
+        <path d="M7 7 4 4 3 11c-.4 5 2.8 9 9 9s9.4-4 9-9l-1-7-3 3a8 8 0 0 0-10 0Z" />
+        <path d="M8 13h.01M16 13h.01M9.5 16c1.5 1 3.5 1 5 0" />
+      </>
+    ),
+    cat: (
+      <>
+        <path d="M5 9 4 3l5 3a9 9 0 0 1 6 0l5-3-1 6a8 8 0 1 1-14 0Z" />
+        <path d="M8.5 12h.01m7 0h.01M10 15c1.2 1 2.8 1 4 0m-4.5 0L7 16m7.5-1L17 16" />
+      </>
+    ),
+    share: (
+      <>
+        <circle cx="18" cy="5" r="3" />
+        <circle cx="6" cy="12" r="3" />
+        <circle cx="18" cy="19" r="3" />
+        <path d="m8.6 10.5 6.8-4m-6.8 7 6.8 4" />
       </>
     ),
     pin: (

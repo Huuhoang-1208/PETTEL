@@ -31,6 +31,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/listings', [PublicListingController::class, 'index']);
 Route::get('/listings/{id}', [PublicListingController::class, 'show'])->whereNumber('id');
+Route::get('/listings/{id}/services', [PublicListingController::class, 'services'])->whereNumber('id');
+Route::get('/listings/{id}/availability', [PublicListingController::class, 'availability'])->whereNumber('id');
 Route::get('/listings/{id}/reviews', [PublicListingController::class, 'reviews'])
     ->whereNumber('id')->name('listings.reviews.index');
 Route::get('/listings/{id}/media/{mediaId}/content', [ListingMediaController::class, 'publicContent'])

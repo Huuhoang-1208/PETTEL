@@ -33,6 +33,28 @@ export type Listing = {
   review_count: number;
   acceptance_rules_json: { species: string[]; sizes: string[] };
   media?: { image_url: string; thumbnail_url: string }[];
+  caregiver?: {
+    display_name: string;
+    type: string;
+    area_code: string;
+    name: string | null;
+    demo: {
+      home_type: string | null;
+      photo_file: string | null;
+      status: string | null;
+      amenities: string[];
+      trust_level: string | null;
+      confidence_score: number | null;
+      verified_details: Record<string, boolean | number>;
+      rating_average: number | null;
+      review_count: number | null;
+      introduction?: string | null;
+      experience_years?: number | null;
+      care_principles?: { title: string; description: string }[];
+      space_amenities?: { title: string; description: string }[];
+      is_demo: boolean;
+    } | null;
+  } | null;
   match_reasons?: string[];
   status?: string;
 };

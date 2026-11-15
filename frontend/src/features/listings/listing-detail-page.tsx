@@ -14,8 +14,7 @@ export function ListingDetailPage() {
   return (
     <>
       <SiteHeader />
-      <main className="app-container">
-        <Link href="/services">← Tìm dịch vụ</Link>
+      <main className="app-container listing-detail-container">
         <ApiError error={listing.error} />
         {listing.loading && <p role="status">Đang tải dịch vụ...</p>}
         {!id && (
