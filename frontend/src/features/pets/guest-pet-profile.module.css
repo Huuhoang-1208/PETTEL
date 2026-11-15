@@ -1,0 +1,461 @@
+.page {
+  color: #10243e;
+  background: #f6f6ff;
+  font-family: "Manrope", "Inter", sans-serif;
+}
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 22px 20px 27px;
+  background:
+    radial-gradient(ellipse at 24% 35%, #dff4f5 0, #eff4fb 35%, transparent 68%),
+    radial-gradient(ellipse at 87% 61%, #fff0e1 0, #faf5f6 25%, transparent 53%), #fbfaff;
+}
+.heroInner {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  text-align: center;
+}
+.breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #edf0ff;
+  color: #667d94;
+  font-size: 10px;
+}
+.breadcrumb a:hover {
+  color: #007b85;
+}
+.breadcrumb strong {
+  color: #007b85;
+  font-weight: 800;
+}
+.guestBadge {
+  padding-left: 8px;
+  border-left: 1px solid #cbd4e7;
+  color: #61739a;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.2px;
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #00818b;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.45px;
+}
+.eyebrow svg {
+  width: 16px;
+  height: 16px;
+}
+.hero h1 {
+  max-width: 1050px;
+  margin: 12px auto 10px;
+  color: #12243d;
+  font-size: clamp(30px, 3vw, 42px);
+  font-weight: 850;
+  letter-spacing: -0.9px;
+  line-height: 1.18;
+  text-wrap: balance;
+}
+.hero h1 em {
+  color: #007d88;
+  font-style: normal;
+  text-decoration: underline;
+  text-decoration-color: #f2a21a;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+.heroInner > p {
+  max-width: 1000px;
+  margin: 0 auto;
+  color: #63788d;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+.primaryButton,
+.secondaryButton {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 19px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  transition:
+    transform 0.15s,
+    background 0.15s,
+    box-shadow 0.15s;
+}
+.primaryButton {
+  background: #007780;
+  box-shadow: 0 4px 10px #0077802b;
+  color: #fff;
+}
+.primaryButton:hover {
+  background: #00656d;
+  box-shadow: 0 6px 15px #00778038;
+  transform: translateY(-1px);
+}
+.secondaryButton {
+  border: 1px solid #e9eaf2;
+  background: #fff;
+  color: #294760;
+}
+.secondaryButton:hover {
+  background: #f4fcfc;
+  transform: translateY(-1px);
+}
+.primaryButton svg,
+.secondaryButton svg {
+  width: 16px;
+  height: 16px;
+}
+.promises {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 21px;
+  margin-top: 17px;
+}
+.promises span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #4b687c;
+  font-size: 10px;
+  font-weight: 650;
+}
+.promises svg {
+  width: 14px;
+  height: 14px;
+  color: #007e87;
+}
+.benefitsSection {
+  padding: 38px 28px 40px;
+  background: #f0f1ff;
+}
+.sectionIntro {
+  max-width: 900px;
+  margin: 0 auto 26px;
+  text-align: center;
+}
+.sectionIntro > span {
+  color: #007b86;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.55px;
+}
+.sectionIntro h2 {
+  margin: 7px 0 5px;
+  color: #10243e;
+  font-size: clamp(24px, 2.4vw, 32px);
+  font-weight: 850;
+  letter-spacing: -0.5px;
+  line-height: 1.25;
+}
+.sectionIntro p {
+  color: #657a91;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.benefitGrid,
+.stepsGrid {
+  display: grid;
+  width: min(1380px, 100%);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+  margin: 0 auto;
+}
+.benefitCard {
+  --accent: #008792;
+  --accent-bg: #e4f3f3;
+  display: flex;
+  min-height: 290px;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 24px;
+  border: 1px solid #eeeff7;
+  border-radius: 26px;
+  background: #fff;
+  box-shadow: 0 3px 10px #24395308;
+}
+.benefitCard.orange {
+  --accent: #af7000;
+  --accent-bg: #fff0d7;
+}
+.benefitCard.purple {
+  --accent: #7143d4;
+  --accent-bg: #eee5ff;
+}
+.benefitIcon {
+  display: grid;
+  width: 50px;
+  height: 50px;
+  place-items: center;
+  margin-bottom: 14px;
+  border-radius: 50%;
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.benefitIcon svg {
+  width: 26px;
+  height: 26px;
+}
+.benefitCard h3 {
+  margin: 0 0 8px;
+  color: #172d48;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+.benefitCard > p {
+  margin: 0 0 16px;
+  color: #687d93;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.benefitCard > small {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 800;
+}
+.benefitCard > small svg {
+  width: 15px;
+  height: 15px;
+}
+.stepsSection {
+  padding: 34px 28px 38px;
+  background: #fbfaff;
+}
+.stepsSection .sectionIntro {
+  margin-bottom: 22px;
+}
+.stepsGrid {
+  gap: 18px;
+}
+.stepCard {
+  min-height: 145px;
+  padding: 19px 21px;
+  border: 1px solid #eef0f8;
+  border-radius: 10px;
+  background: #f2f3ff;
+}
+.stepCard > span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  margin-bottom: 9px;
+  border-radius: 50%;
+  background: #007d86;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 850;
+}
+.stepCard h3 {
+  margin: 0 0 5px;
+  color: #19334e;
+  font-size: 14px;
+  font-weight: 800;
+}
+.stepCard p {
+  color: #718398;
+  font-size: 10px;
+  line-height: 1.55;
+}
+.joinSection {
+  padding: 36px 28px;
+  background: linear-gradient(100deg, #e9edff, #e4e9ff);
+}
+.joinInner {
+  display: grid;
+  width: min(1380px, 100%);
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.9fr);
+  align-items: center;
+  gap: 42px;
+  margin: 0 auto;
+}
+.joinCopy {
+  padding: 10px 0;
+}
+.joinEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #007c87;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.35px;
+}
+.joinEyebrow svg {
+  width: 16px;
+  height: 16px;
+}
+.joinCopy h2 {
+  margin: 10px 0;
+  color: #122945;
+  font-size: 28px;
+  font-weight: 850;
+  letter-spacing: -0.55px;
+  line-height: 1.3;
+}
+.joinCopy > p {
+  max-width: 600px;
+  color: #60778f;
+  font-size: 13px;
+  line-height: 1.75;
+}
+.joinCheck {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 18px;
+  color: #007e87;
+  font-size: 11px;
+  font-weight: 750;
+}
+.joinCheck svg {
+  width: 16px;
+  height: 16px;
+}
+.joinCard {
+  padding: 26px;
+  border: 1px solid #eaecf5;
+  border-radius: 25px;
+  background: #fff;
+  box-shadow: 0 6px 15px #27395414;
+  text-align: center;
+}
+.joinIcon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  margin: 0 auto 10px;
+  border-radius: 50%;
+  background: #e5f3f3;
+  color: #007d86;
+}
+.joinIcon svg {
+  width: 21px;
+  height: 21px;
+}
+.joinCard h3 {
+  margin: 0 0 4px;
+  color: #172e48;
+  font-size: 18px;
+  font-weight: 850;
+}
+.joinCard > p {
+  margin: 0;
+  color: #73859a;
+  font-size: 10px;
+}
+.joinCard > .primaryButton {
+  display: flex;
+  margin-top: 12px;
+}
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 14px 0;
+  color: #9aa5b3;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+.divider::before,
+.divider::after {
+  height: 1px;
+  flex: 1;
+  background: #eceef4;
+  content: "";
+}
+.joinCard .registerLine {
+  color: #728397;
+}
+.registerLine a {
+  color: #007d87;
+  font-weight: 800;
+}
+.registerLine a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.page a:focus-visible {
+  outline: 3px solid #73cbd1;
+  outline-offset: 3px;
+}
+@media (max-width: 700px) {
+  .hero {
+    padding: 20px 14px 23px;
+  }
+  .hero h1 {
+    font-size: 26px;
+  }
+  .benefitsSection,
+  .stepsSection,
+  .joinSection {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+  .benefitGrid,
+  .stepsGrid {
+    grid-template-columns: 1fr;
+    max-width: 440px;
+    gap: 10px;
+  }
+  .benefitCard {
+    min-height: 0;
+  }
+  .stepsGrid {
+    max-width: 440px;
+  }
+  .stepCard {
+    min-height: 0;
+  }
+  .joinInner {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    max-width: 440px;
+  }
+}
+@media (max-width: 420px) {
+  .hero h1 {
+    font-size: 23px;
+  }
+  .heroActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .heroActions a {
+    width: 100%;
+  }
+  .promises {
+    gap: 8px 12px;
+  }
+  .joinCard {
+    padding: 18px 14px;
+  }
+}

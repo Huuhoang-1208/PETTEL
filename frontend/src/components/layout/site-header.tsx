@@ -90,81 +90,79 @@ export function SiteHeader() {
           <PettelIcon name="globe" />
           <span>VN</span>
         </span>
-        <Link
-          className="pettel-icon-link pettel-message-link"
-          href="/chat"
-          aria-label="Mở tin nhắn"
-          title="Tin nhắn"
-          aria-current={pathname === "/chat" ? "page" : undefined}
-          onClick={closeMenus}
-        >
-          <PettelIcon name="message" />
-        </Link>
-        <Link
-          className="pettel-icon-link pettel-bookings-link"
-          href="/bookings"
-          aria-label={needsAttention ? "Đơn chăm sóc có yêu cầu cần xử lý" : "Xem đơn chăm sóc"}
-        >
-          <PettelIcon name="bell" />
-          {needsAttention && <span className="pettel-attention-dot" />}
-        </Link>
-        <details
-          className="pettel-account"
-          ref={menu}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") closeMenus();
-          }}
-        >
-          <summary aria-label={user ? `Tài khoản ${user.name}` : "Tài khoản"}>
-            <span className="pettel-avatar">
-              <PettelIcon name="user" />
-            </span>
-            <PettelIcon name="chevron" />
-          </summary>
-          <div className="pettel-account-menu">
-            {user ? (
-              <>
-                <div className="pettel-account-info">
-                  <strong>{user.name}</strong>
-                  <span>{user.email}</span>
-                </div>
-                <Link href="/owner-profile" onClick={closeMenus} aria-current={pathname === "/owner-profile" ? "page" : undefined}>
-                  Hồ sơ chủ nuôi
+        {user && (
+          <>
+            <Link
+              className="pettel-icon-link pettel-message-link"
+              href="/chat"
+              aria-label="Mở tin nhắn"
+              title="Tin nhắn"
+              aria-current={pathname === "/chat" ? "page" : undefined}
+              onClick={closeMenus}
+            >
+              <PettelIcon name="message" />
+            </Link>
+            <Link
+              className="pettel-icon-link pettel-bookings-link"
+              href="/bookings"
+              aria-label={needsAttention ? "Đơn chăm sóc có yêu cầu cần xử lý" : "Xem đơn chăm sóc"}
+            >
+              <PettelIcon name="bell" />
+              {needsAttention && <span className="pettel-attention-dot" />}
+            </Link>
+          </>
+        )}
+        {user ? (
+          <details
+            className="pettel-account"
+            ref={menu}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") closeMenus();
+            }}
+          >
+            <summary aria-label={`Tài khoản ${user.name}`}>
+              <span className="pettel-avatar">
+                <PettelIcon name="user" />
+              </span>
+              <PettelIcon name="chevron" />
+            </summary>
+            <div className="pettel-account-menu">
+              <div className="pettel-account-info">
+                <strong>{user.name}</strong>
+                <span>{user.email}</span>
+              </div>
+              <Link href="/owner-profile" onClick={closeMenus} aria-current={pathname === "/owner-profile" ? "page" : undefined}>
+                Hồ sơ chủ nuôi
+              </Link>
+              <Link href="/bookings" onClick={closeMenus}>
+                Đơn chăm sóc của tôi
+              </Link>
+              <Link href="/pet-profile" onClick={closeMenus}>
+                Hồ sơ thú cưng
+              </Link>
+              <Link href="/caregiver" onClick={closeMenus}>
+                Khu vực người chăm
+              </Link>
+              {user.roles?.some((role) => role.role === "ADMIN") && (
+                <Link href="/admin" onClick={closeMenus}>
+                  Quản trị dịch vụ
                 </Link>
-                <Link href="/bookings" onClick={closeMenus}>
-                  Đơn chăm sóc của tôi
-                </Link>
-                <Link href="/pet-profile" onClick={closeMenus}>
-                  Hồ sơ thú cưng
-                </Link>
-                <Link href="/caregiver" onClick={closeMenus}>
-                  Khu vực người chăm
-                </Link>
-                {user.roles?.some((role) => role.role === "ADMIN") && (
-                  <Link href="/admin" onClick={closeMenus}>
-                    Quản trị dịch vụ
-                  </Link>
-                )}
-                <Link href="/contact-support" onClick={closeMenus} aria-current={pathname === "/contact-support" ? "page" : undefined}>
-                  Liên hệ và Hỗ trợ
-                </Link>
-                <ApiError error={logoutError} />
-                <button disabled={loggingOut} onClick={() => void logout()}>
-                  {loggingOut ? "Đang đăng xuất..." : "Đăng xuất"}
-                </button>
-              </>
-            ) : (
-              <>
-                <Link href="/login" onClick={closeMenus}>
-                  Đăng nhập / Đăng ký
-                </Link>
-                <Link href="/bookings" onClick={closeMenus}>
-                  Đơn chăm sóc của tôi
-                </Link>
-              </>
-            )}
-          </div>
-        </details>
+              )}
+              <Link href="/contact-support" onClick={closeMenus} aria-current={pathname === "/contact-support" ? "page" : undefined}>
+                Liên hệ và Hỗ trợ
+              </Link>
+              <ApiError error={logoutError} />
+              <button disabled={loggingOut} onClick={() => void logout()}>
+                {loggingOut ? "Đang đăng xuất..." : "Đăng xuất"}
+              </button>
+            </div>
+          </details>
+        ) : (
+          <Link className="pettel-login-link" href="/login" aria-label="Đăng nhập" onClick={closeMenus}>
+            <PettelIcon name="user" />
+            <span>Đăng nhập</span>
+          </Link>
+        )}
         <details
           className="pettel-mobile-nav"
           ref={mobileMenu}

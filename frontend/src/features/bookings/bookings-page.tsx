@@ -10,7 +10,7 @@ export function BookingsPage() {
       <SiteHeader />
       <main className="app-container">
         <h1>Đơn chăm sóc</h1>
-        <RequireSession next="/bookings">
+        <RequireSession next="/bookings" redirectToLogin>
           <BookingList />
         </RequireSession>
       </main>
