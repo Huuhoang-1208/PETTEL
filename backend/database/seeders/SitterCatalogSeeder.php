@@ -6,6 +6,7 @@ use App\Models\CaregiverProfile;
 use App\Models\Listing;
 use App\Models\MediaObject;
 use App\Models\User;
+use App\Support\PublicReviewCache;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -185,6 +186,136 @@ class SitterCatalogSeeder extends Seeder
                 ],
             );
         }
+
+        $this->seedDemoReviews();
+    }
+
+    private function seedDemoReviews(): void
+    {
+        $reviewers = [
+            ['name' => 'Nguyễn Mai Phương', 'email' => 'reviewer-mai@example.test', 'pets' => ['DOG' => 'Mochi', 'CAT' => 'Mochi Mèo']],
+            ['name' => 'Trần Vũ Tuấn', 'email' => 'reviewer-tuan@example.test', 'pets' => ['DOG' => 'Bơ', 'CAT' => 'Bơ Mèo']],
+            ['name' => 'Lê Hương Giang', 'email' => 'reviewer-giang@example.test', 'pets' => ['DOG' => 'Simba', 'CAT' => 'Simba Mèo']],
+        ];
+
+        foreach ($reviewers as &$reviewer) {
+            $user = User::query()->firstOrCreate(
+                ['email' => $reviewer['email']],
+                ['name' => $reviewer['name'], 'password' => 'DemoOnly123!'],
+            );
+            DB::table('user_roles')->insertOrIgnore([
+                'user_id' => $user->id,
+                'role' => 'OWNER',
+                'assigned_at' => now(),
+            ]);
+            $reviewer['user_id'] = $user->id;
+            $reviewer['pet_ids'] = [];
+            foreach ($reviewer['pets'] as $species => $petName) {
+                DB::table('pets')->updateOrInsert(
+                    ['user_id' => $user->id, 'name' => $petName],
+                    [
+                        'species' => $species,
+                        'size' => $species === 'CAT' ? 'SMALL' : 'MEDIUM',
+                        'sex' => 'UNKNOWN',
+                        'age_note' => '3 tuổi',
+                        'status' => 'ACTIVE',
+                        'updated_at' => now(),
+                        'created_at' => now(),
+                    ],
+                );
+                $reviewer['pet_ids'][$species] = DB::table('pets')
+                    ->where('user_id', $user->id)
+                    ->where('name', $petName)
+                    ->value('id');
+            }
+        }
+        unset($reviewer);
+
+        $messages = [
+            'Gia đình mình đã gửi bé %s vài lần và rất yên tâm. Sitter cập nhật ảnh, clip đúng hẹn và chăm bé theo thói quen đã trao đổi.',
+            'Không gian sạch sẽ, sitter kiên nhẫn làm quen với bé %s. Mình nhận được cập nhật trong suốt thời gian gửi.',
+            'Sitter trao đổi rõ ràng và chăm bé %s cẩn thận. Bé về nhà vui vẻ, gia đình sẽ tiếp tục đặt lịch.',
+        ];
+
+        Listing::query()
+            ->where('status', 'ACTIVE')
+            ->whereHas('caregiverProfile', fn ($profile) => $profile->whereNotNull('demo_profile_json'))
+            ->with('caregiverProfile')
+            ->orderBy('id')
+            ->get()
+            ->each(function (Listing $listing) use ($reviewers, $messages): void {
+                $acceptedSpecies = $listing->acceptance_rules_json['species'] ?? ['DOG'];
+                if ($acceptedSpecies === []) {
+                    $acceptedSpecies = ['DOG'];
+                }
+
+                foreach ($reviewers as $index => $reviewer) {
+                    $idempotencyKey = sprintf('demo-review-%d-%d', $listing->id, $index + 1);
+                    $bookingId = DB::table('bookings')
+                        ->where('owner_id', $reviewer['user_id'])
+                        ->where('request_idempotency_key', $idempotencyKey)
+                        ->value('id');
+                    $start = now('UTC')->subDays(30 - ($index * 8))->startOfHour();
+                    $duration = $listing->service_type === 'DAYCARE' ? 2 : 24;
+                    $end = $start->copy()->addHours($duration);
+                    $petSpecies = $acceptedSpecies[$index % count($acceptedSpecies)];
+                    $petName = $reviewer['pets'][$petSpecies];
+                    $petId = $reviewer['pet_ids'][$petSpecies];
+                    $petSize = $petSpecies === 'CAT' ? 'SMALL' : 'MEDIUM';
+                    $petSnapshot = [
+                        'schema_version' => 1,
+                        'pet_id' => (string) $petId,
+                        'name' => $petName,
+                        'species' => $petSpecies,
+                        'size' => $petSize,
+                    ];
+
+                    if ($bookingId === null) {
+                        $bookingId = DB::table('bookings')->insertGetId([
+                            'owner_id' => $reviewer['user_id'],
+                            'pet_id' => $petId,
+                            'listing_id' => $listing->id,
+                            'caregiver_user_id' => $listing->caregiverProfile->user_id,
+                            'start_at' => $start->format('Y-m-d H:i:s.u'),
+                            'end_at' => $end->format('Y-m-d H:i:s.u'),
+                            'status' => 'COMPLETED',
+                            'price_snapshot_vnd' => $listing->price_vnd,
+                            'price_unit' => $listing->price_unit,
+                            'price_quantity' => 1,
+                            'pet_snapshot_json' => json_encode($petSnapshot, JSON_THROW_ON_ERROR),
+                            'listing_snapshot_json' => json_encode([
+                                'schema_version' => 1,
+                                'listing_id' => (string) $listing->id,
+                                'title' => $listing->title,
+                                'service_type' => $listing->service_type,
+                                'price_unit' => $listing->price_unit,
+                                'unit_price_vnd' => $listing->price_vnd,
+                            ], JSON_THROW_ON_ERROR),
+                            'policy_snapshot_json' => json_encode(['schema_version' => 1, 'payment_mode' => 'SANDBOX'], JSON_THROW_ON_ERROR),
+                            'request_idempotency_key' => $idempotencyKey,
+                            'request_payload_hash' => hash('sha256', $idempotencyKey),
+                            'created_at' => $start->format('Y-m-d H:i:s.u'),
+                            'updated_at' => $end->format('Y-m-d H:i:s.u'),
+                        ]);
+                    }
+
+                    $reviewedAt = $end->copy()->addHours(4);
+                    DB::table('reviews')->updateOrInsert(
+                        ['booking_id' => $bookingId],
+                        [
+                            'owner_id' => $reviewer['user_id'],
+                            'listing_id' => $listing->id,
+                            'rating' => $index === 2 ? 4 : 5,
+                            'body' => sprintf($messages[$index % count($messages)], $petName),
+                            'status' => 'VISIBLE',
+                            'is_demo' => true,
+                            'created_at' => $reviewedAt->format('Y-m-d H:i:s.u'),
+                            'updated_at' => $reviewedAt->format('Y-m-d H:i:s.u'),
+                        ],
+                    );
+                    PublicReviewCache::invalidate((string) $listing->id);
+                }
+            });
     }
 
     private function makeThumbnail(string $contents): string

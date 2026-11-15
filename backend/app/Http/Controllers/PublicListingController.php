@@ -236,15 +236,20 @@ class PublicListingController extends Controller
         $cached = PublicReviewCache::remember((string) $listing->id, $page, $perPage, function () use ($listing, $page, $perPage): array {
             $reviews = $this->visibleReviews()
                 ->where('reviews.listing_id', $listing->id)
-                ->select(['reviews.id', 'reviews.rating', 'reviews.body', 'reviews.is_demo', 'reviews.created_at'])
+                ->join('users as review_owners', 'review_owners.id', '=', 'reviews.owner_id')
                 ->orderByDesc('reviews.created_at')
                 ->orderByDesc('reviews.id')
-                ->paginate($perPage, ['*'], 'page', $page)
-                ->through(static fn (stdClass $review): array => [
+                ->paginate($perPage, [
+                    'reviews.id', 'reviews.rating', 'reviews.body', 'reviews.is_demo', 'reviews.created_at',
+                    'review_owners.name as owner_name', 'bookings.pet_snapshot_json',
+                ], 'page', $page)
+                ->through(fn (stdClass $review): array => [
                     'id' => (string) $review->id,
                     'rating' => (int) $review->rating,
                     'body' => $review->body,
                     'is_demo' => (bool) $review->is_demo,
+                    'reviewer_name' => $this->publicReviewerName((string) $review->owner_name),
+                    'pet_species' => $this->petSpeciesFromSnapshot($review->pet_snapshot_json),
                     'created_at' => CarbonImmutable::parse($review->created_at, 'UTC')->format('Y-m-d\\TH:i:s.u\\Z'),
                 ]);
 
@@ -260,11 +265,50 @@ class PublicListingController extends Controller
 
         $attributes = $listing->getAttributes();
         $average = $attributes['rating_average'] ?? null;
+        $ratingDistribution = array_fill_keys([1, 2, 3, 4, 5], 0);
+        foreach ($this->visibleReviews()
+            ->where('reviews.listing_id', $listing->id)
+            ->select('reviews.rating', DB::raw('COUNT(*) AS count'))
+            ->groupBy('reviews.rating')
+            ->get() as $rating) {
+            $ratingDistribution[(int) $rating->rating] = (int) $rating->count;
+        }
 
         return JsonResource::collection($reviews)->additional([
             'rating_average' => $average === null ? null : round((float) $average, 2),
             'review_count' => (int) ($attributes['review_count'] ?? 0),
+            'rating_distribution' => $ratingDistribution,
         ]);
+    }
+
+    private function publicReviewerName(string $name): string
+    {
+        $parts = preg_split('/\\s+/u', trim($name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        if (count($parts) < 2) {
+            return 'Khách hàng';
+        }
+
+        $givenName = array_pop($parts);
+        $initial = mb_substr($parts[0], 0, 1, 'UTF-8');
+
+        return $givenName.' '.$initial.'.';
+    }
+
+    private function petSpeciesFromSnapshot(mixed $snapshot): ?string
+    {
+        if (! is_string($snapshot)) {
+            return null;
+        }
+
+        $pet = json_decode($snapshot, true);
+        $species = is_array($pet) ? ($pet['species'] ?? null) : null;
+
+        return match ($species) {
+            'DOG' => 'DOG',
+            'CAT' => 'CAT',
+            'OTHER' => 'OTHER',
+            default => null,
+        };
     }
 
     private function findPublicListing(string $id): Listing

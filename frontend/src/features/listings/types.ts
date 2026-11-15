@@ -24,4 +24,6 @@ export type Review = {
   body: string | null;
   created_at: string;
   is_demo: boolean;
+  reviewer_name: string;
+  pet_species: "DOG" | "CAT" | "OTHER" | null;
 };
