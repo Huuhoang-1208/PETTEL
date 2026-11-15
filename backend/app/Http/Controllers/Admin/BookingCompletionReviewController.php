@@ -15,7 +15,7 @@ class BookingCompletionReviewController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $this->requireAdmin($request);
+        $this->requireStaff($request);
 
         $latestEvents = DB::table('booking_status_events')
             ->select('booking_id')
@@ -129,6 +129,20 @@ class BookingCompletionReviewController extends Controller
             $user instanceof User
             && $user->status === 'ACTIVE'
             && $user->hasRole('ADMIN'),
+            403,
+        );
+
+        return $user;
+    }
+
+    private function requireStaff(Request $request): User
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $user instanceof User
+            && $user->status === 'ACTIVE'
+            && ($user->hasRole('ADMIN') || $user->hasRole('SUPPORT')),
             403,
         );
 

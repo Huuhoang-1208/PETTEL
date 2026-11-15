@@ -279,11 +279,13 @@ class AppServiceProvider extends ServiceProvider
                 // derived from the controller/resource code instead of accepting UnknownType.
                 $quote = $object([
                     'price_total_vnd' => new IntegerType,
+                    'base_price_total_vnd' => new IntegerType,
+                    'addons_total_vnd' => new IntegerType,
                     'price_unit' => $string(),
                     'quantity' => new IntegerType,
                     'pricing_version' => new IntegerType,
                     'cancellation_policy_version' => new IntegerType,
-                ], ['price_total_vnd', 'price_unit', 'quantity', 'pricing_version', 'cancellation_policy_version']);
+                ], ['price_total_vnd', 'base_price_total_vnd', 'addons_total_vnd', 'price_unit', 'quantity', 'pricing_version', 'cancellation_policy_version']);
                 if ($schema = $schemaFor('bookings/quote', 'post')) {
                     $schema->type = $quote;
                 }

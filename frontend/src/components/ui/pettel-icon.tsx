@@ -21,6 +21,7 @@ export type PettelIconName =
   | "walk"
   | "clock"
   | "mail"
+  | "message"
   | "key"
   | "eye"
   | "eye-off"
@@ -40,6 +41,12 @@ export function PettelIcon({
   style?: CSSProperties;
 }) {
   const paths: Record<Exclude<PettelIconName, "paw">, React.ReactNode> = {
+    message: (
+      <>
+        <path d="M20 15a3 3 0 0 1-3 3H8l-5 3V6a3 3 0 0 1 3-3h11a3 3 0 0 1 3 3Z" />
+        <path d="M7 8h9M7 12h6" />
+      </>
+    ),
     mail: (
       <>
         <rect x="3" y="5" width="18" height="14" rx="2" />

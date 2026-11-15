@@ -35,7 +35,7 @@ export function SiteHeader() {
       label: "Trở thành Sitter",
       active: pathname === "/caregiver",
     },
-    { href: "/#ve-pettel", label: "Về PETTEL", active: false },
+    { href: "/about", label: "Về PETTEL", active: pathname === "/about" },
     {
       href: "/pet-profile",
       label: "Hồ sơ thú cưng",
@@ -91,6 +91,16 @@ export function SiteHeader() {
           <span>VN</span>
         </span>
         <Link
+          className="pettel-icon-link pettel-message-link"
+          href="/chat"
+          aria-label="Mở tin nhắn"
+          title="Tin nhắn"
+          aria-current={pathname === "/chat" ? "page" : undefined}
+          onClick={closeMenus}
+        >
+          <PettelIcon name="message" />
+        </Link>
+        <Link
           className="pettel-icon-link pettel-bookings-link"
           href="/bookings"
           aria-label={needsAttention ? "Đơn chăm sóc có yêu cầu cần xử lý" : "Xem đơn chăm sóc"}
@@ -118,6 +128,9 @@ export function SiteHeader() {
                   <strong>{user.name}</strong>
                   <span>{user.email}</span>
                 </div>
+                <Link href="/owner-profile" onClick={closeMenus} aria-current={pathname === "/owner-profile" ? "page" : undefined}>
+                  Hồ sơ chủ nuôi
+                </Link>
                 <Link href="/bookings" onClick={closeMenus}>
                   Đơn chăm sóc của tôi
                 </Link>
@@ -132,6 +145,9 @@ export function SiteHeader() {
                     Quản trị dịch vụ
                   </Link>
                 )}
+                <Link href="/contact-support" onClick={closeMenus} aria-current={pathname === "/contact-support" ? "page" : undefined}>
+                  Liên hệ và Hỗ trợ
+                </Link>
                 <ApiError error={logoutError} />
                 <button disabled={loggingOut} onClick={() => void logout()}>
                   {loggingOut ? "Đang đăng xuất..." : "Đăng xuất"}

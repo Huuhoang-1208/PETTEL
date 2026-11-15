@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
 
 type ChannelAuthorizationResponse = NonNullable<Parameters<ChannelAuthorizationCallback>[1]>;
 
-export function useBookingMessages(bookingId: string) {
+export function useBookingMessages(bookingId: string, kind: "bookings" | "inquiries" = "bookings") {
   const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [nextPage, setNextPage] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export function useBookingMessages(bookingId: string) {
 
       try {
         const { data } = await api.get<Page<Message>>(
-          `/api/bookings/${bookingId}/messages?per_page=50`,
+          `/api/${kind}/${bookingId}/messages?per_page=50`,
         );
 
         if (active && version === requestVersion) {
@@ -88,7 +88,7 @@ export function useBookingMessages(bookingId: string) {
     const timer = window.setInterval(() => {
       if (!document.hidden) void refreshMessages();
     }, 5000);
-    if (process.env.NEXT_PUBLIC_REVERB_APP_KEY) void connect().catch(() => {});
+    if (kind === "bookings" && process.env.NEXT_PUBLIC_REVERB_APP_KEY) void connect().catch(() => {});
 
     return () => {
       active = false;
@@ -96,7 +96,7 @@ export function useBookingMessages(bookingId: string) {
       refreshRef.current = async () => {};
       disconnect();
     };
-  }, [bookingId]);
+  }, [bookingId, kind]);
 
   return { messages, error, nextPage, refresh: () => refreshRef.current() };
 }

@@ -2,6 +2,8 @@
 
 export type Quote = {
   price_total_vnd: number;
+  base_price_total_vnd: number;
+  addons_total_vnd: number;
   quantity: number;
   price_unit: string;
 };
@@ -13,6 +15,7 @@ export type Draft = {
     start_at: string;
     end_at: string;
     instructions: string;
+    addons: string[];
   };
   quote: Quote;
   key: string;

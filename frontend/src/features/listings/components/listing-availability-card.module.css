@@ -59,9 +59,15 @@
   border-radius: 50%;
 }
 
-.availableDot { background: #00a6b0; }
-.fullDot { background: #dce3fb; }
-.selectedDot { background: #ffa30b; }
+.availableDot {
+  background: #00a6b0;
+}
+.fullDot {
+  background: #dce3fb;
+}
+.selectedDot {
+  background: #ffa30b;
+}
 
 .calendar {
   padding: 16px;
@@ -177,7 +183,7 @@
 
 .outsideDay {
   color: #a5b1c1;
-  opacity: .7;
+  opacity: 0.7;
 }
 
 .note {

@@ -8,6 +8,8 @@ use App\Http\Controllers\Auth\EnableCaregiverRoleController;
 use App\Http\Controllers\BookingCareLifecycleController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BookingMessageController;
+use App\Http\Controllers\ServiceInquiryController;
+use App\Http\Controllers\OwnerProfileController;
 use App\Http\Controllers\BookingQueryController;
 use App\Http\Controllers\CancelBookingController;
 use App\Http\Controllers\CaregiverListingController;
@@ -50,6 +52,15 @@ Route::post('/user/roles/caregiver', EnableCaregiverRoleController::class)
     ->name('user.roles.caregiver');
 
 Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
+    Route::get('/owner-profile', [OwnerProfileController::class, 'show']);
+    Route::get('/owner-profile/bookings', [OwnerProfileController::class, 'bookings']);
+    Route::patch('/owner-profile', [OwnerProfileController::class, 'update'])->middleware('throttle:20,1');
+    Route::post('/owner-profile/media', [ListingMediaController::class, 'upload'])->middleware('throttle:20,1');
+    Route::get('/owner-profile/media/{mediaId}/content', [ListingMediaController::class, 'ownerContent'])->whereNumber('mediaId');
+    Route::get('/inquiries', [ServiceInquiryController::class, 'index']);
+    Route::get('/inquiries/{id}', [ServiceInquiryController::class, 'show'])->whereNumber('id');
+    Route::get('/inquiries/{id}/messages', [ServiceInquiryController::class, 'messages'])->whereNumber('id');
+    Route::post('/inquiries/{id}/messages', [ServiceInquiryController::class, 'send'])->whereNumber('id')->middleware('throttle:30,1');
     Route::get('/bookings', [BookingQueryController::class, 'index']);
     Route::get('/bookings/{id}', [BookingQueryController::class, 'show'])->whereNumber('id');
     Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
@@ -57,6 +68,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
 });
 
 Route::middleware(['auth:sanctum', 'account.active', 'role:OWNER'])->group(function () {
+    Route::post('/inquiries', [ServiceInquiryController::class, 'store'])->middleware('throttle:30,1');
     Route::post('/bookings/quote', [BookingController::class, 'quote'])->name('bookings.quote');
     Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
     Route::post('/bookings/{id}/sandbox-payments', StartSandboxPaymentController::class)
@@ -71,6 +83,9 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:OWNER'])->group(funct
 
     Route::get('/pets', [PetController::class, 'index'])->name('pets.index');
     Route::post('/pets', [PetController::class, 'store'])->name('pets.store');
+    Route::post('/pets/media', [ListingMediaController::class, 'upload'])->name('pets.media.upload');
+    Route::get('/pets/media/{mediaId}/content', [ListingMediaController::class, 'ownerContent'])
+        ->whereNumber('mediaId')->name('pets.media.content');
     Route::get('/pets/{pet}', [PetController::class, 'show'])->name('pets.show');
     Route::patch('/pets/{pet}', [PetController::class, 'update'])->name('pets.update');
     Route::patch('/pets/{pet}/archive', [PetController::class, 'archive'])->name('pets.archive');
@@ -110,44 +125,47 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
         Route::get('/media/{mediaId}/content', [ListingMediaController::class, 'ownerContent'])->whereNumber('mediaId');
     });
 
-Route::middleware(['auth:sanctum', 'account.active', 'role:ADMIN'])->prefix('admin')->group(function () {
-    Route::get('/reports', [AdminReportController::class, 'index'])->name('admin.reports.index');
-    Route::get('/reports/{id}', [AdminReportController::class, 'show'])
-        ->whereNumber('id')->name('admin.reports.show');
-    Route::get('/reports/{id}/evidence', [AdminReportController::class, 'evidence'])
-        ->whereNumber('id')->name('admin.reports.evidence');
-    Route::post('/reports/{id}/status', [AdminReportController::class, 'changeStatus'])
-        ->whereNumber('id')->name('admin.reports.status');
-    Route::post('/reports/{id}/booking-decision', [AdminReportController::class, 'bookingDecision'])
-        ->whereNumber('id')->name('admin.reports.booking-decision');
-    Route::get('/reports/{id}/history', [AdminReportController::class, 'history'])
-        ->whereNumber('id')->name('admin.reports.history');
-    Route::post('/reports/{id}/moderation', [AdminReportController::class, 'moderate'])
-        ->whereNumber('id')->name('admin.reports.moderation');
+Route::middleware(['auth:sanctum', 'account.active'])->prefix('admin')->group(function () {
+    Route::middleware('role:ADMIN,SUPPORT')->group(function () {
+        Route::get('/reports', [AdminReportController::class, 'index'])->name('admin.reports.index');
+        Route::get('/reports/{id}', [AdminReportController::class, 'show'])
+            ->whereNumber('id')->name('admin.reports.show');
+        Route::get('/reports/{id}/history', [AdminReportController::class, 'history'])
+            ->whereNumber('id')->name('admin.reports.history');
+        Route::get('/booking-cancellations', [BookingCancellationQueueController::class, 'index']);
+        Route::get(
+            '/booking-completion-reviews',
+            [BookingCompletionReviewController::class, 'index'],
+        );
+        Route::get('/listings', [ListingLifecycleController::class, 'adminIndex']);
+        Route::get('/listings/{id}', [ListingLifecycleController::class, 'show'])->whereNumber('id');
+        Route::get('/listing-change-requests', [ListingChangeRequestController::class, 'queue']);
+        Route::get('/listings/{id}/change-requests/{requestId}', [ListingChangeRequestController::class, 'adminShow'])->whereNumber(['id', 'requestId']);
+    });
 
-    Route::get('/booking-cancellations', [BookingCancellationQueueController::class, 'index']);
-    Route::post('/booking-cancellations/{id}/retry', [BookingCancellationQueueController::class, 'retry'])->whereNumber('id');
-    Route::get(
-        '/booking-completion-reviews',
-        [BookingCompletionReviewController::class, 'index'],
-    );
-
-    Route::post(
-        '/booking-completion-reviews/{id}/complete',
-        [BookingCompletionReviewController::class, 'complete'],
-    )->whereNumber('id');
-    Route::get('/listings', [ListingLifecycleController::class, 'adminIndex']);
-    Route::get('/listings/{id}', [ListingLifecycleController::class, 'show'])->whereNumber('id');
-    Route::post('/listings/{id}/approve', [ListingLifecycleController::class, 'approve'])->whereNumber('id');
-    Route::post('/listings/{id}/reject', [ListingLifecycleController::class, 'reject'])->whereNumber('id');
-    Route::post('/listings/{id}/suspend', [ListingLifecycleController::class, 'suspend'])->whereNumber('id');
-    Route::post('/listings/{id}/restore', [ListingLifecycleController::class, 'restore'])->whereNumber('id');
-    Route::post('/listings/{id}/archive', [ListingLifecycleController::class, 'archive'])->whereNumber('id');
-    Route::get('/listing-change-requests', [ListingChangeRequestController::class, 'queue']);
-    Route::get('/listings/{id}/change-requests/{requestId}', [ListingChangeRequestController::class, 'adminShow'])->whereNumber(['id', 'requestId']);
-    Route::post('/listings/{id}/change-requests/{requestId}/approve', [ListingChangeRequestController::class, 'approve'])->whereNumber(['id', 'requestId']);
-    Route::post('/listings/{id}/change-requests/{requestId}/reject', [ListingChangeRequestController::class, 'reject'])->whereNumber(['id', 'requestId']);
-    Route::get('/listings/{id}/media/{mediaId}/content', [ListingMediaController::class, 'adminContent'])->whereNumber(['id', 'mediaId']);
+    Route::middleware('role:ADMIN')->group(function () {
+        Route::get('/reports/{id}/evidence', [AdminReportController::class, 'evidence'])
+            ->whereNumber('id')->name('admin.reports.evidence');
+        Route::post('/reports/{id}/status', [AdminReportController::class, 'changeStatus'])
+            ->whereNumber('id')->name('admin.reports.status');
+        Route::post('/reports/{id}/booking-decision', [AdminReportController::class, 'bookingDecision'])
+            ->whereNumber('id')->name('admin.reports.booking-decision');
+        Route::post('/reports/{id}/moderation', [AdminReportController::class, 'moderate'])
+            ->whereNumber('id')->name('admin.reports.moderation');
+        Route::post('/booking-cancellations/{id}/retry', [BookingCancellationQueueController::class, 'retry'])->whereNumber('id');
+        Route::post(
+            '/booking-completion-reviews/{id}/complete',
+            [BookingCompletionReviewController::class, 'complete'],
+        )->whereNumber('id');
+        Route::post('/listings/{id}/approve', [ListingLifecycleController::class, 'approve'])->whereNumber('id');
+        Route::post('/listings/{id}/reject', [ListingLifecycleController::class, 'reject'])->whereNumber('id');
+        Route::post('/listings/{id}/suspend', [ListingLifecycleController::class, 'suspend'])->whereNumber('id');
+        Route::post('/listings/{id}/restore', [ListingLifecycleController::class, 'restore'])->whereNumber('id');
+        Route::post('/listings/{id}/archive', [ListingLifecycleController::class, 'archive'])->whereNumber('id');
+        Route::post('/listings/{id}/change-requests/{requestId}/approve', [ListingChangeRequestController::class, 'approve'])->whereNumber(['id', 'requestId']);
+        Route::post('/listings/{id}/change-requests/{requestId}/reject', [ListingChangeRequestController::class, 'reject'])->whereNumber(['id', 'requestId']);
+        Route::get('/listings/{id}/media/{mediaId}/content', [ListingMediaController::class, 'adminContent'])->whereNumber(['id', 'mediaId']);
+    });
 });
 
 Route::post('/bookings/{id}/reject', RejectBookingController::class)

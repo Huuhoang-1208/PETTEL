@@ -22,6 +22,11 @@ class Pet extends Model
         'temperament',
         'special_needs',
         'photo_media_id',
+        'breed',
+        'weight_kg',
+        'microchip_number',
+        'is_neutered',
+        'health_flags',
     ];
 
     /** @return BelongsTo<User, $this> */
@@ -38,6 +43,7 @@ class Pet extends Model
             'pet_id' => (string) $this->getKey(),
             'name' => $this->name,
             'species' => $this->species,
+            'breed' => $this->breed,
             'birth_date' => $this->birth_date?->toDateString(),
             'age_note' => $this->age_note,
             'sex' => $this->sex,
@@ -46,6 +52,9 @@ class Pet extends Model
             'vaccination_note' => $this->vaccination_note,
             'temperament' => $this->temperament,
             'special_needs' => $this->special_needs,
+            'weight_kg' => $this->weight_kg,
+            'is_neutered' => $this->is_neutered,
+            'health_flags' => $this->health_flags,
         ];
     }
 
@@ -54,6 +63,9 @@ class Pet extends Model
     {
         return [
             'birth_date' => 'date',
+            'weight_kg' => 'decimal:2',
+            'is_neutered' => 'boolean',
+            'health_flags' => 'array',
         ];
     }
 }

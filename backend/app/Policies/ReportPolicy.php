@@ -10,12 +10,12 @@ class ReportPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $this->isActiveAdmin($user);
+        return $this->isActiveStaff($user);
     }
 
     public function view(User $user, Report $report): bool
     {
-        return $this->isActiveAdmin($user)
+        return $this->isActiveStaff($user)
             && $report->exists;
     }
 
@@ -72,6 +72,16 @@ class ReportPolicy
             ->where('users.id', $user->id)
             ->where('users.status', 'ACTIVE')
             ->where('user_roles.role', 'ADMIN')
+            ->exists();
+    }
+
+    private function isActiveStaff(User $user): bool
+    {
+        return DB::table('users')
+            ->join('user_roles', 'user_roles.user_id', '=', 'users.id')
+            ->where('users.id', $user->id)
+            ->where('users.status', 'ACTIVE')
+            ->whereIn('user_roles.role', ['ADMIN', 'SUPPORT'])
             ->exists();
     }
 }

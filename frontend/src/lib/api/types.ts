@@ -9,6 +9,7 @@ export type Pet = {
   id: string;
   name: string;
   species: string;
+  breed?: string | null;
   sex: string | null;
   size: string | null;
   birth_date: string | null;
@@ -17,6 +18,11 @@ export type Pet = {
   vaccination_note: string | null;
   temperament: string | null;
   special_needs: string | null;
+  weight_kg?: number | string | null;
+  microchip_number?: string | null;
+  is_neutered?: boolean;
+  health_flags?: { core_vaccines?: boolean; rabies_vaccine?: boolean; deworming?: boolean } | null;
+  photo_media_id?: string | null;
   status: string;
 };
 
@@ -79,7 +85,10 @@ export type Message = {
   body: string | null;
   created_at: string;
   attachments: { id: string; url: string; mime_type: string }[];
+  context?: { pet_name: string | null; pet_breed: string | null; pet_weight_kg: string | number | null; service_type: string; start_at: string | null; end_at: string | null } | null;
 };
+
+export type Inquiry = { id: string; listing_id: string; listing_title: string; sitter_name: string };
 
 export type Page<T> = {
   data: T[];

@@ -25,6 +25,9 @@ class PetRequest extends FormRequest
             'vaccination_note',
             'temperament',
             'special_needs',
+            'breed',
+            'weight_kg',
+            'microchip_number',
         ]) as $key => $value) {
             if (is_string($value)) {
                 $value = trim($value);
@@ -55,6 +58,14 @@ class PetRequest extends FormRequest
             'vaccination_note' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'temperament' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'special_needs' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'breed' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'weight_kg' => ['sometimes', 'nullable', 'numeric', 'min:0.01', 'max:200'],
+            'microchip_number' => ['sometimes', 'nullable', 'string', 'max:80'],
+            'is_neutered' => ['sometimes', 'boolean'],
+            'health_flags' => ['sometimes', 'nullable', 'array:core_vaccines,rabies_vaccine,deworming'],
+            'health_flags.core_vaccines' => ['sometimes', 'boolean'],
+            'health_flags.rabies_vaccine' => ['sometimes', 'boolean'],
+            'health_flags.deworming' => ['sometimes', 'boolean'],
             'photo_media_id' => [
                 'sometimes',
                 'nullable',

@@ -898,6 +898,15 @@ button:disabled {
   object-fit: contain;
   border-radius: 10px;
 }
+.app-inquiry-context {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #dff5f6;
+  color: #174d5b;
+  font-size: 12px;
+}
+.app-inquiry-context p { margin: 5px 0 0; font-size: 11px; }
 .app-attachment {
   font-size: 13px;
   max-width: 180px;

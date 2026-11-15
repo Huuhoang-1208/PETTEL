@@ -149,7 +149,8 @@ export function AuthForm({ auth }: { auth: AuthFormState }) {
           Luôn đồng hành cùng bé cưng
         </span>
         <Link href="/services">Khám phá dịch vụ</Link>
-        <Link href="/#ve-pettel">Về PETTEL</Link>
+        <Link href="/about">Về PETTEL</Link>
+        <Link href="/admin/login">Đăng nhập nội bộ</Link>
       </div>
     </section>
   );

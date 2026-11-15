@@ -1,5 +1,7 @@
 "use client";
 import { write } from "@/lib/api/request";
+import { api } from "@/lib/api/client";
+import { type User } from "@/lib/api/types";
 import { useSession } from "@/providers/session-provider";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
@@ -59,7 +61,10 @@ export function useAuthForm() {
         return;
       }
       refresh();
-      const next = query.get("next") ?? (role === "CAREGIVER" ? "/caregiver" : "/");
+      const isStaffLogin = mode === "login" && (await api.get<User>("/api/user")).data.roles?.some(
+        (assignedRole) => assignedRole.role === "ADMIN" || assignedRole.role === "SUPPORT",
+      );
+      const next = isStaffLogin ? "/admin" : query.get("next") ?? (role === "CAREGIVER" ? "/caregiver" : "/");
       router.replace(
         next.startsWith("/") && !next.startsWith("//") && !next.includes("\\") ? next : "/",
       );

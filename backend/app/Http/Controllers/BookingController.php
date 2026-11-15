@@ -12,7 +12,7 @@ use Illuminate\Support\Arr;
 class BookingController extends Controller
 {
     /**
-     * @response array{price_total_vnd: int, price_unit: string, quantity: int, pricing_version: int, cancellation_policy_version: int}
+     * @response array{price_total_vnd: int, base_price_total_vnd: int, addons_total_vnd: int, price_unit: string, quantity: int, pricing_version: int, cancellation_policy_version: int}
      */
     public function quote(QuoteBookingRequest $request): JsonResponse
     {
