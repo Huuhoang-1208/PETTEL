@@ -3,6 +3,7 @@
 import { ApiError } from "@/components/ui/api-error";
 import { PettelIcon } from "@/components/ui/pettel-icon";
 import { RequireSession } from "@/features/auth/components/require-session";
+import { ChangeRequestReviewCard } from "@/features/admin/components/change-request-review-card";
 import { type Change } from "@/features/admin/types";
 import { useApi } from "@/hooks/use-api";
 import { write } from "@/lib/api/request";
@@ -89,7 +90,7 @@ function AdminConsole() {
 
   const pendingListings = useApi<Page<Listing>>(isStaff ? "/api/admin/listings?status=PENDING_REVIEW&per_page=3" : null, 60000);
   const activeListings = useApi<Page<Listing>>(isStaff ? "/api/admin/listings?status=ACTIVE&per_page=1" : null, 60000);
-  const pendingChanges = useApi<Page<Change>>(isStaff ? "/api/admin/listing-change-requests?per_page=1" : null, 60000);
+  const pendingChanges = useApi<Page<Change>>(isStaff ? "/api/admin/listing-change-requests?status=PENDING_REVIEW&per_page=50" : null, 15000);
   const completionReviews = useApi<BookingOperations>(isStaff ? "/api/admin/booking-completion-reviews" : null, 60000);
   const cancellations = useApi<{ data: CancellationOperation[] }>(isStaff ? "/api/admin/booking-cancellations" : null, 60000);
   const openReports = useApi<Page<AdminReport>>(isStaff ? "/api/admin/reports?status=OPEN&per_page=3" : null, 60000);
@@ -105,6 +106,17 @@ function AdminConsole() {
       listing.area_code,
     ].some((value) => value?.toLocaleLowerCase("vi").includes(query)));
   }, [pendingListings.data, search]);
+  const filteredChanges = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase("vi");
+    const rows = pendingChanges.data?.data ?? [];
+    if (!query) return rows;
+    return rows.filter((change) => [
+      change.listing_id,
+      change.proposed_data_json.data.title,
+      change.proposed_data_json.data.description,
+      change.proposed_data_json.data.area_code,
+    ].some((value) => value?.toLocaleLowerCase("vi").includes(query)));
+  }, [pendingChanges.data, search]);
 
   async function reviewListing(listing: Listing, action: "approve" | "reject") {
     if (!isAdmin) return;
@@ -116,6 +128,7 @@ function AdminConsole() {
       await write("post", `/api/admin/listings/${listing.id}/${action}`, reason ? { reason } : undefined);
       setReasonByListing((current) => ({ ...current, [listing.id]: "" }));
       pendingListings.reload();
+      pendingChanges.reload();
     } catch (error) {
       setActionError(error);
     } finally {
@@ -128,6 +141,7 @@ function AdminConsole() {
   }
 
   const pendingTotal = pendingListings.data?.meta?.total ?? 0;
+  const pendingReviewTotal = pendingTotal + (pendingChanges.data?.meta?.total ?? 0);
   const activeTotal = activeListings.data?.meta?.total ?? 0;
   const changesTotal = pendingChanges.data?.meta?.total ?? 0;
   const completionTotal = (completionReviews.data?.data.overdue_bookings.length ?? 0) + (completionReviews.data?.data.release_operations_for_review.length ?? 0);
@@ -178,7 +192,7 @@ function AdminConsole() {
               onClick={() => setActiveSection(item.id)}
             >
               <span className={styles.navIcon}>{item.icon}</span><span>{item.label}</span>
-              {item.id === "sitters" && pendingTotal > 0 && <b>{pendingTotal}</b>}
+              {item.id === "sitters" && pendingReviewTotal > 0 && <b>{pendingReviewTotal}</b>}
               {item.id === "reports" && reportsTotal > 0 && <b className={styles.redCount}>{reportsTotal}</b>}
             </button>
           ))}
@@ -218,8 +232,8 @@ function AdminConsole() {
             <section id="sitters" className={styles.panel}>
               <div className={styles.panelHeading}>
                 <span className={`${styles.panelIcon} ${styles.amberIcon}`}><PettelIcon name="award" /></span>
-                <div><h2>Hàng Chờ Duyệt Hồ Sơ Sitter Mới</h2><p>Kiểm tra hồ sơ và thông tin dịch vụ trước khi phê chuẩn.</p></div>
-                <span className={styles.queueCount}>Cần xử lý: {pendingListings.loading ? "…" : pendingTotal}</span>
+                <div><h2>Hàng chờ duyệt Sitter &amp; dịch vụ</h2><p>Hồ sơ mới và đề xuất chỉnh sửa dịch vụ sẽ được duyệt tại đây.</p></div>
+                <span className={styles.queueCount}>Cần xử lý: {pendingListings.loading || pendingChanges.loading ? "…" : pendingReviewTotal}</span>
               </div>
               <div className={styles.listingQueue}>
                 {pendingListings.loading && <p className={styles.emptyState}>Đang tải hàng đợi duyệt…</p>}
@@ -239,9 +253,17 @@ function AdminConsole() {
                     {isAdmin && <div className={styles.rejectRow}><input aria-label={`Lý do từ chối ${listing.title}`} value={reasonByListing[listing.id] ?? ""} onChange={(event) => setReasonByListing((current) => ({ ...current, [listing.id]: event.target.value }))} placeholder="Ghi chú nếu cần yêu cầu bổ sung hoặc từ chối" maxLength={500} /><button disabled={!reasonByListing[listing.id]?.trim() || busyListing === listing.id} onClick={() => void reviewListing(listing, "reject")}>Yêu cầu bổ sung</button></div>}
                   </article>
                 ))}
-                {!pendingListings.loading && filteredListings.length === 0 && <p className={styles.emptyState}>{search ? "Không tìm thấy hồ sơ phù hợp." : "Hiện không có hồ sơ Sitter chờ duyệt."}</p>}
+                {!pendingChanges.loading && filteredChanges.map((change) => {
+                  return <ChangeRequestReviewCard
+                    key={`change-${change.id}`}
+                    change={change}
+                    isAdmin={isAdmin}
+                    refresh={() => { pendingChanges.reload(); pendingListings.reload(); }}
+                  />;
+                })}
+                {!pendingListings.loading && !pendingChanges.loading && filteredListings.length + filteredChanges.length === 0 && <p className={styles.emptyState}>{search ? "Không tìm thấy mục phù hợp." : "Hiện không có hồ sơ hoặc dịch vụ chờ duyệt."}</p>}
               </div>
-              <div className={styles.panelFooter}><span>Đang hiển thị {filteredListings.length} trong {pendingTotal} hồ sơ chờ duyệt</span><button type="button" onClick={() => pendingListings.reload()}>Làm mới hàng đợi <PettelIcon name="arrow" /></button></div>
+              <div className={styles.panelFooter}><span>Đang hiển thị {filteredListings.length + filteredChanges.length} trong {pendingReviewTotal} mục chờ duyệt</span><button type="button" onClick={() => { pendingListings.reload(); pendingChanges.reload(); }}>Làm mới hàng đợi <PettelIcon name="arrow" /></button></div>
             </section>
 
             <aside className={styles.panel}>
@@ -378,3 +400,4 @@ function formatDate(value?: string | null) {
   if (Number.isNaN(date.getTime())) return "—";
   return new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(date);
 }
+

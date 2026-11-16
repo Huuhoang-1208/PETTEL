@@ -10,6 +10,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BookingMessageController;
 use App\Http\Controllers\ServiceInquiryController;
 use App\Http\Controllers\OwnerProfileController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\BookingQueryController;
 use App\Http\Controllers\CancelBookingController;
 use App\Http\Controllers\CaregiverListingController;
@@ -52,6 +53,9 @@ Route::post('/user/roles/caregiver', EnableCaregiverRoleController::class)
     ->name('user.roles.caregiver');
 
 Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
     Route::get('/owner-profile', [OwnerProfileController::class, 'show']);
     Route::get('/owner-profile/bookings', [OwnerProfileController::class, 'bookings']);
     Route::patch('/owner-profile', [OwnerProfileController::class, 'update'])->middleware('throttle:20,1');

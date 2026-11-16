@@ -52,7 +52,7 @@ class CaregiverProfileRequest extends FormRequest
                     'DN_EAST',
                 ]),
             ],
-            'application_data_json' => ['sometimes', 'array:private_address,experience_species,care_skills,capacity,housing_type,space_type,amenities,space_media_ids,avatar_media_id,contact_phone,contact_email,safety_plan,kyc_front_media_id,kyc_back_media_id,certificate_media_id,agreements'],
+            'application_data_json' => ['sometimes', 'array:private_address,experience_species,care_skills,capacity,housing_type,space_type,amenities,space_media_ids,avatar_media_id,contact_phone,contact_email,safety_plan,kyc_front_media_id,kyc_back_media_id,certificate_media_id,agreements,experience_years,care_principles,pet_requirements'],
             'application_data_json.private_address' => ['sometimes', 'nullable', 'string', 'max:300'],
             'application_data_json.experience_species' => ['sometimes', 'array', 'list', 'max:6'],
             'application_data_json.experience_species.*' => ['string', Rule::in(['DOG_SMALL', 'DOG_MEDIUM', 'DOG_LARGE', 'CAT_SHORT_HAIR', 'CAT_LONG_HAIR', 'SMALL_PETS'])],
@@ -75,6 +75,19 @@ class CaregiverProfileRequest extends FormRequest
             'application_data_json.agreements' => ['sometimes', 'array:partner_terms,care_commitment'],
             'application_data_json.agreements.partner_terms' => ['sometimes', 'boolean'],
             'application_data_json.agreements.care_commitment' => ['sometimes', 'boolean'],
+            'application_data_json.experience_years' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:60'],
+            'application_data_json.care_principles' => ['sometimes', 'array', 'list', 'max:3'],
+            'application_data_json.care_principles.*' => ['required', 'array:title,description'],
+            'application_data_json.care_principles.*.title' => ['required', 'string', 'max:80'],
+            'application_data_json.care_principles.*.description' => ['required', 'string', 'max:300'],
+            'application_data_json.pet_requirements' => ['sometimes', 'array', 'list', 'max:5'],
+            'application_data_json.pet_requirements.*' => ['string', Rule::in([
+                'REQUIRE_VACCINATION',
+                'ACCEPTS_MEDICATION',
+                'ACCEPTS_SENIOR_OR_SHY',
+                'ACCEPTS_SPECIAL_DIET',
+                'ACCEPTS_POST_SURGERY',
+            ])],
         ];
     }
 

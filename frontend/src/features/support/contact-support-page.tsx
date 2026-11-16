@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { PettelIcon } from "@/components/ui/pettel-icon";
-import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import styles from "./contact-support-page.module.css";
 
@@ -117,7 +116,6 @@ export function ContactSupportPage() {
           </section>
         </div>
       </main>
-      <SiteFooter />
     </div>
   );
 }

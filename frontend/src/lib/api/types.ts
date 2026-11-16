@@ -45,6 +45,10 @@ export type Listing = {
     type: string;
     area_code: string;
     name: string | null;
+    bio?: string | null;
+    experience_years?: number | null;
+    care_principles?: { title: string; description: string }[];
+    pet_requirements?: string[];
     demo: {
       home_type: string | null;
       photo_file: string | null;
@@ -96,6 +100,16 @@ export type Page<T> = {
   meta?: { current_page: number; last_page: number; total: number };
   links?: { next: string | null };
 };
+
+export type NotificationItem = {
+  id: string;
+  type: string;
+  data: { type?: string; booking_id?: string; [key: string]: unknown };
+  read_at: string | null;
+  created_at: string;
+};
+
+export type NotificationPage = Page<NotificationItem> & { unread_count: number };
 
 export type CareUpdate = {
   id: string;

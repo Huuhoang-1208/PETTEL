@@ -570,6 +570,24 @@ button:disabled {
   color: #60718a;
   font-size: 14px;
 }
+.listing-pet-requirements {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.listing-pet-requirements li {
+  max-width: 100%;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #eff8f7;
+  color: #276a70;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
 .listing-care-principles {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -835,6 +853,7 @@ button:disabled {
 }
 .app-description {
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .app-bookings-grid {
   display: grid;

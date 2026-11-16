@@ -63,7 +63,7 @@ function statusTone(status: string) {
 }
 
 export function SitterManagementDashboard({ profile }: { profile: Profile }) {
-  const listings = useApi<Page<ManagedListing>>("/api/caregiver/listings?status=ALL&per_page=50", 60000);
+  const listings = useApi<Page<ManagedListing>>("/api/caregiver/listings?status=ALL&per_page=50", 15000);
   const bookings = useApi<Page<Booking>>("/api/bookings?per_page=50", 15000);
   const [actionError, setActionError] = useState<unknown>();
   const [busyBooking, setBusyBooking] = useState<string | null>(null);
@@ -76,8 +76,8 @@ export function SitterManagementDashboard({ profile }: { profile: Profile }) {
   );
   const sitterListings = listings.data?.data ?? [];
   const requested = sitterBookings.filter((booking) => booking.status === "REQUESTED");
-  const activeListings = sitterListings.filter((listing) => listing.status === "ACTIVE");
-  const pendingListings = sitterListings.filter((listing) => listing.status === "PENDING_REVIEW");
+  const activeListings = sitterListings.filter((listing) => listing.status === "ACTIVE" && !listing.pending_change_request_id);
+  const pendingListings = sitterListings.filter((listing) => listing.status === "PENDING_REVIEW" || !!listing.pending_change_request_id);
   const now = new Date();
   const today = dateKey(now);
   const weekLimit = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -232,7 +232,7 @@ export function SitterManagementDashboard({ profile }: { profile: Profile }) {
             <section className={styles.panel}>
               <div className={styles.panelHeading}><div><h2>Dịch vụ của tôi</h2><span>{activeListings.length} hoạt động · {pendingListings.length} chờ duyệt</span></div><button type="button" onClick={() => selectTab("services")}><PettelIcon name="plus" /> Thêm dịch vụ</button></div>
               <div className={styles.serviceSummary}>
-                {sitterListings.slice(0, 4).map((listing) => <article key={listing.id}><span><PettelIcon name={listing.service_type === "BOARDING" ? "home" : "calendar"} /></span><div><strong>{listing.title}</strong><small>{money(listing.price_vnd)} · {listing.price_unit === "NIGHT" ? "đêm" : "giờ"}</small></div><b className={`${styles.status} ${listing.status === "ACTIVE" ? styles.live : listing.status === "PENDING_REVIEW" ? styles.warning : styles.neutral}`}>{listing.status === "ACTIVE" ? "Đang hoạt động" : listing.status === "PENDING_REVIEW" ? "Chờ duyệt" : listing.status === "DRAFT" ? "Bản nháp" : listing.status}</b></article>)}
+                {sitterListings.slice(0, 4).map((listing) => { const pendingReview = listing.status === "PENDING_REVIEW" || !!listing.pending_change_request_id; return <article key={listing.id}><span><PettelIcon name={listing.service_type === "BOARDING" ? "home" : "calendar"} /></span><div><strong>{listing.title}</strong><small>{money(listing.price_vnd)} · {listing.price_unit === "NIGHT" ? "đêm" : "giờ"}</small></div><b className={`${styles.status} ${pendingReview ? styles.warning : listing.status === "ACTIVE" ? styles.live : styles.neutral}`}>{pendingReview ? "Chờ duyệt" : listing.status === "ACTIVE" ? "Đang hoạt động" : listing.status === "DRAFT" ? "Bản nháp" : listing.status}</b></article>; })}
                 {!listings.loading && sitterListings.length === 0 && <p className={styles.empty}>Bạn chưa tạo dịch vụ. Hãy thêm dịch vụ đầu tiên để bắt đầu nhận khách.</p>}
               </div>
             </section>

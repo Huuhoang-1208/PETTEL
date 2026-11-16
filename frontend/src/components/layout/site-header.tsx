@@ -4,8 +4,9 @@ import { ApiError } from "@/components/ui/api-error";
 import { PettelIcon } from "@/components/ui/pettel-icon";
 import { useApi } from "@/hooks/use-api";
 import { write } from "@/lib/api/request";
-import { type Booking, type Page } from "@/lib/api/types";
+import { type NotificationPage } from "@/lib/api/types";
 import { useSession } from "@/providers/session-provider";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
@@ -18,12 +19,8 @@ export function SiteHeader() {
   const [logoutError, setLogoutError] = useState<unknown>();
   const [loggingOut, setLoggingOut] = useState(false);
   const isCaregiver = user?.roles?.some((role) => role.role === "CAREGIVER") ?? false;
-  const bookings = useApi<Page<Booking>>(user ? "/api/bookings?per_page=20" : null, 60000);
-  const needsAttention = bookings.data?.data.some((booking) =>
-    booking.participant_role === "OWNER"
-      ? ["AWAITING_PAYMENT", "AWAITING_CONFIRMATION"].includes(booking.status)
-      : booking.status === "REQUESTED",
-  );
+  const notifications = useApi<NotificationPage>(user ? "/api/notifications?per_page=1" : null, 30000);
+  const hasUnreadNotifications = (notifications.data?.unread_count ?? 0) > 0;
   const links = [
     { href: "/", label: "Khám phá", active: pathname === "/" },
     {
@@ -65,10 +62,13 @@ export function SiteHeader() {
   return (
     <header className="pettel-header">
       <Link href="/" className="pettel-brand" aria-label="PETTEL — Trang chủ" onClick={closeMenus}>
-        <span className="pettel-brand-mark">
-          <PettelIcon name="paw" />
-        </span>
-        <span>PETTEL</span>
+        <Image
+          src="/pettel-logo.png"
+          width={1040}
+          height={280}
+          alt="PETTEL — Pet Care & Hotel Platform"
+          priority
+        />
       </Link>
       <nav className="pettel-nav" aria-label="Điều hướng chính">
         {links.map((link) => (
@@ -105,11 +105,14 @@ export function SiteHeader() {
             </Link>
             <Link
               className="pettel-icon-link pettel-bookings-link"
-              href="/bookings"
-              aria-label={needsAttention ? "Đơn chăm sóc có yêu cầu cần xử lý" : "Xem đơn chăm sóc"}
+              href="/notifications"
+              aria-label={hasUnreadNotifications ? "Xem thông báo chưa đọc" : "Xem thông báo"}
+              title="Thông báo"
+              aria-current={pathname === "/notifications" ? "page" : undefined}
+              onClick={closeMenus}
             >
               <PettelIcon name="bell" />
-              {needsAttention && <span className="pettel-attention-dot" />}
+              {hasUnreadNotifications && <span className="pettel-attention-dot" />}
             </Link>
           </>
         )}
@@ -135,7 +138,7 @@ export function SiteHeader() {
               <Link href="/owner-profile" onClick={closeMenus} aria-current={pathname === "/owner-profile" ? "page" : undefined}>
                 Hồ sơ chủ nuôi
               </Link>
-              <Link href="/bookings" onClick={closeMenus}>
+              <Link href="/owner-profile#history" onClick={closeMenus}>
                 Đơn chăm sóc của tôi
               </Link>
               <Link href="/pet-profile" onClick={closeMenus}>

@@ -14,8 +14,21 @@ import { type Listing } from "@/lib/api/types";
 import { sizes, species } from "@/lib/constants";
 
 export function ListingDetail({ listing }: { listing: Listing }) {
-  const introduction = listing.caregiver?.demo?.introduction ?? listing.description;
-  const principles = listing.caregiver?.demo?.care_principles ?? [];
+  const introduction = listing.caregiver?.demo?.introduction ?? listing.caregiver?.bio ?? listing.description;
+  const principles = listing.caregiver?.care_principles?.length
+    ? listing.caregiver.care_principles
+    : listing.caregiver?.demo?.care_principles ?? [];
+  const experienceYears = listing.caregiver?.experience_years ?? listing.caregiver?.demo?.experience_years;
+  const petRequirementLabels: Record<string, string> = {
+    REQUIRE_VACCINATION: "Chỉ nhận bé đã tiêm phòng đầy đủ",
+    ACCEPTS_MEDICATION: "Có thể chăm sóc bé cần uống thuốc",
+    ACCEPTS_SENIOR_OR_SHY: "Có thể nhận bé lớn tuổi hoặc nhút nhát",
+    ACCEPTS_SPECIAL_DIET: "Có thể theo chế độ ăn đặc biệt",
+    ACCEPTS_POST_SURGERY: "Có thể chăm sóc sau phẫu thuật theo hướng dẫn thú y",
+  };
+  const petRequirements = (listing.caregiver?.pet_requirements ?? [])
+    .map((requirement) => petRequirementLabels[requirement])
+    .filter(Boolean);
 
   return (
     <>
@@ -27,9 +40,9 @@ export function ListingDetail({ listing }: { listing: Listing }) {
           <section className="app-card listing-detail-panel">
             <h2>Về {listing.caregiver?.display_name ?? "người chăm sóc"} &amp; Triết lý chăm sóc</h2>
             <p className="app-description">{introduction}</p>
-            {listing.caregiver?.demo?.experience_years ? (
+            {experienceYears !== null && experienceYears !== undefined ? (
               <p className="listing-detail-experience">
-                Kinh nghiệm chăm sóc thú cưng: {listing.caregiver.demo.experience_years} năm
+                Kinh nghiệm chăm sóc thú cưng: {experienceYears} năm
               </p>
             ) : null}
             <h3>Thông tin chăm sóc</h3>
@@ -44,6 +57,14 @@ export function ListingDetail({ listing }: { listing: Listing }) {
                 Kích thước: {listing.acceptance_rules_json.sizes.map((value) => sizes[value]).join(" · ")}
               </p>
             </div>
+            {petRequirements.length > 0 && (
+              <>
+                <h3>Yêu cầu &amp; khả năng nhận thú cưng</h3>
+                <ul className="listing-pet-requirements">
+                  {petRequirements.map((requirement) => <li key={requirement}>{requirement}</li>)}
+                </ul>
+              </>
+            )}
             {principles.length > 0 && (
               <>
                 <h3>3 nguyên tắc chăm sóc</h3>

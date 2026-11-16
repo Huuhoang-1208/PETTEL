@@ -137,6 +137,63 @@
   font-size: 22px;
   cursor: pointer;
 }
+.header .close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid #d7deea;
+  font-family: Arial, sans-serif;
+  line-height: 1;
+  text-align: center;
+}
+.availabilityHint {
+  margin: -5px 0 0;
+  color: #718096;
+  font-size: 10px;
+  line-height: 1.45;
+}
+.availabilityMonthControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 2px 0 -4px;
+  color: #53647d;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+.availabilityMonthControls > div {
+  display: flex;
+  gap: 5px;
+}
+.availabilityMonthButton {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #f0f1ff;
+  color: #53647d;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.availabilityMonthButton:hover {
+  background: #e3e7ff;
+  color: #00858c;
+}
+.noAvailability {
+  margin: -5px 0 0;
+  padding: 9px 11px;
+  border: 1px solid #f0dfb8;
+  border-radius: 10px;
+  background: #fff9ec;
+  color: #86621e;
+  font-size: 11px;
+  line-height: 1.45;
+}
 .close:disabled {
   cursor: wait;
   opacity: 0.6;

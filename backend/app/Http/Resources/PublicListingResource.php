@@ -18,12 +18,19 @@ class PublicListingResource extends JsonResource
         $caregiver = $this->whenLoaded('caregiverProfile', function (): array {
             $profile = $this->caregiverProfile;
             $demo = $profile->demo_profile_json ?? [];
+            $application = $profile->application_data_json ?? [];
 
             return [
                 'display_name' => $profile->display_name,
+                'bio' => $profile->bio,
                 'type' => $profile->type,
                 'area_code' => $profile->area_code,
                 'name' => $profile->user?->name,
+                'experience_years' => isset($application['experience_years'])
+                    ? (int) $application['experience_years']
+                    : null,
+                'care_principles' => $application['care_principles'] ?? [],
+                'pet_requirements' => $application['pet_requirements'] ?? [],
                 'demo' => $demo === [] ? null : [
                     'home_type' => $demo['home_type'] ?? null,
                     'photo_file' => $demo['photo_file'] ?? null,

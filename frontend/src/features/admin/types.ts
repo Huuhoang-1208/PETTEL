@@ -7,4 +7,5 @@ export type Change = {
   listing_id: string;
   proposed_data_json: { data: Listing };
   status: string;
+  requested_at?: string | null;
 };

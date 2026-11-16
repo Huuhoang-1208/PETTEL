@@ -19,15 +19,25 @@ const filters: { id: Filter; label: string }[] = [
   { id: "DRAFT", label: "Bản nháp" },
 ];
 
+function isPendingReview(item: ManagedListing) {
+  return item.status === "PENDING_REVIEW" || !!item.pending_change_request_id;
+}
+
+function isActive(item: ManagedListing) {
+  return item.status === "ACTIVE" && !item.pending_change_request_id;
+}
+
 export function ListingManager({ includeAvailability = true }: { includeAvailability?: boolean }) {
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<Filter>("ALL");
-  const listings = useApi<Page<ManagedListing>>(`/api/caregiver/listings?status=ALL&page=${page}&per_page=50`);
+  const listings = useApi<Page<ManagedListing>>(`/api/caregiver/listings?status=ALL&page=${page}&per_page=50`, 15000);
   const [editing, setEditing] = useState<ManagedListing | null | undefined>();
   const items = listings.data?.data ?? [];
-  const visibleItems = useMemo(() => filter === "ALL" ? items : items.filter((item) => item.status === filter), [filter, items]);
-  const activeCount = items.filter((item) => item.status === "ACTIVE").length;
-  const pendingCount = items.filter((item) => item.status === "PENDING_REVIEW").length;
+  const visibleItems = useMemo(() => filter === "ALL" ? items : items.filter((item) =>
+    filter === "PENDING_REVIEW" ? isPendingReview(item) : filter === "ACTIVE" ? isActive(item) : item.status === filter,
+  ), [filter, items]);
+  const activeCount = items.filter(isActive).length;
+  const pendingCount = items.filter(isPendingReview).length;
   const draftCount = items.filter((item) => item.status === "DRAFT").length;
 
   return (
@@ -56,7 +66,7 @@ export function ListingManager({ includeAvailability = true }: { includeAvailabi
       </div>
 
       <nav className={styles.filters} aria-label="Lọc dịch vụ">
-        {filters.map((item) => <button type="button" key={item.id} className={filter === item.id ? styles.activeFilter : undefined} onClick={() => setFilter(item.id)}>{item.label}<b>{item.id === "ALL" ? items.length : items.filter((listing) => listing.status === item.id).length}</b></button>)}
+        {filters.map((item) => <button type="button" key={item.id} className={filter === item.id ? styles.activeFilter : undefined} onClick={() => setFilter(item.id)}>{item.label}<b>{item.id === "ALL" ? items.length : item.id === "PENDING_REVIEW" ? pendingCount : item.id === "ACTIVE" ? activeCount : items.filter((listing) => listing.status === item.id).length}</b></button>)}
       </nav>
 
       {listings.loading && <div className={styles.loading}><span /><p>Đang tải danh sách dịch vụ...</p></div>}

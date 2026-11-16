@@ -14,6 +14,13 @@ const emptyProfile: Profile = { display_name: "", bio: "", type: "INDIVIDUAL", a
 const speciesOptions = [["DOG_SMALL", "Chó nhỏ"], ["DOG_MEDIUM", "Chó vừa"], ["DOG_LARGE", "Chó lớn"], ["CAT_SHORT_HAIR", "Mèo lông ngắn"], ["CAT_LONG_HAIR", "Mèo lông dài"], ["SMALL_PETS", "Thú cưng nhỏ"]];
 const skillOptions = [["MEDICATION", "Cho uống thuốc / nhỏ mắt"], ["SENIOR_OR_SHY", "Pet già hoặc nhút nhát"], ["SPECIAL_DIET", "Chế độ ăn đặc biệt"], ["POST_SURGERY", "Chăm sóc sau phẫu thuật"]];
 const amenityOptions = [["BALCONY_NET", "Lưới an toàn ban công"], ["HEPA_FILTER", "Máy lọc không khí HEPA"], ["CAGE_FREE", "Không gian không lồng"], ["AIR_CONDITIONING", "Điều hòa"], ["SEPARATE_FOOD_STORAGE", "Bảo quản thức ăn riêng"], ["CAMERA", "Camera giám sát"]];
+const petRequirementOptions = [
+  ["REQUIRE_VACCINATION", "Chỉ nhận bé đã tiêm phòng đầy đủ"],
+  ["ACCEPTS_MEDICATION", "Có thể chăm sóc bé cần uống thuốc"],
+  ["ACCEPTS_SENIOR_OR_SHY", "Có thể nhận bé lớn tuổi hoặc nhút nhát"],
+  ["ACCEPTS_SPECIAL_DIET", "Có thể theo chế độ ăn đặc biệt"],
+  ["ACCEPTS_POST_SURGERY", "Có thể chăm sóc sau phẫu thuật theo hướng dẫn thú y"],
+];
 
 export function ProfileForm() {
   const profile = useApi<{ data: Profile }>("/api/caregiver/profile");
@@ -38,7 +45,8 @@ export function ProfileForm() {
     application.private_address?.trim(), application.contact_phone?.trim(), application.contact_email?.trim(),
     application.experience_species?.length, application.care_skills?.length, application.housing_type,
     application.amenities?.length, application.safety_plan?.trim(), application.kyc_front_media_id,
-    application.kyc_back_media_id,
+    application.kyc_back_media_id, application.experience_years !== null && application.experience_years !== undefined,
+    application.care_principles?.length,
   ];
   const percent = Math.round(completionItems.filter(Boolean).length / completionItems.length * 100);
   const displayName = draft.display_name.trim() || "Tên hồ sơ Sitter";
@@ -47,10 +55,23 @@ export function ProfileForm() {
   const avatarUrl = application.avatar_media_id
     ? `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}/api/caregiver/media/${application.avatar_media_id}/content`
     : null;
+  const savedContactEmail = value?.application_data_json?.contact_email?.trim().toLowerCase();
+  const currentContactEmail = application.contact_email?.trim().toLowerCase();
+  const contactEmailVerified = Boolean(
+    value?.contact_verification?.email_verified
+    && savedContactEmail
+    && currentContactEmail === savedContactEmail,
+  );
 
-  function toggleApplicationList(key: "experience_species" | "care_skills" | "amenities", item: string, checked: boolean) {
+  function toggleApplicationList(key: "experience_species" | "care_skills" | "amenities" | "pet_requirements", item: string, checked: boolean) {
     const current = application[key] ?? [];
     setApplication({ ...application, [key]: checked ? [...current, item] : current.filter((value) => value !== item) });
+  }
+
+  function updatePrinciple(index: number, key: "title" | "description", text: string) {
+    const principles = [...(application.care_principles ?? [])];
+    principles[index] = { ...principles[index], [key]: text };
+    setApplication({ ...application, care_principles: principles });
   }
 
   if (profile.loading) return <p className={styles.loading}>Đang tải hồ sơ Sitter...</p>;
@@ -154,19 +175,50 @@ export function ProfileForm() {
             <em>{(draft.bio ?? "").length}/2000 ký tự</em>
           </label>
 
+          <div className={styles.principlesSection}>
+            <div className={styles.principlesHeading}>
+              <div><strong>Nguyên tắc chăm sóc</strong><small>Chia sẻ tối đa 3 điều khách hàng có thể mong đợi khi gửi thú cưng cho bạn.</small></div>
+              <span>{application.care_principles?.length ?? 0}/3</span>
+            </div>
+            {(application.care_principles ?? []).map((principle, index) => (
+              <fieldset className={styles.principleCard} key={`principle-${index}`}>
+                <legend>Nguyên tắc {index + 1}</legend>
+                <button type="button" className={styles.removePrinciple} onClick={() => setApplication({ ...application, care_principles: application.care_principles?.filter((_, itemIndex) => itemIndex !== index) })}>Xóa</button>
+                <label className={styles.field}><span>Tiêu đề</span><input required maxLength={80} value={principle.title} onChange={(event) => updatePrinciple(index, "title", event.target.value)} placeholder="Ví dụ: Tôn trọng thói quen của bé" /></label>
+                <label className={styles.field}><span>Mô tả</span><textarea required maxLength={300} rows={3} value={principle.description} onChange={(event) => updatePrinciple(index, "description", event.target.value)} placeholder="Mô tả cách bạn áp dụng nguyên tắc này khi chăm sóc." /></label>
+              </fieldset>
+            ))}
+            {(application.care_principles?.length ?? 0) < 3 && <button type="button" className={styles.addPrinciple} onClick={() => setApplication({ ...application, care_principles: [...(application.care_principles ?? []), { title: "", description: "" }] })}>＋ Thêm nguyên tắc</button>}
+          </div>
+
           <section className={styles.detailSection}>
             <div className={styles.detailHeading}><span>02</span><div><h3>Thông tin bổ sung</h3><p>Thông tin riêng tư chỉ dùng để hoàn thiện hồ sơ đối tác.</p></div></div>
             <div className={styles.detailGrid}>
               <label className={styles.field}><span>Địa chỉ / tòa nhà <small>Riêng tư</small></span><input value={application.private_address ?? ""} onChange={(event) => setApplication({ ...application, private_address: event.target.value })} maxLength={300} placeholder="Địa chỉ nơi bạn nhận chăm sóc" /></label>
               <label className={styles.field}><span>Số điện thoại liên hệ</span><input value={application.contact_phone ?? ""} onChange={(event) => setApplication({ ...application, contact_phone: event.target.value })} type="tel" maxLength={24} placeholder="0905 123 456" /></label>
               <label className={styles.field}><span>Email nhận thông báo</span><input value={application.contact_email ?? ""} onChange={(event) => setApplication({ ...application, contact_email: event.target.value })} type="email" maxLength={255} placeholder="ban@example.com" /></label>
+              <label className={styles.field}><span>Số năm kinh nghiệm</span><input type="number" min={0} max={60} step={1} value={application.experience_years ?? ""} onChange={(event) => setApplication({ ...application, experience_years: event.target.value === "" ? null : Number(event.target.value) })} placeholder="Ví dụ: 3" /></label>
               <label className={styles.field}><span>Số thú cưng tối đa nhận cùng lúc</span><select value={application.capacity ?? "1"} onChange={(event) => setApplication({ ...application, capacity: event.target.value })}><option value="1">1 bé</option><option value="2">2 bé</option><option value="4">3–4 bé (có người phụ trợ)</option></select></label>
               <label className={styles.field}><span>Loại hình nhà ở</span><select value={application.housing_type ?? "APARTMENT"} onChange={(event) => setApplication({ ...application, housing_type: event.target.value })}><option value="APARTMENT">Chung cư cao tầng</option><option value="HOUSE">Nhà phố có sân</option><option value="VILLA">Biệt thự có rào kín</option></select></label>
               <label className={styles.field}><span>Không gian chăm sóc</span><select value={application.space_type ?? "INDOOR"} onChange={(event) => setApplication({ ...application, space_type: event.target.value })}><option value="INDOOR">Trong nhà</option><option value="INDOOR_YARD">Trong nhà và sân</option></select></label>
             </div>
 
+            <div className={styles.verificationGrid}>
+              <div className={styles.verificationItem}>
+                <strong>Email nhận thông báo</strong>
+                <span className={contactEmailVerified ? styles.verified : styles.notVerified}>{contactEmailVerified ? "Đã xác minh" : "Chưa xác minh"}</span>
+                <small>{contactEmailVerified ? "Email này trùng với email tài khoản PETTEL đã xác minh." : value?.contact_verification?.email_verification_available ? "Dùng email tài khoản PETTEL đã xác minh để nhận thông báo." : "Luồng xác nhận email tài khoản PETTEL chưa được tích hợp."}</small>
+              </div>
+              <div className={styles.verificationItem}>
+                <strong>Số điện thoại liên hệ</strong>
+                <span className={value?.contact_verification?.phone_verified ? styles.verified : styles.notVerified}>{value?.contact_verification?.phone_verified ? "Đã xác minh" : "Chưa xác minh"}</span>
+                <small>{value?.contact_verification?.phone_verification_available ? "Số điện thoại đã được xác minh với PETTEL." : "PETTEL chưa bật xác minh số điện thoại qua mã OTP."}</small>
+              </div>
+            </div>
+
             <fieldset className={styles.choiceField}><legend>Loài thú cưng bạn có kinh nghiệm</legend><div className={styles.choiceGrid}>{speciesOptions.map(([code, label]) => <label key={code}><input type="checkbox" checked={(application.experience_species ?? []).includes(code)} onChange={(event) => toggleApplicationList("experience_species", code, event.target.checked)} />{label}</label>)}</div></fieldset>
             <fieldset className={styles.choiceField}><legend>Kỹ năng chăm sóc đặc biệt</legend><div className={styles.choiceGrid}>{skillOptions.map(([code, label]) => <label key={code}><input type="checkbox" checked={(application.care_skills ?? []).includes(code)} onChange={(event) => toggleApplicationList("care_skills", code, event.target.checked)} />{label}</label>)}</div></fieldset>
+            <fieldset className={styles.choiceField}><legend>Yêu cầu &amp; khả năng nhận thú cưng</legend><div className={styles.choiceGrid}>{petRequirementOptions.map(([code, label]) => <label key={code}><input type="checkbox" checked={(application.pet_requirements ?? []).includes(code)} onChange={(event) => toggleApplicationList("pet_requirements", code, event.target.checked)} />{label}</label>)}</div></fieldset>
             <fieldset className={styles.choiceField}><legend>Tiện ích an toàn tại nơi chăm sóc</legend><div className={styles.choiceGrid}>{amenityOptions.map(([code, label]) => <label key={code}><input type="checkbox" checked={(application.amenities ?? []).includes(code)} onChange={(event) => toggleApplicationList("amenities", code, event.target.checked)} />{label}</label>)}</div></fieldset>
 
             <label className={styles.field}><span>Kế hoạch an toàn & xử lý tình huống khẩn cấp</span><textarea value={application.safety_plan ?? ""} onChange={(event) => setApplication({ ...application, safety_plan: event.target.value })} maxLength={1500} rows={4} placeholder="Các bước bạn sẽ thực hiện khi thú cưng có dấu hiệu bất thường..." /></label>
@@ -198,6 +250,7 @@ export function ProfileForm() {
             <p className={styles.location}><PettelIcon name="pin" /> {areaLabel}</p>
             <span className={styles.typeBadge}>{typeLabel}</span>
             <p className={styles.bio}>{draft.bio?.trim() || "Phần giới thiệu của bạn sẽ xuất hiện tại đây để khách hàng hiểu thêm về kinh nghiệm và cách bạn chăm sóc thú cưng."}</p>
+            {application.care_principles?.length ? <div className={styles.previewPrinciples}><strong>Nguyên tắc chăm sóc</strong>{application.care_principles.slice(0, 3).map((principle, index) => <p key={`${principle.title}-${index}`}>{principle.title}</p>)}</div> : null}
             <div className={styles.previewFoot}><PettelIcon name="shield" /> Thông tin hồ sơ được PETTEL quản lý</div>
           </div>
         </section>
@@ -209,7 +262,7 @@ export function ProfileForm() {
 
         <section className={styles.scope}>
           <h3>Hồ sơ này gồm</h3>
-          <ul><li><PettelIcon name="check" /> Tên hiển thị</li><li><PettelIcon name="check" /> Loại hình hoạt động</li><li><PettelIcon name="check" /> Khu vực chính</li><li><PettelIcon name="check" /> Giới thiệu & kinh nghiệm</li></ul>
+          <ul><li><PettelIcon name="check" /> Tên hiển thị</li><li><PettelIcon name="check" /> Loại hình hoạt động</li><li><PettelIcon name="check" /> Khu vực chính</li><li><PettelIcon name="check" /> Giới thiệu & kinh nghiệm</li><li><PettelIcon name="check" /> Nguyên tắc chăm sóc</li><li><PettelIcon name="check" /> Yêu cầu nhận thú cưng</li></ul>
           <p>Ảnh đại diện, dịch vụ và giấy tờ xác minh được quản lý ở các mục riêng.</p>
         </section>
       </aside>

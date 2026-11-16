@@ -582,6 +582,39 @@
   font-size: 11px;
   white-space: nowrap;
 }
+.historyItem button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #008a9d;
+  font-size: 11px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.historyItem button:hover {
+  text-decoration: underline;
+}
+.historyTabs {
+  display: flex;
+  gap: 7px;
+  margin: -8px 0 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #efedf7;
+}
+.historyTabs button {
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #f1f2ff;
+  color: #284b64;
+  font-size: 11px;
+  cursor: pointer;
+}
+.historyTabs .activeHistoryTab {
+  background: #e4f7f7;
+  color: #008a96;
+  font-weight: 700;
+}
 .settingsRow {
   display: flex;
   align-items: center;

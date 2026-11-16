@@ -40,7 +40,12 @@ class ServiceInquiryController extends Controller
             'body' => ['required', 'string', 'max:500', 'regex:/\S/u'],
             'request_key' => ['required', 'uuid'],
         ]);
-        $listing = Listing::query()->with('caregiverProfile.user')->where('status', 'ACTIVE')->findOrFail($data['listing_id']);
+        $listing = Listing::query()->with('caregiverProfile.user')->where('status', 'ACTIVE')
+            ->whereNotExists(fn (Builder $query) => $query->selectRaw('1')
+                ->from('listing_change_requests')
+                ->whereColumn('listing_change_requests.listing_id', 'listings.id')
+                ->where('listing_change_requests.status', 'PENDING_REVIEW'))
+            ->findOrFail($data['listing_id']);
         $profile = $listing->caregiverProfile;
         abort_unless($profile && $profile->user?->status === 'ACTIVE' && $profile->user->hasRole('CAREGIVER'), 404);
         abort_if((string) $profile->user_id === (string) $request->user()->id, 422, 'Bạn không thể nhắn tin cho chính mình.');

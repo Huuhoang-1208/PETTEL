@@ -12,6 +12,13 @@ class CaregiverProfileResource extends JsonResource
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
+        $user = $this->user;
+        $application = $this->application_data_json ?? [];
+        $contactEmail = is_string($application['contact_email'] ?? null)
+            ? strtolower(trim($application['contact_email']))
+            : '';
+        $accountEmail = strtolower((string) $user?->email);
+
         return [
             'id' => (string) $this->id,
             'type' => $this->type,
@@ -19,7 +26,16 @@ class CaregiverProfileResource extends JsonResource
             'bio' => $this->bio,
             'area_code' => $this->area_code,
             // This resource is only returned from the authenticated, owner-scoped caregiver API.
-            'application_data_json' => $this->application_data_json ?? [],
+            'application_data_json' => $application,
+            'contact_verification' => [
+                'email_verified' => $user?->email_verified_at !== null
+                    && $contactEmail !== ''
+                    && $contactEmail === $accountEmail,
+                'email_verification_available' => false,
+                // Phone OTP verification is not configured in this project yet.
+                'phone_verified' => false,
+                'phone_verification_available' => false,
+            ],
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { PettelIcon } from "@/components/ui/pettel-icon";
+import Link from "next/link";
 import styles from "./site-footer.module.css";
 
 const parentLinks = [
@@ -77,7 +77,7 @@ export function SiteFooter() {
         <span>© PETTEL Việt Nam. Đồng hành cùng bé cưng mỗi ngày.</span>
         <nav aria-label="Liên kết nhanh">
           <Link href="/services">Tìm dịch vụ</Link>
-          <Link href="/bookings">Hỗ trợ đơn đặt</Link>
+          <Link href="/owner-profile#history">Hỗ trợ đơn đặt</Link>
           <Link href="/caregiver">Trở thành Sitter</Link>
         </nav>
       </div>
@@ -102,7 +102,7 @@ function FooterLinkColumn({
               <Link href={link.href}>{link.label}</Link>
             ) : (
               <span>
-                {link.label} <small>Sắp ra mắt</small>
+                {link.label} 
               </span>
             )}
           </li>

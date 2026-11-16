@@ -12,6 +12,19 @@ import { statuses } from "@/lib/constants";
 import { dateTime, money } from "@/lib/format";
 import Link from "next/link";
 import { useRef, useState } from "react";
+import styles from "./booking-panel.module.css";
+
+const bookingStatusStyles: Record<string, string> = {
+  REQUESTED: styles.statusPending,
+  AWAITING_PAYMENT: styles.statusPending,
+  CONFIRMED: styles.statusConfirmed,
+  IN_PROGRESS: styles.statusActive,
+  AWAITING_CONFIRMATION: styles.statusPending,
+  COMPLETED: styles.statusCompleted,
+  CANCELLED: styles.statusClosed,
+  REJECTED: styles.statusClosed,
+  EXPIRED: styles.statusClosed,
+};
 
 export function BookingPanel({ id, onChange }: { id: string; onChange: () => void }) {
   const booking = useApi<{ data: Booking }>(`/api/bookings/${id}`, 15000);
@@ -64,36 +77,64 @@ export function BookingPanel({ id, onChange }: { id: string; onChange: () => voi
   const value = booking.data?.data;
   const owner = value?.participant_role === "OWNER";
   return (
-    <div className="app-card">
+    <article className={styles.panel}>
       {dialog}
       <ApiError error={booking.error ?? error} />
-      {booking.loading && <p>Đang cập nhật đơn...</p>}
+      {booking.loading && !value && (
+        <p className={styles.loading}>Đang tải thông tin đơn chăm sóc...</p>
+      )}
       {value && (
         <>
-          <h2>
-            Đơn #{value.id} · {value.listing_title}
-          </h2>
-          <p>
-            <strong>{statuses[value.status] ?? value.status}</strong>
-          </p>
-          <p>
-            {dateTime(value.start_at)} → {dateTime(value.end_at)}
-          </p>
-          <h3>{money(value.price_snapshot_vnd)}</h3>
+          <header className={styles.heading}>
+            <div>
+              <span className={styles.eyebrow}>CHI TIẾT ĐƠN CHĂM SÓC</span>
+              <h2>Đơn #{value.id}</h2>
+              <p>{value.listing_title || "Dịch vụ chăm sóc thú cưng"}</p>
+            </div>
+            <span className={`${styles.status} ${bookingStatusStyles[value.status] ?? ""}`}>
+              <span aria-hidden="true" />
+              {statuses[value.status] ?? value.status}
+            </span>
+          </header>
+
+          <section className={styles.summaryGrid} aria-label="Thông tin đơn chăm sóc">
+            <div className={styles.summaryItem}>
+              <span>Giờ gửi bé</span>
+              <strong>{dateTime(value.start_at)}</strong>
+            </div>
+            <div className={styles.summaryItem}>
+              <span>Giờ đón bé</span>
+              <strong>{dateTime(value.end_at)}</strong>
+            </div>
+            <div className={styles.summaryItem}>
+              <span>Thú cưng</span>
+              <strong>{value.pet_name || "Chưa có tên thú cưng"}</strong>
+            </div>
+            <div className={`${styles.summaryItem} ${styles.priceItem}`}>
+              <span>Tổng chi phí</span>
+              <strong>{money(value.price_snapshot_vnd)}</strong>
+            </div>
+          </section>
+
           {value.payment_due_at && value.status === "AWAITING_PAYMENT" && (
-            <p>Hạn thanh toán: {dateTime(value.payment_due_at)}</p>
+            <div className={styles.deadline}>
+              <strong>Hạn thanh toán</strong>
+              <span>{dateTime(value.payment_due_at)}</span>
+            </div>
           )}
-          <p role="status">{notice}</p>
-          <div className="app-actions">
-            <Link className="app-button" href={`/chat?booking=${id}`}>
+          {notice && <p className={styles.notice} role="status">{notice}</p>}
+
+          <div className={styles.actions}>
+            <Link className={styles.primaryAction} href={`/chat?booking=${id}`}>
               Mở chat của đơn
             </Link>
             {!owner && value.status === "REQUESTED" && (
               <>
-                <button disabled={busy} onClick={() => void action("accept")}>
+                <button className={styles.primaryAction} disabled={busy} onClick={() => void action("accept")}>
                   Nhận đơn
                 </button>
                 <button
+                  className={styles.dangerAction}
                   disabled={busy}
                   onClick={async () => {
                     if (await ask("Từ chối yêu cầu đặt lịch này?")) void action("reject");
@@ -104,22 +145,23 @@ export function BookingPanel({ id, onChange }: { id: string; onChange: () => voi
               </>
             )}
             {!owner && value.status === "CONFIRMED" && (
-              <button disabled={busy} onClick={() => void action("start")}>
+              <button className={styles.primaryAction} disabled={busy} onClick={() => void action("start")}>
                 Bắt đầu chăm sóc
               </button>
             )}
             {!owner && value.status === "IN_PROGRESS" && (
-              <button disabled={busy} onClick={() => void action("request-completion")}>
+              <button className={styles.primaryAction} disabled={busy} onClick={() => void action("request-completion")}>
                 Yêu cầu xác nhận hoàn thành
               </button>
             )}
             {owner && value.status === "AWAITING_PAYMENT" && (
-              <button disabled={busy} onClick={() => void pay()}>
+              <button className={styles.primaryAction} disabled={busy} onClick={() => void pay()}>
                 Thanh toán sandbox
               </button>
             )}
             {owner && value.status === "AWAITING_CONFIRMATION" && (
               <button
+                className={styles.primaryAction}
                 disabled={busy}
                 onClick={async () => {
                   if (await ask("Xác nhận đã nhận lại thú cưng và hoàn thành dịch vụ?"))
@@ -131,6 +173,7 @@ export function BookingPanel({ id, onChange }: { id: string; onChange: () => voi
             )}
             {["REQUESTED", "AWAITING_PAYMENT", "CONFIRMED"].includes(value.status) && (
               <button
+                className={styles.dangerAction}
                 disabled={busy}
                 onClick={async () => {
                   if (
@@ -145,16 +188,18 @@ export function BookingPanel({ id, onChange }: { id: string; onChange: () => voi
               </button>
             )}
           </div>
+
           {attempt?.is_sandbox && value.status === "AWAITING_PAYMENT" && (
-            <div className="app-notice">
+            <div className={styles.paymentNotice}>
               <h3>Thanh toán thử nghiệm</h3>
               <p>{money(attempt.amount_vnd)} · Không thu tiền thật.</p>
-              <div className="app-actions">
+              <div className={styles.actions}>
                 {[
                   ["SUCCESS", "Giả lập thành công"],
                   ["FAILURE", "Giả lập thất bại"],
                 ].map(([result, label]) => (
                   <button
+                    className={styles.secondaryAction}
                     key={result}
                     disabled={busy}
                     onClick={async () => {
@@ -173,11 +218,21 @@ export function BookingPanel({ id, onChange }: { id: string; onChange: () => voi
               </div>
             </div>
           )}
-          <CareFeed booking={value} />
-          {owner && value.status === "COMPLETED" && <ReviewForm id={id} />}
-          <ReportForm target={{ booking_id: id }} />
+
+          <div className={styles.sectionDivider} />
+          <section className={styles.detailSection}>
+            <CareFeed booking={value} />
+          </section>
+          {owner && value.status === "COMPLETED" && (
+            <section className={styles.detailSection}>
+              <ReviewForm id={id} />
+            </section>
+          )}
+          <div className={styles.reportSection}>
+            <ReportForm target={{ booking_id: id }} />
+          </div>
         </>
       )}
-    </div>
+    </article>
   );
 }

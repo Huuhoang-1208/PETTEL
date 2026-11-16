@@ -73,16 +73,18 @@ export function ManagedListingCard({
     SUSPENDED: "Tạm ngưng",
     ARCHIVED: "Đã lưu trữ",
   };
+  const displayedStatus = listing.pending_change_request_id ? "PENDING_REVIEW" : listing.status;
   const serviceLabel = services[listing.service_type as keyof typeof services] ?? listing.service_type;
-  const statusTone = listing.status === "ACTIVE" ? styles.statusActive : listing.status === "PENDING_REVIEW" ? styles.statusPending : listing.status === "SUSPENDED" ? styles.statusPaused : listing.status === "DRAFT" ? styles.statusDraft : styles.statusArchived;
+  const statusTone = displayedStatus === "ACTIVE" ? styles.statusActive : displayedStatus === "PENDING_REVIEW" ? styles.statusPending : displayedStatus === "SUSPENDED" ? styles.statusPaused : displayedStatus === "DRAFT" ? styles.statusDraft : styles.statusArchived;
   return (
     <article className={styles.serviceCard}>
       <header className={styles.cardTop}>
         <span className={styles.serviceIcon}><PettelIcon name={listing.service_type === "BOARDING" ? "home" : "calendar"} /></span>
         <div className={styles.serviceHeading}><span>{serviceLabel}</span><h3>{listing.title}</h3></div>
-        <span className={`${styles.statusBadge} ${statusTone}`}><i />{labels[listing.status ?? ""] ?? listing.status}</span>
+        <span className={`${styles.statusBadge} ${statusTone}`}><i />{labels[displayedStatus ?? ""] ?? displayedStatus}</span>
       </header>
       <p className={styles.description}>{listing.description}</p>
+      {listing.pending_change_request_id && <p className={styles.reviewNote}><PettelIcon name="clock" /><span><strong>Đề xuất chỉnh sửa đang chờ duyệt</strong>Dịch vụ tạm ẩn với khách hàng. Nội dung hiện tại sẽ được cập nhật sau khi PETTEL duyệt.</span></p>}
       <div className={styles.details}>
         <span><PettelIcon name="pin" /> {areas[listing.area_code as keyof typeof areas] ?? listing.area_code}</span>
         <span><PettelIcon name="paw" /> {(listing.acceptance_rules_json.species ?? []).map((item) => species[item as keyof typeof species] ?? item).join(", ") || "Chưa chọn loài"}</span>

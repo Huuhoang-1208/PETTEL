@@ -8,6 +8,12 @@ export type Profile = {
   type: string;
   area_code: string;
   application_data_json?: SitterApplicationData;
+  contact_verification?: {
+    email_verified: boolean;
+    email_verification_available: boolean;
+    phone_verified: boolean;
+    phone_verification_available: boolean;
+  };
 };
 
 export type SitterApplicationData = {
@@ -27,6 +33,9 @@ export type SitterApplicationData = {
   kyc_back_media_id?: number | null;
   certificate_media_id?: number | null;
   agreements?: { partner_terms?: boolean; care_commitment?: boolean };
+  experience_years?: number | null;
+  care_principles?: { title: string; description: string }[];
+  pet_requirements?: string[];
 };
 
 export type ManagedListing = Omit<Listing, "media"> & {

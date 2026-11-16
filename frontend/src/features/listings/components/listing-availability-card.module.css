@@ -74,6 +74,11 @@
   background: #f0f1ff;
 }
 
+.calendarArea {
+  display: grid;
+  gap: 10px;
+}
+
 .monthHeader {
   display: flex;
   align-items: center;
@@ -181,6 +186,65 @@
   font-weight: 750;
 }
 
+.availabilityDetails {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid #d9e9ed;
+  border-radius: 12px;
+  background: linear-gradient(110deg, #f0fbfb, #f7f8ff);
+}
+
+.detailsHeading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  color: #203148;
+  font-size: 12px;
+}
+
+.detailsHeading span {
+  color: #687991;
+  font-size: 11px;
+  text-align: right;
+}
+
+.timeSlotList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeSlotList li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid #cfe8e8;
+  border-radius: 9px;
+  background: #fff;
+  color: #007f88;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.timeSlotList svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+}
+
+.noTimeSlots {
+  margin: 0;
+  color: #687991;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
 .outsideDay {
   color: #a5b1c1;
   opacity: 0.7;
@@ -213,6 +277,14 @@
   .legend {
     justify-content: flex-start;
   }
+
+  .detailsHeading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .detailsHeading span { text-align: left; }
 
   .calendar {
     padding: 12px 9px;

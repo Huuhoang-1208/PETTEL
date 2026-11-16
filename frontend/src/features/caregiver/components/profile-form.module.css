@@ -22,6 +22,24 @@
 .field input:focus,.field select:focus,.field textarea:focus { border-color: #00a6b0; box-shadow: 0 0 0 3px #00a6b019; }
 .field input::placeholder,.field textarea::placeholder { color: #98a3b4; }
 .field em { align-self: flex-end; color: #8994a4; font-size: 10px; font-style: normal; font-weight: 450; }
+.principlesSection { display: grid; gap: 10px; padding: 14px; border: 1px solid #e5eaf3; border-radius: 12px; background: #fbfcff; }
+.principlesHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.principlesHeading > div { display: grid; gap: 3px; }
+.principlesHeading strong { color: #26384e; font-size: 13px; }
+.principlesHeading small { color: #79879a; font-size: 11px; font-weight: 450; }
+.principlesHeading > span { flex: 0 0 auto; color: #00828b; font-size: 11px; font-weight: 800; }
+.principleCard { position: relative; display: grid; gap: 10px; min-width: 0; margin: 0; padding: 13px; border: 1px solid #e5eaf3; border-radius: 10px; background: #fff; }
+.principleCard legend { padding: 0 5px; color: #31455d; font-size: 11px; font-weight: 800; }
+.removePrinciple { position: absolute; top: 6px; right: 10px; padding: 4px 7px; border: 0; border-radius: 7px; background: #fff0f0; color: #a04444; font: inherit; font-size: 10px; cursor: pointer; }
+.principleCard textarea { min-height: 76px; }
+.addPrinciple { justify-self: start; min-height: 36px; padding: 0 12px; border: 1px solid #cfe8e9; border-radius: 9px; background: #effafa; color: #007d86; font: inherit; font-size: 11px; font-weight: 750; cursor: pointer; }
+.verificationGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.verificationItem { display: grid; gap: 5px; min-width: 0; padding: 11px; border: 1px solid #e6eaf2; border-radius: 10px; background: #fff; }
+.verificationItem strong { color: #31445a; font-size: 11px; }
+.verificationItem > span { justify-self: start; padding: 3px 8px; border-radius: 99px; font-size: 10px; font-weight: 800; }
+.verified { background: #e8f7ee; color: #267447; }
+.notVerified { background: #fff3df; color: #946200; }
+.verificationItem small { color: #79879a; font-size: 10px; line-height: 1.45; }
 .field > span small { margin-left: 6px; padding: 3px 6px; border-radius: 99px; background: #fff1d8; color: #9a680c; font-size: 9px; font-weight: 700; }
 .detailSection { display: flex; flex-direction: column; gap: 16px; padding: 16px; border: 1px solid #e9ecf5; border-radius: 13px; background: #fcfcff; }
 .detailHeading { display: flex; align-items: center; gap: 10px; }
@@ -81,6 +99,9 @@
 .location svg { width: 13px; height: 13px; color: #00838b; }
 .typeBadge { display: inline-flex; padding: 5px 8px; border-radius: 99px; background: #f0f2ff; color: #536783; font-size: 10px; font-weight: 650; }
 .bio { min-height: 65px; margin: 12px 0; color: #687b91; font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
+.previewPrinciples { display: grid; gap: 5px; margin: 0 0 12px; }
+.previewPrinciples strong { color: #31445a; font-size: 10px; }
+.previewPrinciples p { margin: 0; padding: 6px 8px; border-radius: 7px; background: #f2f4ff; color: #53677f; font-size: 10px; }
 .previewFoot { display: flex; align-items: center; gap: 6px; padding-top: 10px; border-top: 1px solid #edf0f5; color: #718097; font-size: 10px; }
 .previewFoot svg { width: 14px; height: 14px; color: #00838b; }
 .tip { display: flex; align-items: flex-start; gap: 10px; padding: 14px; background: #fffaf0; border-color: #f5e8c9; }
@@ -95,4 +116,4 @@
 .scope p { margin: 0; padding-top: 9px; border-top: 1px solid #edf0f5; color: #8691a0; font-size: 10px; line-height: 1.5; }
 @media (max-width: 1050px) { .layout { grid-template-columns: minmax(0,1fr) minmax(245px,.72fr); gap: 11px; } .editor { padding: 16px; } }
 @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } .side { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); } .preview { grid-row: span 2; } }
-@media (max-width: 560px) { .editor { padding: 14px; } .editorHeader { align-items: flex-start; } .editorHeader h2 { font-size: 18px; } .editorHeader p { font-size: 12px; } .required { display: none; } .typeOptions,.detailGrid,.choiceGrid,.uploadGrid { grid-template-columns: 1fr; } .actions { align-items: stretch; flex-direction: column; } .actions button { width: 100%; } .side { display: flex; } }
+@media (max-width: 560px) { .editor { padding: 14px; } .editorHeader { align-items: flex-start; } .editorHeader h2 { font-size: 18px; } .editorHeader p { font-size: 12px; } .required { display: none; } .typeOptions,.detailGrid,.choiceGrid,.uploadGrid,.verificationGrid { grid-template-columns: 1fr; } .actions { align-items: stretch; flex-direction: column; } .actions button { width: 100%; } .side { display: flex; } }

@@ -1,9 +1,5 @@
-import { BookingsPage } from "@/features/bookings/bookings-page";
-import { Suspense } from "react";
+import { redirect } from "next/navigation";
+
 export default function Page() {
-  return (
-    <Suspense fallback={<p>Đang tải...</p>}>
-      <BookingsPage />
-    </Suspense>
-  );
+  redirect("/");
 }

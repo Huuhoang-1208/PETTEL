@@ -3,6 +3,7 @@
 import { ApiError } from "@/components/ui/api-error";
 import { PettelIcon, type PettelIconName } from "@/components/ui/pettel-icon";
 import { PetEditor } from "@/features/pets/components/pet-editor";
+import { BookingPanel } from "@/features/bookings/components/booking-panel";
 import { useApi } from "@/hooks/use-api";
 import { write } from "@/lib/api/request";
 import type { Booking, Page, Pet } from "@/lib/api/types";
@@ -10,7 +11,7 @@ import { statuses } from "@/lib/constants";
 import { dateTime, money } from "@/lib/format";
 import { useSession } from "@/providers/session-provider";
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import type { OwnerProfile } from "../types";
 import { OwnerEditor } from "./owner-editor";
 import { OwnerSidebar } from "./owner-sidebar";
@@ -30,6 +31,7 @@ export function OwnerDashboard() {
   const profileResource = useApi<{ data: OwnerProfile }>("/api/owner-profile");
   const [petPage, setPetPage] = useState(1);
   const [bookingPage, setBookingPage] = useState(1);
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   const petsResource = useApi<Page<Pet>>(`/api/pets?page=${petPage}`);
   const bookingsResource = useApi<Page<Booking>>(`/api/owner-profile/bookings?page=${bookingPage}`);
   const profile = profileResource.data?.data;
@@ -41,6 +43,37 @@ export function OwnerDashboard() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>();
   const [notice, setNotice] = useState("");
+  useEffect(() => {
+    const syncTabFromHash = () => {
+      const requestedTab = window.location.hash.slice(1);
+      const validTab = tabs.some((item) => item.id === requestedTab);
+      setTab(validTab ? requestedTab : "general");
+      if (!validTab) {
+        window.history.replaceState(
+          window.history.state,
+          "",
+          `${window.location.pathname}${window.location.search}#general`,
+        );
+      }
+    };
+    syncTabFromHash();
+    window.addEventListener("hashchange", syncTabFromHash);
+    window.addEventListener("popstate", syncTabFromHash);
+    return () => {
+      window.removeEventListener("hashchange", syncTabFromHash);
+      window.removeEventListener("popstate", syncTabFromHash);
+    };
+  }, []);
+  function selectTab(id: string) {
+    setTab(id);
+    if (window.location.hash !== `#${id}`) {
+      window.history.pushState(
+        window.history.state,
+        "",
+        `${window.location.pathname}${window.location.search}#${id}`,
+      );
+    }
+  }
   function openEditor() { setError(undefined); setEditingProfile(true); }
   function openPetEditor(pet: Pet | null) { setError(undefined); setEditingPet(pet); }
 
@@ -101,7 +134,7 @@ export function OwnerDashboard() {
         <EmergencyContactCard profile={profile} onUpdated={profileResource.reload} />
       </div>
       <div className={styles.mainColumn}>
-        <div className={styles.tabs} role="tablist" aria-label="Các mục hồ sơ">{tabs.map((item) => <button key={item.id} id={`owner-tab-${item.id}`} role="tab" type="button" aria-selected={tab === item.id} aria-controls="owner-tab-panel" className={tab === item.id ? styles.activeTab : ""} onClick={() => setTab(item.id)}><PettelIcon name={item.icon} />{item.label}{item.id === "history" && profile ? ` (${profile.stats.booking_count})` : ""}</button>)}</div>
+        <div className={styles.tabs} role="tablist" aria-label="Các mục hồ sơ">{tabs.map((item) => <button key={item.id} id={`owner-tab-${item.id}`} role="tab" type="button" aria-selected={tab === item.id} aria-controls="owner-tab-panel" className={tab === item.id ? styles.activeTab : ""} onClick={() => selectTab(item.id)}><PettelIcon name={item.icon} />{item.label}{item.id === "history" && profile ? ` (${profile.stats.booking_count})` : ""}</button>)}</div>
         <section id="owner-tab-panel" role="tabpanel" aria-labelledby={`owner-tab-${tab}`} className={styles.panel}>
           {tab === "general" && <>
             <header className={styles.panelHeading}><span className={styles.sectionIcon}><PettelIcon name="paw" /></span><div><h2>Thú cưng đang nuôi{profile && ` (${profile.stats.pet_count} bé)`}</h2><p>Hồ sơ sức khỏe, thói quen sinh hoạt và lịch chăm sóc của bé</p></div><button className={styles.smallButton} onClick={() => openPetEditor(null)}><PettelIcon name="plus" />Thêm thú cưng mới</button></header>
@@ -111,7 +144,83 @@ export function OwnerDashboard() {
             {!petsResource.loading && !pets.length && <div className={styles.empty}><PettelIcon name="paw" /><h3>Thêm thành viên nhỏ của gia đình</h3><p>Tạo hồ sơ để tìm Sitter phù hợp và chia sẻ những điều đặc biệt của bé.</p><button className={styles.primaryButton} onClick={() => openPetEditor(null)}>Thêm thú cưng</button></div>}
             {(petsResource.data?.meta?.last_page ?? 1) > 1 && <div className={styles.pager}><button disabled={petPage === 1} onClick={() => setPetPage(petPage - 1)}>Trước</button><span>Trang {petPage}</span><button disabled={petPage >= (petsResource.data?.meta?.last_page ?? 1)} onClick={() => setPetPage(petPage + 1)}>Sau</button></div>}
           </>}
-          {tab === "history" && <><header className={styles.panelHeading}><span className={styles.sectionIcon}><PettelIcon name="calendar" /></span><div><h2>Lịch sử đặt chăm sóc</h2><p>Theo dõi từng lần gửi gắm bé yêu cùng PETTEL</p></div></header><ApiError error={bookingsResource.error} />{bookingsResource.loading && <p className={styles.empty}>Đang tải lịch sử...</p>}{bookings.map((booking) => <article className={styles.historyItem} key={booking.id}><div><h3>{booking.listing_title || `Đơn #${booking.id}`}</h3><p>{booking.pet_name} • {dateTime(booking.start_at)}</p><span>{statuses[booking.status] ?? booking.status}</span></div><div><strong>{money(booking.price_snapshot_vnd)}</strong><Link href={`/bookings?open=${booking.id}`}>Xem chi tiết →</Link></div></article>)}{!bookingsResource.loading && !bookings.length && <p className={styles.empty}>Bạn chưa có đơn chăm sóc nào. <Link href="/services">Tìm Sitter phù hợp →</Link></p>}{(bookingsResource.data?.meta?.last_page ?? 1) > 1 && <div className={styles.pager}><button disabled={bookingPage === 1} onClick={() => setBookingPage(bookingPage - 1)}>Trước</button><span>Trang {bookingPage}</span><button disabled={bookingPage >= (bookingsResource.data?.meta?.last_page ?? 1)} onClick={() => setBookingPage(bookingPage + 1)}>Sau</button></div>}</>}
+          {tab === "history" && <>
+            <header className={styles.panelHeading}>
+              <span className={styles.sectionIcon}><PettelIcon name="calendar" /></span>
+              <div>
+                <h2>Lịch sử đặt chăm sóc</h2>
+                <p>Theo dõi từng lần gửi gắm bé yêu cùng PETTEL</p>
+              </div>
+            </header>
+            {selectedBookingId && (
+              <div className={styles.historyTabs} role="tablist" aria-label="Chi tiết đơn chăm sóc">
+                <button
+                  id="owner-history-list-tab"
+                  role="tab"
+                  type="button"
+                  aria-selected="false"
+                  onClick={() => setSelectedBookingId(null)}
+                >
+                  ← Danh sách đơn
+                </button>
+                <button
+                  id="owner-history-detail-tab"
+                  role="tab"
+                  type="button"
+                  aria-selected="true"
+                  className={styles.activeHistoryTab}
+                >
+                  Chi tiết đơn #{selectedBookingId}
+                </button>
+              </div>
+            )}
+            {selectedBookingId ? (
+              <div role="tabpanel" aria-labelledby="owner-history-detail-tab">
+                <BookingPanel
+                  key={selectedBookingId}
+                  id={selectedBookingId}
+                  onChange={bookingsResource.reload}
+                />
+              </div>
+            ) : (
+              <>
+                <ApiError error={bookingsResource.error} />
+                {bookingsResource.loading && <p className={styles.empty}>Đang tải lịch sử...</p>}
+                {bookings.map((booking) => (
+                  <article className={styles.historyItem} key={booking.id}>
+                    <div>
+                      <h3>{booking.listing_title || `Đơn #${booking.id}`}</h3>
+                      <p>{booking.pet_name} • {dateTime(booking.start_at)}</p>
+                      <span>{statuses[booking.status] ?? booking.status}</span>
+                    </div>
+                    <div>
+                      <strong>{money(booking.price_snapshot_vnd)}</strong>
+                      <button type="button" onClick={() => setSelectedBookingId(String(booking.id))}>
+                        Xem chi tiết →
+                      </button>
+                    </div>
+                  </article>
+                ))}
+                {!bookingsResource.loading && !bookings.length && (
+                  <p className={styles.empty}>
+                    Bạn chưa có đơn chăm sóc nào. <Link href="/services">Tìm Sitter phù hợp →</Link>
+                  </p>
+                )}
+                {(bookingsResource.data?.meta?.last_page ?? 1) > 1 && (
+                  <div className={styles.pager}>
+                    <button disabled={bookingPage === 1} onClick={() => setBookingPage(bookingPage - 1)}>Trước</button>
+                    <span>Trang {bookingPage}</span>
+                    <button
+                      disabled={bookingPage >= (bookingsResource.data?.meta?.last_page ?? 1)}
+                      onClick={() => setBookingPage(bookingPage + 1)}
+                    >
+                      Sau
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </>}
           {tab === "reviews" && <><header className={styles.panelHeading}><span className={styles.sectionIcon}><PettelIcon name="star" /></span><div><h2>Đánh giá từ Pet Sitter</h2><p>Những chia sẻ từ người chăm về hành trình đồng hành cùng bé</p></div></header><div className={styles.empty}><PettelIcon name="heart" /><h3>Chưa có đánh giá từ Sitter</h3><p>Hiện chưa có dữ liệu đánh giá chủ nuôi để hiển thị trong hồ sơ.</p><Link className={styles.secondaryButton} href="/chat">Trao đổi với người chăm</Link></div></>}
           {tab === "settings" && <><header className={styles.panelHeading}><span className={styles.sectionIcon}><PettelIcon name="sliders" /></span><div><h2>Cài đặt hồ sơ</h2><p>Thông tin liên hệ và quyền riêng tư của bạn</p></div></header><div className={styles.settingsRow}><div><h3>Thông tin cá nhân</h3><p>{profile?.name} • {profile?.email}</p></div><button className={styles.secondaryButton} disabled={!profile} onClick={openEditor}>Chỉnh sửa</button></div><div className={styles.settingsRow}><div><h3>Quyền riêng tư</h3><p>Hồ sơ này chỉ hiển thị trong tài khoản của bạn. Khi chia sẻ, chỉ nội dung giới thiệu được gửi, không bao gồm email và số điện thoại.</p></div><PettelIcon name="shield" /></div><Link className={styles.smallButton} href="/pet-profile">Quản lý đầy đủ hồ sơ thú cưng →</Link></>}
         </section>
