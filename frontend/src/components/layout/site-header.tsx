@@ -17,6 +17,7 @@ export function SiteHeader() {
   const mobileMenu = useRef<HTMLDetailsElement>(null);
   const [logoutError, setLogoutError] = useState<unknown>();
   const [loggingOut, setLoggingOut] = useState(false);
+  const isCaregiver = user?.roles?.some((role) => role.role === "CAREGIVER") ?? false;
   const bookings = useApi<Page<Booking>>(user ? "/api/bookings?per_page=20" : null, 60000);
   const needsAttention = bookings.data?.data.some((booking) =>
     booking.participant_role === "OWNER"
@@ -31,9 +32,9 @@ export function SiteHeader() {
       active: pathname === "/services" || pathname === "/detail",
     },
     {
-      href: "/caregiver",
+      href: isCaregiver ? "/caregiver/manage" : "/caregiver",
       label: "Trở thành Sitter",
-      active: pathname === "/caregiver",
+      active: pathname === "/caregiver" || pathname.startsWith("/caregiver/manage"),
     },
     { href: "/about", label: "Về PETTEL", active: pathname === "/about" },
     {
@@ -140,9 +141,15 @@ export function SiteHeader() {
               <Link href="/pet-profile" onClick={closeMenus}>
                 Hồ sơ thú cưng
               </Link>
-              <Link href="/caregiver" onClick={closeMenus}>
-                Khu vực người chăm
-              </Link>
+              {isCaregiver ? (
+                <Link href="/caregiver/manage" onClick={closeMenus} aria-current={pathname.startsWith("/caregiver/manage") ? "page" : undefined}>
+                  Quản lý Sitter
+                </Link>
+              ) : (
+                <Link href="/caregiver" onClick={closeMenus}>
+                  Khu vực người chăm
+                </Link>
+              )}
               {user.roles?.some((role) => role.role === "ADMIN") && (
                 <Link href="/admin" onClick={closeMenus}>
                   Quản trị dịch vụ

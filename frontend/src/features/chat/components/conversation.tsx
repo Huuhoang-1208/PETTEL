@@ -29,6 +29,7 @@ export function Conversation({ id, kind = "bookings" }: { id: string; kind?: Cha
   const [busy, setBusy] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [draft, setDraft] = useState("");
+  const [optimisticMessage, setOptimisticMessage] = useState<Message | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [emojisOpen, setEmojisOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -38,26 +39,37 @@ export function Conversation({ id, kind = "bookings" }: { id: string; kind?: Cha
   const composer = useRef<HTMLTextAreaElement>(null);
   const nearBottom = useRef(true);
   const merged = Array.from(new Map([...older, ...messages].map((message) => [message.id, message])).values()).sort((a, b) => a.created_at.localeCompare(b.created_at) || (BigInt(a.id) < BigInt(b.id) ? -1 : 1));
+  const visibleMessages = optimisticMessage ? [...merged, optimisticMessage] : merged;
   const lastId = messages[messages.length - 1]?.id;
   const context = contextFor(record, merged);
   const sitter = record?.sitter_name ?? listing.data?.data.caregiver?.display_name ?? record?.listing_title ?? "Người chăm thú cưng";
   const avatar = listingPhoto(listing.data?.data, true);
-  useEffect(() => { if (feed.current && nearBottom.current) feed.current.scrollTop = feed.current.scrollHeight; }, [lastId]);
+  useEffect(() => { if (feed.current && nearBottom.current) feed.current.scrollTop = feed.current.scrollHeight; }, [lastId, optimisticMessage?.id]);
   function updateDraft(value: string) { setDraft(value); sendKey.current = crypto.randomUUID(); }
   function appendDraft(value: string) { updateDraft(`${draft}${draft ? "\n" : ""}${value}`.slice(0, 2000)); composer.current?.focus(); }
   async function send() {
     if ((!draft.trim() && files.length === 0) || busy) return;
     const data = new FormData();
-    if (draft.trim()) data.set("body", draft.trim());
+    const body = draft.trim();
+    if (body) data.set("body", body);
     files.forEach((file) => data.append("attachments[]", file));
     setBusy(true); setError(undefined);
+    const pending = body ? {
+      id: `pending-${crypto.randomUUID()}`,
+      sender_id: String(user?.id ?? ""),
+      body,
+      created_at: new Date().toISOString(),
+      attachments: [],
+      context: null,
+    } satisfies Message : null;
+    setOptimisticMessage(pending);
     try {
       await write("post", `/api/${kind}/${id}/messages`, kind === "inquiries" ? { body: draft.trim(), request_key: sendKey.current } : data);
       sendKey.current = crypto.randomUUID(); setDraft(""); setFiles([]); setEmojisOpen(false);
       if (picker.current) picker.current.value = "";
       nearBottom.current = true;
       await refresh();
-    } catch (failure) { setError(failure); } finally { setBusy(false); }
+    } catch (failure) { setError(failure); } finally { setOptimisticMessage(null); setBusy(false); }
   }
   const cursor = olderNext === undefined ? nextPage : olderNext;
   async function loadOlder() {
@@ -85,10 +97,10 @@ export function Conversation({ id, kind = "bookings" }: { id: string; kind?: Cha
       <div className={styles.feed} ref={feed} role="log" aria-live="polite" onScroll={() => { if (feed.current) nearBottom.current = feed.current.scrollHeight - feed.current.scrollTop - feed.current.clientHeight < 100; }}>
         {cursor && <button className={styles.loadOlder} disabled={loadingOlder} onClick={() => void loadOlder()}>{loadingOlder ? "Đang tải..." : "Xem tin nhắn trước"}</button>}
         {(record || context) && <CareOverview record={record} context={context} listing={listing.data?.data} compact />}
-        {merged.map((message, index) => {
+        {visibleMessages.map((message, index) => {
           const mine = String(message.sender_id) === String(user?.id);
           const day = new Date(message.created_at).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", day: "numeric", month: "long", year: "numeric" });
-          const previousDay = index ? new Date(merged[index - 1].created_at).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", day: "numeric", month: "long", year: "numeric" }) : null;
+          const previousDay = index ? new Date(visibleMessages[index - 1].created_at).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", day: "numeric", month: "long", year: "numeric" }) : null;
           return <div key={message.id}>
             {previousDay !== day && <div className={styles.dayDivider}><span>{day}</span></div>}
             <article className={`${styles.message} ${mine ? styles.mine : styles.theirs}`}>
@@ -97,7 +109,7 @@ export function Conversation({ id, kind = "bookings" }: { id: string; kind?: Cha
                 {message.body && <p>{message.body}</p>}
                 {message.context?.pet_name && <div className={styles.petContext}><PettelIcon name="paw" /><div><strong>Hồ sơ: {message.context.pet_name}</strong><span>{message.context.pet_breed || "Thông tin bé cưng"}{message.context.pet_weight_kg ? ` · ${Number(message.context.pet_weight_kg)}kg` : ""}</span></div></div>}
                 {message.attachments?.map((attachment) => <a key={attachment.id} href={apiUrl(attachment.url)} target="_blank" rel="noopener noreferrer"><img className={styles.messagePhoto} src={apiUrl(attachment.url)} alt="Ảnh gửi trong cuộc trò chuyện" /></a>)}
-              </div><time className={styles.messageTime} dateTime={message.created_at}>{new Date(message.created_at).toLocaleTimeString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit" })}{mine && <PettelIcon name="check" />}</time></div>
+              </div><time className={styles.messageTime} dateTime={message.created_at}>{message.id.startsWith("pending-") ? "Đang gửi…" : new Date(message.created_at).toLocaleTimeString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit" })}{mine && <PettelIcon name="check" />}</time></div>
             </article>
           </div>;
         })}

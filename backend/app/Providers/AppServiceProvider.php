@@ -57,6 +57,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        ResetPassword::createUrlUsing(function (CanResetPassword $user, string $token): string {
+            $query = http_build_query([
+                'token' => $token,
+                'email' => $user->getEmailForPasswordReset(),
+            ]);
+
+            return rtrim(config('app.frontend_url'), '/')
+                . '/reset-password?'
+                . $query;
+        });
+
         $this->app->booted(function (): void {
             Scramble::afterOpenApiGenerated(function (OpenApi $openApi): void {
                 $excludedRequestProperties = [

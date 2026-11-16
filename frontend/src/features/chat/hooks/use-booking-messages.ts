@@ -18,6 +18,7 @@ export function useBookingMessages(bookingId: string, kind: "bookings" | "inquir
     let active = true;
     let requestVersion = 0;
     let disconnect = () => {};
+    let realtimeConnected = false;
 
     const reportError = (failure: unknown) => {
       if (active) {
@@ -74,21 +75,36 @@ export function useBookingMessages(bookingId: string, kind: "bookings" | "inquir
       });
 
       disconnect = () => echo.disconnect();
+      const connection = (echo.connector as unknown as {
+        pusher: { connection: { bind: (event: string, callback: () => void) => void } };
+      }).pusher.connection;
+      connection.bind("connected", () => {
+        realtimeConnected = true;
+        void refreshMessages();
+      });
+      connection.bind("disconnected", () => { realtimeConnected = false; });
+      connection.bind("unavailable", () => { realtimeConnected = false; });
 
       echo
-        .private(`bookings.${bookingId}`)
-        .subscribed(() => void refreshMessages())
-        .listen(".booking.message.sent", () => void refreshMessages())
-        .error(() => void refreshMessages());
+        .private(`${kind}.${bookingId}`)
+        .subscribed(() => {
+          realtimeConnected = true;
+          void refreshMessages();
+        })
+        .listen(kind === "bookings" ? ".booking.message.sent" : ".inquiry.message.sent", () => void refreshMessages())
+        .error(() => {
+          realtimeConnected = false;
+          void refreshMessages();
+        });
     }
 
     refreshRef.current = refreshMessages;
     void refreshMessages();
-    // Polling preserves delivery if the socket is temporarily unavailable.
+    // Poll only as a fallback; a healthy Reverb subscription delivers new messages immediately.
     const timer = window.setInterval(() => {
-      if (!document.hidden) void refreshMessages();
+      if (!document.hidden && !realtimeConnected) void refreshMessages();
     }, 5000);
-    if (kind === "bookings" && process.env.NEXT_PUBLIC_REVERB_APP_KEY) void connect().catch(() => {});
+    if (process.env.NEXT_PUBLIC_REVERB_APP_KEY) void connect().catch(() => {});
 
     return () => {
       active = false;

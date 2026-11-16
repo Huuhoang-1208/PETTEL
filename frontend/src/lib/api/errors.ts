@@ -10,6 +10,13 @@ export function errorText(error: unknown) {
     if (status === 419) return "Phiên làm việc đã hết hạn. Vui lòng thử lại.";
     if (!error.response) return "Không kết nối được máy chủ. Vui lòng thử lại.";
     const body = error.response.data;
+    const message = body?.error?.message ?? body?.message;
+    if (
+      typeof message === "string" &&
+      ["these credentials do not match our records.", "the provided credentials are incorrect."].includes(message.trim().toLowerCase())
+    ) {
+      return "Email hoặc mật khẩu chưa đúng. Bạn hãy kiểm tra lại thông tin. Nếu chưa có tài khoản PETTEL, chọn “Đăng ký tài khoản” để tạo mới.";
+    }
     const details = body?.errors ?? body?.error?.details;
     const lines =
       details && typeof details === "object"

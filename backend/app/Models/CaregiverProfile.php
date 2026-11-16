@@ -17,6 +17,7 @@ class CaregiverProfile extends Model
         'bio',
         'demo_profile_json',
         'area_code',
+        'application_data_json',
     ];
 
     /** @return BelongsTo<User, $this> */
@@ -34,6 +35,9 @@ class CaregiverProfile extends Model
     /** @return array{demo_profile_json: 'array'} */
     protected function casts(): array
     {
-        return ['demo_profile_json' => 'array'];
+        return [
+            'demo_profile_json' => 'array',
+            'application_data_json' => 'array',
+        ];
     }
 }

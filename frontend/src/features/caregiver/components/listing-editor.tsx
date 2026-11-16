@@ -1,6 +1,7 @@
 "use client";
 
 import { ApiError } from "@/components/ui/api-error";
+import { PettelIcon } from "@/components/ui/pettel-icon";
 import { ManagedListing } from "@/features/caregiver/types";
 import { write } from "@/lib/api/request";
 import { areas, services, sizes, species } from "@/lib/constants";
@@ -10,10 +11,12 @@ export function ListingEditor({
   listing,
   onSave,
   onClose,
+  styles,
 }: {
   listing: ManagedListing | null;
   onSave: () => void;
   onClose: () => void;
+  styles: Record<string, string>;
 }) {
   const [error, setError] = useState<unknown>();
   const [busy, setBusy] = useState(false);
@@ -58,11 +61,14 @@ export function ListingEditor({
   }
   return (
     <>
-      <h2>{live ? "Gửi đề xuất chỉnh sửa" : listing ? "Chỉnh sửa bản nháp" : "Tạo dịch vụ"}</h2>
+      <header className={styles.editorHeader}>
+        <div><span className={styles.editorEyebrow}><PettelIcon name="home" /> PETTEL SITTER</span><h2>{live ? "Đề xuất chỉnh sửa dịch vụ" : listing ? "Chỉnh sửa bản nháp" : "Tạo dịch vụ mới"}</h2><p>{live ? "Thay đổi sẽ được gửi PETTEL xem xét trước khi áp dụng." : "Mô tả rõ dịch vụ để khách hàng dễ chọn hơn."}</p></div>
+        <button className={styles.closeButton} type="button" onClick={onClose} aria-label="Đóng cửa sổ">×</button>
+      </header>
       <ApiError error={error} />
-      <form className="app-form" onSubmit={submit}>
+      <form className={`${styles.editorForm} app-form`} onSubmit={submit}>
         <label>
-          Tiêu đề
+          Tên dịch vụ
           <input name="title" defaultValue={listing?.title} required maxLength={120} />
         </label>
         <label>
@@ -75,7 +81,7 @@ export function ListingEditor({
           />
         </label>
         <label>
-          Dịch vụ
+          Loại dịch vụ
           <select name="service_type" defaultValue={listing?.service_type ?? "DAYCARE"}>
             {Object.entries(services).map(([key, label]) => (
               <option key={key} value={key}>
@@ -85,7 +91,7 @@ export function ListingEditor({
           </select>
         </label>
         <label>
-          Khu vực
+          Khu vực nhận chăm
           <select name="area_code" defaultValue={listing?.area_code ?? "DN_CENTER"}>
             {Object.entries(areas).map(([key, label]) => (
               <option key={key} value={key}>
@@ -95,7 +101,7 @@ export function ListingEditor({
           </select>
         </label>
         <label>
-          Giá VND / giờ (ban ngày) hoặc đêm (lưu trú)
+          Giá dịch vụ (VND / giờ hoặc đêm)
           <input
             type="number"
             name="price_vnd"
@@ -105,10 +111,10 @@ export function ListingEditor({
             defaultValue={listing?.price_vnd}
           />
         </label>
-        <fieldset>
+        <fieldset className={styles.editorFieldset}>
           <legend>Loài nhận chăm</legend>
           {Object.entries(species).map(([key, label]) => (
-            <label className="app-check" key={key}>
+            <label className={styles.editorCheck} key={key}>
               <input
                 type="checkbox"
                 name="species"
@@ -121,10 +127,10 @@ export function ListingEditor({
             </label>
           ))}
         </fieldset>
-        <fieldset>
+        <fieldset className={styles.editorFieldset}>
           <legend>Kích thước nhận chăm</legend>
           {Object.entries(sizes).map(([key, label]) => (
-            <label className="app-check" key={key}>
+            <label className={styles.editorCheck} key={key}>
               <input
                 type="checkbox"
                 name="sizes"
@@ -137,11 +143,11 @@ export function ListingEditor({
             </label>
           ))}
         </fieldset>
-        <div className="app-actions">
-          <button disabled={busy} className="app-button">
+        <div className={styles.editorActions}>
+          <button disabled={busy} className={styles.primaryButton}>
             {live ? "Gửi đề xuất duyệt" : "Lưu bản nháp"}
           </button>
-          <button type="button" disabled={busy} onClick={onClose}>
+          <button type="button" disabled={busy} className={styles.secondaryButton} onClick={onClose}>
             Đóng
           </button>
         </div>

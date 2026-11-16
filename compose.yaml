@@ -29,7 +29,11 @@ x-laravel: &laravel
     REDIS_HOST: redis
     REDIS_PORT: 6379
     REDIS_PASSWORD: ${REDIS_PASSWORD:-null}
-    MAIL_MAILER: log
+    MAIL_MAILER: smtp
+    MAIL_HOST: mailpit
+    MAIL_PORT: 1025
+    MAIL_FROM_ADDRESS: "hello@pettel.local"
+    MAIL_FROM_NAME: "${APP_NAME:-PETTEL}"
     FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
     SANCTUM_STATEFUL_DOMAINS: ${SANCTUM_STATEFUL_DOMAINS:-localhost:3000,localhost:8080,127.0.0.1:8080}
     SESSION_DOMAIN: ${SESSION_DOMAIN:-null}
@@ -53,9 +57,11 @@ x-laravel: &laravel
       condition: service_healthy
     redis:
       condition: service_healthy
+    mailpit:
+      condition: service_started
   volumes:
     - app_storage:/var/www/html/storage
-
+  
 services:
   web:
     build:
@@ -144,6 +150,13 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+  
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8025:8025"
+      - "127.0.0.1:1025:1025"
 
 volumes:
   app_storage:

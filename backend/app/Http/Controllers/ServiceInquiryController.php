@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Listing;
 use App\Models\Pet;
+use App\Events\InquiryMessageSent;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
@@ -52,7 +53,7 @@ class ServiceInquiryController extends Controller
             'start_at' => isset($data['start_at']) ? CarbonImmutable::parse($data['start_at'])->utc()->toISOString() : null,
             'end_at' => isset($data['end_at']) ? CarbonImmutable::parse($data['end_at'])->utc()->toISOString() : null,
         ];
-        $id = DB::transaction(function () use ($request, $data, $listing, $profile, $context) {
+        [$id, $messageId] = DB::transaction(function () use ($request, $data, $listing, $profile, $context) {
             // Serialize sends by this owner so repeated clicks reuse the same thread.
             DB::table('users')->where('id', $request->user()->id)->lockForUpdate()->first();
             $thread = DB::table('service_inquiries')->where('owner_id', $request->user()->id)->where('listing_id', $listing->id)->first();
@@ -64,10 +65,12 @@ class ServiceInquiryController extends Controller
                 'sitter_name' => $profile->display_name,
                 'created_at' => now(), 'updated_at' => now(),
             ]);
-            $this->saveMessage($request, (string) $id, $data, $context);
+            $messageId = $this->saveMessage($request, (string) $id, $data, $context);
 
-            return (string) $id;
+            return [(string) $id, $messageId];
         });
+
+        InquiryMessageSent::dispatch($id, $messageId);
 
         return response()->json(['id' => $id], 201);
     }
@@ -93,10 +96,12 @@ class ServiceInquiryController extends Controller
     {
         $this->accessible($request)->where('id', $id)->firstOrFail();
         $data = $request->validate(['body' => ['required', 'string', 'max:2000', 'regex:/\S/u'], 'request_key' => ['required', 'uuid']]);
-        DB::transaction(function () use ($request, $id, $data) {
+        $messageId = DB::transaction(function () use ($request, $id, $data) {
             DB::table('service_inquiries')->where('id', $id)->lockForUpdate()->firstOrFail();
-            $this->saveMessage($request, $id, $data);
+            return $this->saveMessage($request, $id, $data);
         });
+
+        InquiryMessageSent::dispatch($id, $messageId);
 
         return response()->json(['sent' => true], 201);
     }
@@ -113,19 +118,21 @@ class ServiceInquiryController extends Controller
             'listing_title' => $thread->listing_title, 'sitter_name' => $thread->sitter_name];
     }
 
-    private function saveMessage(Request $request, string $id, array $data, ?array $context = null): void
+    private function saveMessage(Request $request, string $id, array $data, ?array $context = null): string
     {
         $hash = hash('sha256', json_encode([$data['body'], $context], JSON_THROW_ON_ERROR));
         $existing = DB::table('inquiry_messages')->where('inquiry_id', $id)->where('sender_id', $request->user()->id)->where('request_key', $data['request_key'])->first();
         if ($existing) {
             abort_unless(hash_equals($existing->payload_hash, $hash), 409, 'Mã gửi tin đã được sử dụng cho nội dung khác.');
-            return;
+            return (string) $existing->id;
         }
-        DB::table('inquiry_messages')->insert([
+        $messageId = DB::table('inquiry_messages')->insertGetId([
             'inquiry_id' => $id, 'sender_id' => $request->user()->id,
             'body' => trim($data['body']), 'context_json' => $context ? json_encode($context, JSON_THROW_ON_ERROR) : null,
             'request_key' => $data['request_key'], 'payload_hash' => $hash, 'created_at' => now(),
         ]);
         DB::table('service_inquiries')->where('id', $id)->update(['updated_at' => now()]);
+
+        return (string) $messageId;
     }
 }

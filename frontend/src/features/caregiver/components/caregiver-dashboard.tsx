@@ -1,49 +1,43 @@
 "use client";
 
+import { SitterManagementDashboard } from "@/features/caregiver/components/sitter-management-dashboard";
+import { SitterOnboardingWizard } from "@/features/caregiver/components/sitter-onboarding-wizard";
 import { ApiError } from "@/components/ui/api-error";
-import { ListingManager } from "@/features/caregiver/components/listing-manager";
-import { ProfileForm } from "@/features/caregiver/components/profile-form";
-import { write } from "@/lib/api/request";
+import { useApi } from "@/hooks/use-api";
+import { type Profile } from "@/features/caregiver/types";
+import axios from "axios";
+import { useRouter } from "next/navigation";
 import { useSession } from "@/providers/session-provider";
-import Link from "next/link";
-import { useState } from "react";
 
 export function CaregiverDashboard() {
   const { user, refresh } = useSession();
-  const [error, setError] = useState<unknown>();
-  const [busy, setBusy] = useState(false);
+  const router = useRouter();
   const enabled = user?.roles?.some((role) => role.role === "CAREGIVER");
+  const profile = useApi<{ data: Profile }>(enabled ? "/api/caregiver/profile" : null);
+  const finishOnboarding = () => {
+    refresh();
+    profile.reload();
+    router.push("/caregiver/manage");
+  };
+
   if (!enabled)
     return (
-      <section className="app-card">
-        <p>Bật vai trò người chăm để tạo hồ sơ dịch vụ và nhận yêu cầu đặt lịch.</p>
-        <ApiError error={error} />
-        <button
-          className="app-button"
-          disabled={busy}
-          onClick={async () => {
-            setBusy(true);
-            try {
-              await write("post", "/api/user/roles/caregiver");
-              refresh();
-            } catch (failure) {
-              setError(failure);
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          Trở thành người chăm
-        </button>
-      </section>
+      <SitterOnboardingWizard userName={user?.name ?? ""} userEmail={user?.email ?? ""} onComplete={finishOnboarding} />
     );
-  return (
-    <>
-      <p>
-        <Link href="/bookings">Quản lý đơn nhận chăm sóc →</Link>
-      </p>
-      <ProfileForm />
-      <ListingManager />
-    </>
-  );
+
+  if (profile.loading) return <p>Đang kiểm tra hồ sơ Sitter...</p>;
+
+  const profileMissing = axios.isAxiosError(profile.error) && profile.error.response?.status === 404;
+  if (profileMissing)
+    return (
+      <SitterOnboardingWizard
+        userName={user?.name ?? ""}
+        userEmail={user?.email ?? ""}
+        onComplete={finishOnboarding}
+      />
+    );
+
+  if (profile.error) return <><ApiError error={profile.error} /><button type="button" onClick={profile.reload}>Thử tải lại</button></>;
+
+  return <SitterManagementDashboard profile={profile.data!.data} />;
 }

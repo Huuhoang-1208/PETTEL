@@ -35,6 +35,7 @@ export type Listing = {
   price_vnd: number;
   price_unit: string;
   price_total_vnd: number | null;
+  capacity?: number;
   rating_average: number | null;
   review_count: number;
   acceptance_rules_json: { species: string[]; sizes: string[] };

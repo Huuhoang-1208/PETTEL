@@ -18,6 +18,8 @@ class CaregiverProfileResource extends JsonResource
             'display_name' => $this->display_name,
             'bio' => $this->bio,
             'area_code' => $this->area_code,
+            // This resource is only returned from the authenticated, owner-scoped caregiver API.
+            'application_data_json' => $this->application_data_json ?? [],
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

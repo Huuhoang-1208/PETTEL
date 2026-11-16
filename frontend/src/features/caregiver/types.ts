@@ -7,6 +7,26 @@ export type Profile = {
   bio: string | null;
   type: string;
   area_code: string;
+  application_data_json?: SitterApplicationData;
+};
+
+export type SitterApplicationData = {
+  private_address?: string | null;
+  experience_species?: string[];
+  care_skills?: string[];
+  capacity?: string;
+  housing_type?: string;
+  space_type?: string;
+  amenities?: string[];
+  space_media_ids?: number[];
+  avatar_media_id?: number | null;
+  contact_phone?: string | null;
+  contact_email?: string | null;
+  safety_plan?: string | null;
+  kyc_front_media_id?: number | null;
+  kyc_back_media_id?: number | null;
+  certificate_media_id?: number | null;
+  agreements?: { partner_terms?: boolean; care_commitment?: boolean };
 };
 
 export type ManagedListing = Omit<Listing, "media"> & {
