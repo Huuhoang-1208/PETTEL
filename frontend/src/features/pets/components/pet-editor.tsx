@@ -30,6 +30,13 @@ export function PetEditor({
 }) {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState("");
+  const [selectedSpecies, setSelectedSpecies] = useState(editing?.species ?? "DOG");
+  const [recordPhotoName, setRecordPhotoName] = useState("");
+
+  useEffect(() => {
+    setSelectedSpecies(editing?.species ?? "DOG");
+    setRecordPhotoName("");
+  }, [editing?.id, editing?.species]);
 
   useEffect(() => {
     if (!editing?.photo_media_id) return;
@@ -55,6 +62,23 @@ export function PetEditor({
       return;
     }
     setPhotoPreview(URL.createObjectURL(file));
+  }
+
+  function chooseVaccinationRecord(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    setPhotoError("");
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setPhotoError("Ảnh sổ tiêm cần là JPG, PNG hoặc WebP.");
+      event.currentTarget.value = "";
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError("Ảnh sổ tiêm cần có dung lượng tối đa 5 MB.");
+      event.currentTarget.value = "";
+      return;
+    }
+    setRecordPhotoName(file.name);
   }
 
   return (
@@ -84,13 +108,19 @@ export function PetEditor({
             <div className={styles.speciesChoices}>
               {Object.entries(species).map(([key, label]) => (
                 <label className={styles.speciesOption} key={key}>
-                  <input type="radio" name="species" value={key} defaultChecked={editing?.species ? editing.species === key : key === "DOG"} />
+                  <input type="radio" name="species" value={key} checked={selectedSpecies === key} onChange={() => setSelectedSpecies(key)} />
                   <span className={styles.speciesIcon}><PettelIcon name={key === "DOG" ? "dog" : key === "CAT" ? "cat" : "paw"} /></span>
                   <span className={styles.speciesText}><strong>{key === "DOG" ? "Bé Cún" : key === "CAT" ? "Bé Mèo" : "Bé khác"}</strong><small>{speciesSubtitle[key]}</small></span>
                   <span className={styles.radioCheck} aria-hidden="true"><PettelIcon name="check" /></span>
                 </label>
               ))}
             </div>
+            {selectedSpecies === "OTHER" && (
+              <label className={`${styles.field} ${styles.speciesDetail}`}>
+                <span>Loài cụ thể <em>*</em></span>
+                <input name="species_detail" required maxLength={100} defaultValue={editing?.species_detail ?? ""} placeholder="Ví dụ: Thỏ, hamster, chim vẹt..." />
+              </label>
+            )}
           </section>
 
           <section className={styles.formSection}>
@@ -155,29 +185,81 @@ export function PetEditor({
           <section className={`${styles.formSection} ${styles.healthSection}`}>
             <div className={styles.healthHeading}><h3>4. Sức khỏe &amp; tiêm chủng</h3><span><PettelIcon name="shield" /> Do bạn cung cấp</span></div>
             <div className={styles.healthChecks}>
-              <label><input type="checkbox" name="health_core_vaccines" defaultChecked={editing?.health_flags?.core_vaccines ?? false} /> Đã tiêm vaccine cơ bản</label>
-              <label><input type="checkbox" name="health_rabies_vaccine" defaultChecked={editing?.health_flags?.rabies_vaccine ?? false} /> Đã tiêm vaccine dại</label>
-              <label><input type="checkbox" name="health_deworming" defaultChecked={editing?.health_flags?.deworming ?? false} /> Đã tẩy giun</label>
+              {([
+                ["core_vaccines", "Vaccine cơ bản", editing?.health_flags?.core_vaccines ? "DONE" : "UNKNOWN", editing?.core_vaccines_date ?? ""],
+                ["rabies_vaccine", "Vaccine dại", editing?.health_flags?.rabies_vaccine ? "DONE" : "UNKNOWN", editing?.rabies_vaccine_date ?? ""],
+                ["deworming", "Tẩy giun", editing?.health_flags?.deworming ? "DONE" : "UNKNOWN", editing?.deworming_date ?? ""],
+              ] as const).map(([key, label, legacyStatus, date]) => (
+                <div className={styles.vaccineCard} key={key}>
+                  <strong>{label}</strong>
+                  <select name={`vaccination_statuses.${key}`} defaultValue={editing?.vaccination_statuses?.[key] ?? legacyStatus} aria-label={`Tình trạng ${label}`}>
+                    <option value="DONE">{key === "deworming" ? "Đã tẩy giun" : "Đã tiêm"}</option>
+                    <option value="NOT_DONE">{key === "deworming" ? "Chưa tẩy giun" : "Chưa tiêm"}</option>
+                    <option value="UNKNOWN">Chưa rõ</option>
+                  </select>
+                  <input type="date" name={`${key}_date`} defaultValue={date} max={new Date().toISOString().slice(0, 10)} aria-label={`Ngày ${label.toLowerCase()} (không bắt buộc)`} />
+                </div>
+              ))}
               <label><input type="hidden" name="is_neutered" value="0" /><input type="checkbox" name="is_neutered" value="1" defaultChecked={editing?.is_neutered ?? false} /> Đã triệt sản</label>
             </div>
+            <label className={styles.uploadBox}>
+              <input type="file" name="vaccination_record_photo" accept="image/jpeg,image/png,image/webp" onChange={chooseVaccinationRecord} />
+              <span className={styles.cameraIcon}><PettelIcon name="camera" /></span>
+              <span className={styles.uploadCopy}>
+                <strong>{recordPhotoName || (editing?.vaccination_record_media_id ? "Đã có ảnh sổ tiêm · chọn để thay ảnh" : "Thêm ảnh sổ tiêm (không bắt buộc)")}</strong>
+                <small>JPG, PNG hoặc WebP · tối đa 5 MB.</small>
+              </span>
+              <span className={styles.chooseButton}>Chọn ảnh</span>
+            </label>
             <label className={styles.field}>
               <span>Thông tin tiêm chủng, sức khỏe</span>
               <textarea name="vaccination_note" defaultValue={editing?.vaccination_note ?? ""} maxLength={2000} rows={2} placeholder="Ví dụ: Đã tiêm vaccine 5 bệnh ngày..., lịch tẩy giun..." />
             </label>
+          </section>
+
+          <section className={styles.formSection}>
+            <h3>5. Tính cách &amp; cách tiếp cận <span>Chọn tất cả mục phù hợp</span></h3>
+            <div className={styles.tagChoices}>
+              {[["SHY", "Nhút nhát"], ["FEARS_STRANGERS", "Sợ người lạ"], ["NEEDS_WARM_UP", "Cần thời gian làm quen"], ["NOT_SOCIAL_WITH_PETS", "Không quen thú cưng khác"], ["SEPARATION_ANXIETY", "Lo lắng khi ở một mình"], ["HIGH_ENERGY", "Nhiều năng lượng"], ["SENSITIVE_TO_NOISE", "Nhạy cảm với tiếng ồn"]].map(([value, label]) => (
+                <label key={value}><input type="checkbox" name="behavior_tags[]" value={value} defaultChecked={editing?.behavior_tags?.includes(value)} />{label}</label>
+              ))}
+            </div>
+            <label className={styles.field}>
+              <span>Ghi chú thêm về tính cách</span>
+              <textarea name="temperament" defaultValue={editing?.temperament ?? ""} maxLength={2000} rows={2} placeholder="Chia sẻ tình huống hoặc cách giúp bé cảm thấy an tâm..." />
+            </label>
+          </section>
+
+          <section className={styles.formSection}>
+            <h3>6. Chế độ ăn, dị ứng &amp; thức ăn cần tránh</h3>
             <div className={styles.fields}>
               <label className={styles.field}>
-                <span>Tính cách</span>
-                <textarea name="temperament" defaultValue={editing?.temperament ?? ""} maxLength={2000} rows={2} placeholder="Thân thiện, nhút nhát, thích chơi..." />
+                <span>Chế độ ăn &amp; khẩu phần</span>
+                <textarea name="diet_notes" defaultValue={editing?.diet_notes ?? ""} maxLength={2000} rows={2} placeholder="Loại thức ăn, lượng ăn, giờ ăn..." />
               </label>
               <label className={styles.field}>
-                <span>Chế độ ăn</span>
-                <textarea name="diet_notes" defaultValue={editing?.diet_notes ?? ""} maxLength={2000} rows={2} placeholder="Thức ăn, khẩu phần, dị ứng..." />
+                <span>Dị ứng / không dung nạp</span>
+                <textarea name="food_allergies" defaultValue={editing?.food_allergies ?? ""} maxLength={2000} rows={2} placeholder="Ví dụ: Dị ứng thịt gà; không dung nạp sữa..." />
               </label>
               <label className={`${styles.field} ${styles.wide}`}>
-                <span>Nhu cầu chăm sóc đặc biệt</span>
-                <textarea name="special_needs" defaultValue={editing?.special_needs ?? ""} maxLength={2000} rows={2} placeholder="Thuốc đang dùng hoặc lưu ý khi chăm sóc..." />
+                <span>Thức ăn hoặc thành phần cần tránh</span>
+                <textarea name="foods_to_avoid" defaultValue={editing?.foods_to_avoid ?? ""} maxLength={2000} rows={2} placeholder="Ví dụ: Không cho ăn cá, xương nhỏ hoặc thức ăn có gia vị..." />
               </label>
             </div>
+            <p className={styles.helper}>Nếu bé có dị ứng nghiêm trọng, hãy ghi rõ mức độ và dấu hiệu cần lưu ý.</p>
+          </section>
+
+          <section className={styles.formSection}>
+            <h3>7. Hỗ trợ chăm sóc cần thiết <span>Chọn tất cả mục phù hợp</span></h3>
+            <div className={styles.tagChoices}>
+              {[["ORAL_MEDICATION", "Cần uống thuốc"], ["EYE_DROPS", "Cần nhỏ mắt"], ["SPECIAL_DIET", "Cần theo chế độ ăn riêng"], ["POST_SURGERY", "Đang hồi phục sau phẫu thuật"], ["MOBILITY_SUPPORT", "Cần hỗ trợ đi lại"], ["OTHER_SPECIAL_CARE", "Cần chăm sóc đặc biệt khác"]].map(([value, label]) => (
+                <label key={value}><input type="checkbox" name="care_support_tags[]" value={value} defaultChecked={editing?.care_support_tags?.includes(value)} />{label}</label>
+              ))}
+            </div>
+            <label className={styles.field}>
+              <span>Chi tiết cần lưu ý</span>
+              <textarea name="special_needs" defaultValue={editing?.special_needs ?? ""} maxLength={2000} rows={2} placeholder="Ghi chú cách cho thuốc hoặc hướng dẫn chăm sóc cần thiết..." />
+            </label>
           </section>
 
           <ApiError error={error} />

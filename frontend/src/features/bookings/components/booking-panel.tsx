@@ -26,7 +26,7 @@ const bookingStatusStyles: Record<string, string> = {
   EXPIRED: styles.statusClosed,
 };
 
-export function BookingPanel({ id, onChange }: { id: string; onChange: () => void }) {
+export function BookingPanel({ id, onChange, variant = "default" }: { id: string; onChange: () => void; variant?: "default" | "caregiver" }) {
   const booking = useApi<{ data: Booking }>(`/api/bookings/${id}`, 15000);
   const [error, setError] = useState<unknown>();
   const [notice, setNotice] = useState("");
@@ -76,8 +76,11 @@ export function BookingPanel({ id, onChange }: { id: string; onChange: () => voi
   }
   const value = booking.data?.data;
   const owner = value?.participant_role === "OWNER";
+  const canReopenExpiredPayment = !owner
+    && value?.status === "CANCELLED"
+    && value.cancellation_reason_code === "PAYMENT_EXPIRED";
   return (
-    <article className={styles.panel}>
+    <article className={`${styles.panel} ${variant === "caregiver" ? styles.panelCaregiver : ""}`}>
       {dialog}
       <ApiError error={booking.error ?? error} />
       {booking.loading && !value && (
@@ -122,12 +125,37 @@ export function BookingPanel({ id, onChange }: { id: string; onChange: () => voi
               <span>{dateTime(value.payment_due_at)}</span>
             </div>
           )}
+          {canReopenExpiredPayment && (
+            <div className={styles.reopenNotice} role="status">
+              Đơn đã tự hủy do quá hạn thanh toán. Bạn có thể mở lại để chủ nuôi có thêm 15 phút; khung giờ cần còn trống.
+            </div>
+          )}
           {notice && <p className={styles.notice} role="status">{notice}</p>}
 
           <div className={styles.actions}>
             <Link className={styles.primaryAction} href={`/chat?booking=${id}`}>
               Mở chat của đơn
             </Link>
+            {canReopenExpiredPayment && (
+              <button
+                className={styles.primaryAction}
+                disabled={busy}
+                onClick={async () => {
+                  if (await ask(
+                    `Đơn #${id} đã tự hủy vì hết thời gian thanh toán. Bạn có thể mở lại đơn để chủ nuôi có thêm 15 phút thanh toán. PETTEL sẽ kiểm tra khung giờ còn trống trước khi mở.`,
+                    {
+                      title: "Mở lại đơn chăm sóc?",
+                      cancelLabel: "Để sau",
+                      confirmLabel: "Mở lại đơn",
+                      className: "pet-booking-confirmation pet-reopen-confirmation",
+                    },
+                  ))
+                    void action("reopen-expired-payment");
+                }}
+              >
+                Mở lại đơn · 15 phút
+              </button>
+            )}
             {!owner && value.status === "REQUESTED" && (
               <>
                 <button className={styles.primaryAction} disabled={busy} onClick={() => void action("accept")}>
@@ -164,7 +192,15 @@ export function BookingPanel({ id, onChange }: { id: string; onChange: () => voi
                 className={styles.primaryAction}
                 disabled={busy}
                 onClick={async () => {
-                  if (await ask("Xác nhận đã nhận lại thú cưng và hoàn thành dịch vụ?"))
+                  if (await ask(
+                    "Hãy xác nhận bạn đã nhận lại thú cưng. Sau khi xác nhận, đơn chăm sóc sẽ được đánh dấu là đã hoàn thành.",
+                    {
+                      title: "Xác nhận hoàn thành dịch vụ?",
+                      cancelLabel: "Quay lại",
+                      confirmLabel: "Xác nhận hoàn thành",
+                      className: "pet-booking-confirmation pet-completion-confirmation",
+                    },
+                  ))
                     void action("confirm-completion");
                 }}
               >

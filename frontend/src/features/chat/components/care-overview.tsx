@@ -3,12 +3,12 @@ import type { Listing } from "@/lib/api/types";
 import { dateTime } from "@/lib/format";
 import { services, statuses } from "@/lib/constants";
 import Link from "next/link";
-import { careEstimate, dong, type CareContext, type ChatRecord } from "../types";
+import { bookingDetailHref, careEstimate, dong, type CareContext, type ChatRecord } from "../types";
 import styles from "../chat.module.css";
 
 export function CareOverview({ record, context, listing, compact = false }: { record?: ChatRecord; context: CareContext | null; listing?: Listing; compact?: boolean }) {
   const estimate = careEstimate(record, context, listing);
-  const detailHref = record?.status ? `/bookings?open=${record.id}` : record?.listing_id ? `/detail?id=${record.listing_id}` : "/services";
+  const detailHref = record?.status ? bookingDetailHref(record) : record?.listing_id ? `/detail?id=${record.listing_id}` : "/services";
   return <section className={compact ? styles.overview : styles.bookingPanel}>
     <header><h3><PettelIcon name="calendar" />{compact ? "Thông tin gửi thú cưng" : "Lịch chăm sóc của bé"}</h3><span>{record?.status ? statuses[record.status] ?? record.status : "Đang trao đổi"}</span></header>
     <dl className={compact ? styles.overviewGrid : styles.bookingRows}>

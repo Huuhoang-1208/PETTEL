@@ -267,8 +267,8 @@ export function BookingForm({ listing }: { listing: Listing }) {
     setBusy(true);
     setError(undefined);
     try {
-      const result = await write<{ id: string }>("post", "/api/bookings", draft.payload, draft.key);
-      router.push(`/bookings?open=${result.id}`);
+      await write<{ id: string }>("post", "/api/bookings", draft.payload, draft.key);
+      router.push("/owner-profile#history");
     } catch (failure) {
       setError(failure);
       setBusy(false);

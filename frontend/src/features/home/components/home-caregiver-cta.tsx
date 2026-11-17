@@ -15,10 +15,10 @@ export function HomeCaregiverCta() {
             <strong>15.000.000 VNĐ/tháng</strong> từ niềm đam mê chăm sóc thú cưng.
           </p>
           <div className={styles.actions}>
-            <Link className={styles.primaryAction} href="/caregiver">
+            <Link className={styles.primaryAction} href="/caregiver/manage">
               Đăng ký làm Sitter
             </Link>
-            <Link className={styles.secondaryAction} href="/caregiver">
+            <Link className={styles.secondaryAction} href="/caregiver/manage">
               Tìm hiểu quyền lợi & thu nhập <span aria-hidden="true">›</span>
             </Link>
           </div>

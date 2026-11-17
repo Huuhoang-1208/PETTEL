@@ -40,6 +40,7 @@
 .chooseButton { display: grid; width: 52px; height: 43px; flex: 0 0 52px; place-items: center; border-radius: 999px; background: #fff; color: #33465f; font-size: 10px; font-weight: 600; text-align: center; }
 .photoError { margin: 6px 0 0; color: #c33e3e; font-size: 11px; }
 .fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px 12px; }
+.speciesDetail { margin-top: 10px; }
 .field { display: grid; min-width: 0; gap: 5px; color: #3c4c61; font-size: 10px; font-weight: 600; }
 .wide { grid-column: 1 / -1; }
 .field input,.field select,.field textarea { width: 100%; min-width: 0; padding: 10px 13px; border: 1px solid transparent; border-radius: 999px; outline: none; background: #f1f2ff; color: #293b54; font: inherit; font-size: 11px; font-weight: 400; }
@@ -54,8 +55,18 @@
 .healthHeading svg { width: 12px; height: 12px; }
 .healthChecks { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; margin-bottom: 11px; }
 .healthChecks label { display: flex; min-height: 32px; align-items: center; gap: 8px; padding: 6px 9px; border-radius: 999px; background: #fff; color: #53637a; font-size: 10px; }
+.healthChecks > label { align-self: start; }
 .healthChecks input { width: 15px; height: 15px; accent-color: #00a8b4; }
+.vaccineCard { display: grid; min-width: 0; gap: 6px; padding: 9px; border: 1px solid #e6e9f3; border-radius: 13px; background: #fff; }
+.vaccineCard strong { color: #35465c; font-size: 10px; }
+.vaccineCard select,.vaccineCard input { width: 100%; min-width: 0; min-height: 32px; padding: 6px 8px; border: 1px solid #e2e6f0; border-radius: 9px; background: #f7f8ff; color: #35465c; font: inherit; font-size: 10px; }
+.tagChoices { display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 10px; }
+.tagChoices label { display: inline-flex; min-height: 31px; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid #e4e7f0; border-radius: 999px; background: #f6f7ff; color: #52637a; font-size: 10px; cursor: pointer; }
+.tagChoices input { width: 14px; height: 14px; accent-color: #00a8b4; }
+.helper { margin: 10px 0 0; color: #758398; font-size: 10px; line-height: 1.45; }
+.healthSection .uploadBox { margin: 0 0 10px; }
 .healthSection > .field { margin-bottom: 10px; }
+.healthSection > .field textarea { border-color: #d9e1ef; background: #fff; }
 .footer { position: sticky; bottom: 0; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 10px; margin: 0 -24px; padding: 13px 24px 9px; border-top: 1px solid #edf0f5; background: #fff; }
 .cancel,.save { display: inline-flex; min-height: 40px; align-items: center; justify-content: center; gap: 7px; padding: 0 17px; border: 0; border-radius: 999px; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
 .cancel { background: #eff1ff; color: #5c6c86; }

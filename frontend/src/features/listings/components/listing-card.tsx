@@ -7,6 +7,21 @@ import { apiUrl, money } from "@/lib/format";
 import { PettelIcon } from "@/components/ui/pettel-icon";
 import Link from "next/link";
 
+const smartMatchLabels: Record<string, string> = {
+  SPECIES_ACCEPTED: "Nhận loài của bé",
+  SIZE_ACCEPTED: "Nhận kích thước của bé",
+  DOG_SIZE_EXPERIENCE: "Có kinh nghiệm với chó cùng kích thước",
+  SMALL_PET_EXPERIENCE: "Có kinh nghiệm với thú cưng nhỏ",
+  CAT_BREED_EXPERIENCE: "Có kinh nghiệm với giống mèo này",
+  SHY_PET_CARE: "Có kỹ năng chăm bé nhút nhát",
+  MEDICATION_CARE: "Có kỹ năng cho uống thuốc / nhỏ mắt",
+  SPECIAL_DIET_CARE: "Có kinh nghiệm với chế độ ăn riêng",
+  POST_SURGERY_CARE: "Có kỹ năng chăm sóc sau phẫu thuật",
+  SEPARATE_FOOD_STORAGE: "Có chỗ bảo quản thức ăn riêng",
+  INDOOR_SPACE: "Không gian trong nhà phù hợp",
+  INDOOR_YARD_SPACE: "Không gian trong nhà có sân",
+};
+
 export function ListingCard({ item }: { item: Listing }) {
   const demo = item.caregiver?.demo;
   const sitterName = item.caregiver?.display_name ?? item.title;
@@ -56,8 +71,15 @@ export function ListingCard({ item }: { item: Listing }) {
               </span>
             ))}
           </p>
-          {!!item.match_reasons?.length && (
-            <p className="app-success">Phù hợp với hồ sơ thú cưng</p>
+          {item.smart_match && (
+            <div className="listing-card__smart-match" aria-label="Lý do được Smart Match gợi ý">
+              <strong><span aria-hidden="true">✦</span> Gợi ý phù hợp với bé</strong>
+              <div>
+                {item.smart_match.reasons.map((reason) => (
+                  <span key={reason}>{smartMatchLabels[reason] ?? reason}</span>
+                ))}
+              </div>
+            </div>
           )}
         </div>
         <div className="listing-card__bottom">

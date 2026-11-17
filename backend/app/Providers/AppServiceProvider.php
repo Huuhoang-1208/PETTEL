@@ -616,6 +616,7 @@ class AppServiceProvider extends ServiceProvider
                     'bookings|post' => 'Creates a REQUESTED booking from server-owned price and caller identity. A matching idempotency key replays the prior result; a key reused with changed business data conflicts.',
                     'bookings/quote|post' => 'Calculates the current quote without creating a booking or requiring an idempotency key.',
                     'bookings/{id}/accept|post' => 'Transitions an eligible REQUESTED booking to AWAITING_PAYMENT and creates one calendar hold; invalid state, expiry, or unavailable calendar is rejected.',
+                    'bookings/{id}/reopen-expired-payment|post' => 'Only the assigned caregiver can reopen a system-cancelled PAYMENT_EXPIRED booking. The listing and time slot must still be available; a new 15-minute payment window is created.',
                     'bookings/{id}/start|post' => 'Only the assigned caregiver can transition a CONFIRMED booking to IN_PROGRESS; the booking and its status event are committed together.',
                     'bookings/{id}/request-completion|post' => 'Only the assigned caregiver can report completion from IN_PROGRESS, transitioning the booking to AWAITING_CONFIRMATION; this does not complete or release payment.',
                     'bookings/{id}/cancel|post' => 'Cancellation behavior depends on booking/payment state. Payment void/refund processing can be queued; the response may be accepted for asynchronous processing.',

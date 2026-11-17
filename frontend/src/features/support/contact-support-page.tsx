@@ -111,7 +111,7 @@ export function ContactSupportPage() {
             <aside className={styles.faqCard}>
               <div className={styles.sectionHeading}><span className={`${styles.headingIcon} ${styles.faqIcon}`}><PettelIcon name="shield" /></span><span><h2>Câu Hỏi Thường Gặp</h2><p>Giải đáp nhanh các thắc mắc cốt lõi nhất</p></span></div>
               <div className={styles.questions}>{questions.map((item) => <details key={item.question} className={styles.question}><summary>{item.question}<PettelIcon name="chevron" /></summary><p>{item.answer}</p></details>)}</div>
-              <div className={styles.moreHelp}>Chưa tìm thấy câu trả lời? <Link href="/bookings">Xem đơn chăm sóc của tôi <PettelIcon name="arrow" /></Link></div>
+              <div className={styles.moreHelp}>Chưa tìm thấy câu trả lời? <Link href="/owner-profile#history">Xem đơn chăm sóc của tôi <PettelIcon name="arrow" /></Link></div>
             </aside>
           </section>
         </div>

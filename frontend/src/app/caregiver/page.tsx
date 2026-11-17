@@ -1,4 +1,5 @@
-import { CaregiverPage } from "@/features/caregiver/caregiver-page";
+import { redirect } from "next/navigation";
+
 export default function Page() {
-  return <CaregiverPage />;
+  redirect("/caregiver/manage");
 }

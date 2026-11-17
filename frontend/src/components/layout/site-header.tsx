@@ -29,9 +29,9 @@ export function SiteHeader() {
       active: pathname === "/services" || pathname === "/detail",
     },
     {
-      href: isCaregiver ? "/caregiver/manage" : "/caregiver",
+      href: "/caregiver/manage",
       label: "Trở thành Sitter",
-      active: pathname === "/caregiver" || pathname.startsWith("/caregiver/manage"),
+      active: pathname.startsWith("/caregiver/manage"),
     },
     { href: "/about", label: "Về PETTEL", active: pathname === "/about" },
     {
@@ -149,7 +149,7 @@ export function SiteHeader() {
                   Quản lý Sitter
                 </Link>
               ) : (
-                <Link href="/caregiver" onClick={closeMenus}>
+                <Link href="/caregiver/manage" onClick={closeMenus}>
                   Khu vực người chăm
                 </Link>
               )}

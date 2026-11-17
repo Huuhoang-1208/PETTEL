@@ -14,6 +14,11 @@ class SearchListingResource extends JsonResource
     {
         $data = PublicListingResource::make($this->resource)->resolve($request);
         $data['match_reasons'] = $this->resource->getAttribute('search_match_reasons') ?? [];
+        $score = $this->resource->getAttribute('smart_match_score');
+        $data['smart_match'] = $score === null ? null : [
+            'score' => (int) $score,
+            'reasons' => $this->resource->getAttribute('smart_match_reasons') ?? [],
+        ];
 
         return $data;
     }

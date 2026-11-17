@@ -48,15 +48,22 @@ export function PetManager() {
     const form = new FormData(event.currentTarget);
     const payload: Record<string, unknown> = Object.fromEntries(form);
     const photo = form.get("photo");
+    const vaccinationRecordPhoto = form.get("vaccination_record_photo");
     delete payload.photo;
-    payload.health_flags = {
-      core_vaccines: form.has("health_core_vaccines"),
-      rabies_vaccine: form.has("health_rabies_vaccine"),
-      deworming: form.has("health_deworming"),
-    };
-    delete payload.health_core_vaccines;
-    delete payload.health_rabies_vaccine;
-    delete payload.health_deworming;
+    delete payload.vaccination_record_photo;
+    delete payload["behavior_tags[]"];
+    delete payload["care_support_tags[]"];
+    const vaccinationStatuses = Object.fromEntries(
+      ["core_vaccines", "rabies_vaccine", "deworming"].map((key) => [key, form.get(`vaccination_statuses.${key}`) || "UNKNOWN"]),
+    );
+    for (const key of Object.keys(payload)) if (key.startsWith("vaccination_statuses.")) delete payload[key];
+    payload.vaccination_statuses = vaccinationStatuses;
+    payload.behavior_tags = form.getAll("behavior_tags[]");
+    payload.care_support_tags = form.getAll("care_support_tags[]");
+    payload.species_detail = form.get("species") === "OTHER" ? form.get("species_detail") : null;
+    payload.health_flags = Object.fromEntries(
+      Object.entries(vaccinationStatuses).map(([key, value]) => [key, value === "DONE"]),
+    );
     setBusy(true);
     setError(undefined);
     try {
@@ -67,6 +74,14 @@ export function PetManager() {
         payload.photo_media_id = uploaded.data.id;
       } else if (editing?.photo_media_id) {
         payload.photo_media_id = editing.photo_media_id;
+      }
+      if (vaccinationRecordPhoto instanceof File && vaccinationRecordPhoto.size > 0) {
+        const photoData = new FormData();
+        photoData.append("file", vaccinationRecordPhoto);
+        const uploaded = await write<{ data: { id: string } }>("post", "/api/pets/media", photoData);
+        payload.vaccination_record_media_id = uploaded.data.id;
+      } else if (editing?.vaccination_record_media_id) {
+        payload.vaccination_record_media_id = editing.vaccination_record_media_id;
       }
       await write(editing ? "patch" : "post", editing ? `/api/pets/${editing.id}` : "/api/pets", payload);
       setEditing(undefined);
@@ -93,8 +108,8 @@ export function PetManager() {
   }
 
   const activeCount = pets.filter((pet) => pet.status === "ACTIVE").length;
-  const vaccinationCount = pets.filter((pet) => Boolean(pet.vaccination_note?.trim())).length;
-  const matchCount = pets.filter((pet) => Boolean(pet.species && pet.size && pet.temperament?.trim())).length;
+  const vaccinationCount = pets.filter((pet) => pet.vaccination_statuses?.core_vaccines === "DONE" || Boolean(pet.health_flags?.core_vaccines) || Boolean(pet.vaccination_record_media_id)).length;
+  const matchCount = pets.filter((pet) => Boolean(pet.species && pet.size && (pet.temperament?.trim() || pet.behavior_tags?.length))).length;
 
   return (
     <>

@@ -6,7 +6,7 @@ import { type Listing } from "@/lib/api/types";
 import { areas } from "@/lib/constants";
 import Link from "next/link";
 import { useState } from "react";
-import { listingPhoto, type CareContext, type ChatRecord } from "../types";
+import { bookingDetailHref, listingPhoto, type CareContext, type ChatRecord } from "../types";
 import { CareOverview } from "./care-overview";
 import styles from "../chat.module.css";
 
@@ -27,6 +27,6 @@ export function ChatDetails({ record, context, listing, onUseNote }: { record?: 
     <section className={styles.notes}><header><h3>Ghi chú riêng cho Sitter</h3><button onClick={() => setEditing(!editing)} aria-expanded={editing}>{editing ? "Đóng" : "Soạn ghi chú"}</button></header>
       {editing ? <><textarea aria-label="Ghi chú cho người chăm" placeholder="Khẩu phần ăn, thói quen, điều cần lưu ý..." value={note} maxLength={1500} onChange={(event) => setNote(event.target.value)} /><button className={styles.noteAction} disabled={!note.trim()} onClick={() => { onUseNote(`Mình muốn dặn thêm về bé: ${note.trim()}`); setEditing(false); }}>Thêm vào ô tin nhắn <PettelIcon name="arrow" /></button></> : <p>{note || "Thêm thói quen ăn uống, giờ đi dạo và những lưu ý để người chăm hiểu bé hơn."}</p>}
     </section>
-    <div className={styles.helpCard}><span><PettelIcon name="shield" /></span><div><strong>Cần hỗ trợ từ PETTEL?</strong><p>Trao đổi về đơn và quá trình chăm sóc</p></div><Link href="/bookings">Xem đơn</Link></div>
+    <div className={styles.helpCard}><span><PettelIcon name="shield" /></span><div><strong>Cần hỗ trợ từ PETTEL?</strong><p>Trao đổi về đơn và quá trình chăm sóc</p></div><Link href={record?.status ? bookingDetailHref(record) : record?.listing_id ? `/detail?id=${record.listing_id}` : "/owner-profile#history"}>Xem đơn</Link></div>
   </aside>;
 }

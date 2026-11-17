@@ -3,6 +3,7 @@
 import { ApiError } from "@/components/ui/api-error";
 import { PettelIcon } from "@/components/ui/pettel-icon";
 import { AvailabilityManager } from "@/features/caregiver/components/availability-manager";
+import { BookingPanel } from "@/features/bookings/components/booking-panel";
 import { ListingManager } from "@/features/caregiver/components/listing-manager";
 import { ProfileForm } from "@/features/caregiver/components/profile-form";
 import { type ManagedListing, type Profile } from "@/features/caregiver/types";
@@ -12,7 +13,7 @@ import { statuses } from "@/lib/constants";
 import { money } from "@/lib/format";
 import { write } from "@/lib/api/request";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "../sitter-management.module.css";
 
 const navItems = [
@@ -68,7 +69,22 @@ export function SitterManagementDashboard({ profile }: { profile: Profile }) {
   const [actionError, setActionError] = useState<unknown>();
   const [busyBooking, setBusyBooking] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   const [selectedScheduleDate, setSelectedScheduleDate] = useState(() => dateKey(new Date()));
+
+  useEffect(() => {
+    function syncFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab") as DashboardTab | null;
+      const openId = params.get("open");
+      const validTab = tab && navItems.some((item) => item.id === tab) ? tab : "overview";
+      setActiveTab(openId ? "bookings" : validTab);
+      setSelectedBookingId(openId);
+    }
+    syncFromUrl();
+    window.addEventListener("popstate", syncFromUrl);
+    return () => window.removeEventListener("popstate", syncFromUrl);
+  }, []);
 
   const sitterBookings = useMemo(
     () => (bookings.data?.data ?? []).filter((booking) => booking.participant_role === "CAREGIVER"),
@@ -99,6 +115,11 @@ export function SitterManagementDashboard({ profile }: { profile: Profile }) {
   const todaysBookings = sitterBookings.filter((booking) =>
     dateKey(new Date(booking.start_at)) === today
     && !["CANCELLED", "REJECTED", "EXPIRED", "COMPLETED"].includes(booking.status),
+  ).sort((a, b) => a.start_at.localeCompare(b.start_at));
+  const upcomingBookings = sitterBookings.filter((booking) =>
+    ["REQUESTED", "AWAITING_PAYMENT", "CONFIRMED", "IN_PROGRESS"].includes(booking.status)
+    && new Date(booking.start_at) > now
+    && dateKey(new Date(booking.start_at)) !== today,
   ).sort((a, b) => a.start_at.localeCompare(b.start_at));
   const featuredBookings = [...sitterBookings]
     .filter((booking) => ["REQUESTED", "CONFIRMED", "IN_PROGRESS", "AWAITING_PAYMENT"].includes(booking.status))
@@ -133,6 +154,19 @@ export function SitterManagementDashboard({ profile }: { profile: Profile }) {
 
   function selectTab(tab: DashboardTab) {
     setActiveTab(tab);
+    setSelectedBookingId(null);
+    const params = new URLSearchParams();
+    if (tab !== "overview") params.set("tab", tab);
+    const query = params.toString();
+    window.history.pushState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function openBooking(id: string) {
+    setActiveTab("bookings");
+    setSelectedBookingId(id);
+    const params = new URLSearchParams({ tab: "bookings", open: id });
+    window.history.pushState(null, "", `${window.location.pathname}?${params.toString()}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -153,7 +187,7 @@ export function SitterManagementDashboard({ profile }: { profile: Profile }) {
     <span className={styles.petAvatar}><PettelIcon name="paw" /></span>
     <div className={styles.bookingInfo}><div><strong>{booking.pet_name ?? `Đơn chăm sóc #${booking.id}`}</strong><span className={`${styles.status} ${statusTone(booking.status)}`}>{statuses[booking.status] ?? booking.status}</span></div><p>{booking.listing_title ?? "Dịch vụ Sitter"} · {timeRange(booking.start_at, booking.end_at)}</p><small>{new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(booking.start_at))}</small></div>
     <div className={styles.bookingPrice}>{money(booking.price_snapshot_vnd)}<small>giá trị đơn</small></div>
-    {booking.status === "REQUESTED" ? <div className={styles.bookingActions}><button disabled={busyBooking === booking.id} onClick={() => void bookingAction(booking.id, "reject")}>Từ chối</button><button disabled={busyBooking === booking.id} onClick={() => void bookingAction(booking.id, "accept")}><PettelIcon name="check" /> Xác nhận</button></div> : <Link className={styles.detailsLink} href={`/bookings?open=${booking.id}`}>Chi tiết</Link>}
+    {booking.status === "REQUESTED" ? <div className={styles.bookingActions}><button disabled={busyBooking === booking.id} onClick={() => void bookingAction(booking.id, "reject")}>Từ chối</button><button disabled={busyBooking === booking.id} onClick={() => void bookingAction(booking.id, "accept")}><PettelIcon name="check" /> Xác nhận</button></div> : <button type="button" className={styles.detailsLink} onClick={() => openBooking(booking.id)}>Chi tiết</button>}
   </article>;
 
   const todaySchedule = <section className={`${styles.panel} ${styles.schedule}`}>
@@ -163,6 +197,17 @@ export function SitterManagementDashboard({ profile }: { profile: Profile }) {
     <div className={styles.todayList}>{todaysBookings.slice(0, 4).map((booking) => <article key={booking.id}>
       <strong>{new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit" }).format(new Date(booking.start_at))}</strong>
       <div><b>{booking.pet_name ?? `Đơn #${booking.id}`}</b><small>{booking.listing_title ?? "Dịch vụ Sitter"} · {timeRange(booking.start_at, booking.end_at)}</small></div>
+      <span className={`${styles.status} ${statusTone(booking.status)}`}>{statuses[booking.status] ?? booking.status}</span>
+    </article>)}</div>
+  </section>;
+
+  const upcomingSchedule = <section className={`${styles.panel} ${styles.upcomingSchedule}`}>
+    <div className={styles.panelHeading}><div><h2>Lịch sắp tới</h2><span>{upcomingBookings.length} lịch đã lên kế hoạch</span></div><button type="button" onClick={() => selectTab("bookings")}>Mở đơn <PettelIcon name="arrow" /></button></div>
+    {bookings.loading && <p className={styles.empty}>Đang tải lịch...</p>}
+    {!bookings.loading && upcomingBookings.length === 0 && <p className={styles.empty}>Chưa có lịch sắp tới.</p>}
+    <div className={styles.todayList}>{upcomingBookings.slice(0, 4).map((booking) => <article key={booking.id}>
+      <strong>{new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", day: "2-digit", month: "2-digit" }).format(new Date(booking.start_at))}</strong>
+      <div><b>{booking.pet_name ?? `Đơn #${booking.id}`}</b><small>{new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit" }).format(new Date(booking.start_at))} · {booking.listing_title ?? "Dịch vụ Sitter"}</small></div>
       <span className={`${styles.status} ${statusTone(booking.status)}`}>{statuses[booking.status] ?? booking.status}</span>
     </article>)}</div>
   </section>;
@@ -220,12 +265,12 @@ export function SitterManagementDashboard({ profile }: { profile: Profile }) {
                   <span className={styles.petAvatar}><PettelIcon name="paw" /></span>
                   <div className={styles.bookingInfo}><div><strong>{booking.pet_name ?? `Đơn chăm sóc #${booking.id}`}</strong><span className={`${styles.status} ${statusTone(booking.status)}`}>{statuses[booking.status] ?? booking.status}</span></div><p>{booking.listing_title ?? "Dịch vụ Sitter"} · {timeRange(booking.start_at, booking.end_at)}</p><small>{new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(booking.start_at))}</small></div>
                   <div className={styles.bookingPrice}>{money(booking.price_snapshot_vnd)}<small>giá trị đơn</small></div>
-                  {booking.status === "REQUESTED" ? <div className={styles.bookingActions}><button disabled={busyBooking === booking.id} onClick={() => void bookingAction(booking.id, "reject")}>Từ chối</button><button disabled={busyBooking === booking.id} onClick={() => void bookingAction(booking.id, "accept")}><PettelIcon name="check" /> Xác nhận</button></div> : <Link className={styles.detailsLink} href={`/bookings?open=${booking.id}`}>Chi tiết</Link>}
+                  {booking.status === "REQUESTED" ? <div className={styles.bookingActions}><button disabled={busyBooking === booking.id} onClick={() => void bookingAction(booking.id, "reject")}>Từ chối</button><button disabled={busyBooking === booking.id} onClick={() => void bookingAction(booking.id, "accept")}><PettelIcon name="check" /> Xác nhận</button></div> : <button type="button" className={styles.detailsLink} onClick={() => openBooking(booking.id)}>Chi tiết</button>}
                 </article>)}
               </div>
             </section>
 
-            {todaySchedule}
+            <div className={styles.scheduleStack}>{todaySchedule}{upcomingSchedule}</div>
           </div>}
 
           {activeTab === "overview" && <div className={styles.columns}>
@@ -281,7 +326,7 @@ export function SitterManagementDashboard({ profile }: { profile: Profile }) {
                 <span className={styles.agendaLine} />
                 <div className={styles.agendaInfo}><strong>{booking.pet_name ?? `Đơn chăm sóc #${booking.id}`}</strong><span>{booking.listing_title ?? "Dịch vụ Sitter"}</span><small>Mã đơn #{booking.id}</small></div>
                 <span className={`${styles.status} ${statusTone(booking.status)}`}>{statuses[booking.status] ?? booking.status}</span>
-                <Link className={styles.agendaAction} href={`/bookings?open=${booking.id}`}>Chi tiết <PettelIcon name="arrow" /></Link>
+                <Link className={styles.agendaAction} href={`/caregiver/manage?tab=bookings&open=${booking.id}`}>Chi tiết <PettelIcon name="arrow" /></Link>
               </article>)}</div>
             </section>
 
@@ -292,7 +337,20 @@ export function SitterManagementDashboard({ profile }: { profile: Profile }) {
               {!listings.loading && sitterListings.length > 0 && <AvailabilityManager listings={sitterListings} />}
             </section>
           </div>}
-          {activeTab === "bookings" && <section className={styles.panel}><div className={styles.panelHeading}><div><h2>Tất cả đơn nhận chăm sóc</h2><span>{sitterBookings.length} đơn</span></div></div>{bookings.loading && <p className={styles.empty}>Đang tải đơn chăm sóc...</p>}{!bookings.loading && sitterBookings.length === 0 && <p className={styles.empty}>Chưa có đơn chăm sóc dành cho bạn.</p>}<div className={styles.bookingList}>{sitterBookings.map(renderBooking)}</div></section>}
+          {activeTab === "bookings" && <section className={styles.panel}>
+            {selectedBookingId ? <>
+              <div className={styles.bookingDetailHeading}>
+                <div><h2>Chi tiết đơn chăm sóc</h2><span>Mã đơn #{selectedBookingId} · Thông tin và thao tác của đơn</span></div>
+                <button type="button" className={styles.backToBookings} onClick={() => selectTab("bookings")}>← Tất cả đơn</button>
+              </div>
+              <BookingPanel id={selectedBookingId} onChange={() => bookings.reload()} variant="caregiver" />
+            </> : <>
+              <div className={styles.panelHeading}><div><h2>Tất cả đơn nhận chăm sóc</h2><span>{sitterBookings.length} đơn</span></div></div>
+              {bookings.loading && <p className={styles.empty}>Đang tải đơn chăm sóc...</p>}
+              {!bookings.loading && sitterBookings.length === 0 && <p className={styles.empty}>Chưa có đơn chăm sóc dành cho bạn.</p>}
+              <div className={styles.bookingList}>{sitterBookings.map(renderBooking)}</div>
+            </>}
+          </section>}
           {activeTab === "verification" && <section className={styles.verificationNotice}><PettelIcon name="shield" /><div><strong>Xác minh & an toàn</strong><p>Ảnh CCCD và chứng chỉ (nếu có) được lưu riêng tư trong hồ sơ của bạn. Quy trình nhân viên PETTEL xem xét và cập nhật trạng thái xác minh chưa được kết nối.</p></div><Link href="/contact-support">Liên hệ hỗ trợ</Link></section>}
           {activeTab === "support" && <section className={`${styles.panel} ${styles.supportPanel}`}><span><PettelIcon name="message" /></span><h2>Đội ngũ PETTEL sẵn sàng hỗ trợ bạn</h2><p>Nếu cần trợ giúp về hồ sơ, dịch vụ, lịch nhận chăm hoặc đơn chăm sóc, hãy gửi yêu cầu cho đội ngũ hỗ trợ.</p><Link href="/contact-support">Mở Trung tâm Liên hệ và Hỗ trợ <PettelIcon name="arrow" /></Link></section>}
         </main>

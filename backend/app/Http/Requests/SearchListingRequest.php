@@ -89,6 +89,7 @@ class SearchListingRequest extends FormRequest
                 Rule::in(['SMALL', 'MEDIUM', 'LARGE']),
             ],
             'pet_id' => ['bail', 'sometimes', 'required', 'string', 'regex:/\A[1-9][0-9]{0,19}\z/'],
+            'space_type' => ['sometimes', 'nullable', 'string', Rule::in(['INDOOR', 'INDOOR_YARD'])],
             'page' => [...$integerQuery, 'min:1'],
             'per_page' => [...$integerQuery, 'between:1,50'],
             'min_price_vnd' => [...$integerQuery, 'min:0'],

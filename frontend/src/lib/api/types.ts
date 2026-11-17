@@ -9,12 +9,15 @@ export type Pet = {
   id: string;
   name: string;
   species: string;
+    species_detail?: string | null;
   breed?: string | null;
   sex: string | null;
   size: string | null;
   birth_date: string | null;
   age_note: string | null;
   diet_notes: string | null;
+    food_allergies?: string | null;
+    foods_to_avoid?: string | null;
   vaccination_note: string | null;
   temperament: string | null;
   special_needs: string | null;
@@ -22,6 +25,13 @@ export type Pet = {
   microchip_number?: string | null;
   is_neutered?: boolean;
   health_flags?: { core_vaccines?: boolean; rabies_vaccine?: boolean; deworming?: boolean } | null;
+    vaccination_statuses?: { core_vaccines?: "DONE" | "NOT_DONE" | "UNKNOWN"; rabies_vaccine?: "DONE" | "NOT_DONE" | "UNKNOWN"; deworming?: "DONE" | "NOT_DONE" | "UNKNOWN" };
+    core_vaccines_date?: string | null;
+    rabies_vaccine_date?: string | null;
+    deworming_date?: string | null;
+    vaccination_record_media_id?: string | null;
+    behavior_tags?: string[];
+    care_support_tags?: string[];
   photo_media_id?: string | null;
   status: string;
 };
@@ -67,12 +77,14 @@ export type Listing = {
     } | null;
   } | null;
   match_reasons?: string[];
+  smart_match?: { score: number; reasons: string[] } | null;
   status?: string;
 };
 
 export type Booking = {
   id: string;
   status: string;
+  cancellation_reason_code?: string | null;
   pet_id: string;
   listing_id: string;
   start_at: string;

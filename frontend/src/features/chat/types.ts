@@ -5,6 +5,11 @@ export type ChatKind = "inquiries" | "bookings";
 export type ChatThread = { id: string; kind: ChatKind; title: string; subtitle: string; listingId: string; petName?: string | null; status?: string };
 export type ChatRecord = Partial<Booking & Inquiry>;
 export type CareContext = NonNullable<Message["context"]>;
+export function bookingDetailHref(record?: ChatRecord) {
+  return record?.participant_role === "CAREGIVER" && record.id
+    ? `/caregiver/manage?tab=bookings&open=${encodeURIComponent(record.id)}`
+    : "/owner-profile#history";
+}
 export const dong = (value: number) => `${value.toLocaleString("vi-VN")}đ`;
 export function listingPhoto(listing?: Listing, avatar = false) {
   const photo = listing?.caregiver?.demo?.photo_file;

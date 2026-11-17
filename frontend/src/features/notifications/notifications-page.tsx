@@ -78,9 +78,7 @@ export function NotificationsPage() {
           <section className={styles.list} aria-label="Danh sách thông báo">
           {notifications.data?.data.map((notification) => {
             const copy = notificationCopy(notification.type);
-            const href = notification.data.booking_id
-              ? `/bookings?open=${encodeURIComponent(notification.data.booking_id)}`
-              : "/bookings";
+            const href = "/owner-profile#history";
 
             return (
               <article className={`${styles.item} ${notification.read_at ? "" : styles.unread}`} key={notification.id}>

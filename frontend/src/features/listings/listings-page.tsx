@@ -71,6 +71,12 @@ export function ListingsPage() {
               ? `${resource.data.meta?.total ?? resource.data.data.length} Sitter ở Đà Nẵng`
               : "Sitter ở Đà Nẵng"}
           </h1>
+          {query.get("pet_id") && (
+            <div className="listing-smart-results-note">
+              <strong><span aria-hidden="true">✦</span> Smart Match đang ưu tiên hồ sơ bé</strong>
+              <p>Kết quả được sắp xếp theo loài, kích thước và kinh nghiệm chăm sóc phù hợp; thời gian, khu vực và không gian đã chọn cũng được áp dụng.</p>
+            </div>
+          )}
           {resource.loading && <p role="status">Đang tìm dịch vụ...</p>}
           {resource.data?.data.map((item) => (
             <ListingCard key={item.id} item={item} />

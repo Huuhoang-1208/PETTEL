@@ -24,6 +24,7 @@ use App\Http\Controllers\ListingMediaController;
 use App\Http\Controllers\PetController;
 use App\Http\Controllers\PublicListingController;
 use App\Http\Controllers\RejectBookingController;
+use App\Http\Controllers\ReopenExpiredBookingPaymentController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SandboxPaymentCallbackController;
 use App\Http\Controllers\SimulateSandboxPaymentController;
@@ -186,6 +187,11 @@ Route::post('/bookings/{id}/accept', AcceptBookingController::class)
     ->middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
     ->whereNumber('id')
     ->name('bookings.accept');
+
+Route::post('/bookings/{id}/reopen-expired-payment', ReopenExpiredBookingPaymentController::class)
+    ->middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
+    ->whereNumber('id')
+    ->name('bookings.reopen-expired-payment');
 
 Route::post('/bookings/{id}/start', [BookingCareLifecycleController::class, 'start'])
     ->middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])

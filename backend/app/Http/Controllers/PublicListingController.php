@@ -12,6 +12,7 @@ use App\Http\Resources\SearchListingResource;
 use App\Models\AvailabilitySlot;
 use App\Models\Booking;
 use App\Models\Listing;
+use App\Models\Pet;
 use App\Support\PublicReviewCache;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -48,6 +49,12 @@ class PublicListingController extends Controller
 
         if ($pet !== null) {
             $query->whereRelation('caregiverProfile', 'user_id', '!=', $pet->user_id);
+        }
+
+        if ($pet !== null && isset($filters['space_type'])) {
+            $query->whereRelation('caregiverProfile', fn (Builder $profile) =>
+                $profile->whereJsonContains('application_data_json->space_type', $filters['space_type'])
+            );
         }
 
         $keyword = $filters['q'] ?? null;
@@ -92,10 +99,22 @@ class PublicListingController extends Controller
                 $query->where('listings.price_total_vnd', '<=', (int) $filters['max_price_vnd']);
             }
 
-            $query->orderBy('listings.price_total_vnd');
+            if ($pet === null) {
+                $query->orderBy('listings.price_total_vnd');
+            }
 
             $filters['start_at'] = $range['start']->format('Y-m-d\TH:i:s.u\Z');
             $filters['end_at'] = $range['end']->format('Y-m-d\TH:i:s.u\Z');
+        }
+
+        if ($pet !== null) {
+            [$scoreExpression, $scoreBindings] = $this->smartMatchScoreExpression($pet);
+            $query->selectRaw($scoreExpression.' AS smart_match_score', $scoreBindings)
+                ->orderByDesc('smart_match_score');
+
+            if ($range !== null) {
+                $query->orderBy('listings.price_total_vnd');
+            }
         }
 
         $query->orderBy('listings.id');
@@ -123,9 +142,16 @@ class PublicListingController extends Controller
             $reasons[] = 'WITHIN_REQUESTED_BUDGET';
         }
 
-        $results->getCollection()->each(
-            fn (Listing $listing) => $listing->setAttribute('search_match_reasons', $reasons),
-        );
+        $results->getCollection()->each(function (Listing $listing) use ($reasons, $pet, $filters): void {
+            $listing->setAttribute('search_match_reasons', $reasons);
+
+            if ($pet !== null) {
+                $listing->setAttribute(
+                    'smart_match_reasons',
+                    $this->smartMatchReasons($listing, $pet, $filters),
+                );
+            }
+        });
 
         $response = SearchListingResource::collection($results);
 
@@ -140,6 +166,111 @@ class PublicListingController extends Controller
         }
 
         return $response;
+    }
+
+    /** @return array{string, list<string>} */
+    private function smartMatchScoreExpression(Pet $pet): array
+    {
+        $signals = $this->smartMatchSignals($pet);
+        $parts = [];
+        $bindings = [];
+
+        foreach ($signals as $signal) {
+            $parts[] = "CASE WHEN JSON_CONTAINS(application_data_json, JSON_QUOTE(?), '$.{$signal['path']}') THEN {$signal['weight']} ELSE 0 END";
+            $bindings[] = $signal['value'];
+            if (isset($signal['accepted'])) {
+                $parts[] = "CASE WHEN JSON_CONTAINS(application_data_json, JSON_QUOTE(?), '$.pet_requirements') THEN {$signal['accepted_weight']} ELSE 0 END";
+                $bindings[] = $signal['accepted'];
+            }
+        }
+
+        if ($this->petNeedsSpecialDiet($pet)) {
+            $parts[] = "CASE WHEN JSON_CONTAINS(application_data_json, JSON_QUOTE(?), '$.amenities') THEN 1 ELSE 0 END";
+            $bindings[] = 'SEPARATE_FOOD_STORAGE';
+        }
+
+        $score = $parts === [] ? '0' : implode(' + ', $parts);
+
+        return [
+            '(SELECT '.$score.' FROM caregiver_profiles WHERE caregiver_profiles.id = listings.caregiver_profile_id)',
+            $bindings,
+        ];
+    }
+
+    /** @return list<array{path: string, value: string, weight: int, accepted?: string, accepted_weight?: int, reason: string}> */
+    private function smartMatchSignals(Pet $pet): array
+    {
+        $signals = [];
+        $species = (string) $pet->species;
+        $size = (string) $pet->size;
+
+        if ($species === 'DOG' && in_array($size, ['SMALL', 'MEDIUM', 'LARGE'], true)) {
+            $signals[] = ['path' => 'experience_species', 'value' => 'DOG_'.$size, 'weight' => 3, 'reason' => 'DOG_SIZE_EXPERIENCE'];
+        } elseif ($species === 'OTHER') {
+            $signals[] = ['path' => 'experience_species', 'value' => 'SMALL_PETS', 'weight' => 3, 'reason' => 'SMALL_PET_EXPERIENCE'];
+        } elseif ($species === 'CAT' && is_string($pet->breed) && $pet->breed !== '') {
+            $breed = mb_strtolower($pet->breed);
+            if (str_contains($breed, 'dài') || str_contains($breed, 'long') || str_contains($breed, 'persian') || str_contains($breed, 'maine coon') || str_contains($breed, 'ragdoll') || str_contains($breed, 'angora')) {
+                $signals[] = ['path' => 'experience_species', 'value' => 'CAT_LONG_HAIR', 'weight' => 3, 'reason' => 'CAT_BREED_EXPERIENCE'];
+            } elseif (str_contains($breed, 'ngắn') || str_contains($breed, 'short') || str_contains($breed, 'siamese') || str_contains($breed, 'sphynx')) {
+                $signals[] = ['path' => 'experience_species', 'value' => 'CAT_SHORT_HAIR', 'weight' => 3, 'reason' => 'CAT_BREED_EXPERIENCE'];
+            }
+        }
+
+        $behavior = $pet->behavior_tags ?? [];
+        $support = $pet->care_support_tags ?? [];
+
+        if (array_intersect($behavior, ['SHY', 'FEARS_STRANGERS', 'NEEDS_WARM_UP', 'NOT_SOCIAL_WITH_PETS', 'SEPARATION_ANXIETY']) !== []) {
+            $signals[] = ['path' => 'care_skills', 'value' => 'SENIOR_OR_SHY', 'weight' => 4, 'accepted' => 'ACCEPTS_SENIOR_OR_SHY', 'accepted_weight' => 2, 'reason' => 'SHY_PET_CARE'];
+        }
+        if (in_array('ORAL_MEDICATION', $support, true) || in_array('EYE_DROPS', $support, true)) {
+            $signals[] = ['path' => 'care_skills', 'value' => 'MEDICATION', 'weight' => 4, 'accepted' => 'ACCEPTS_MEDICATION', 'accepted_weight' => 2, 'reason' => 'MEDICATION_CARE'];
+        }
+        if (in_array('SPECIAL_DIET', $support, true) || $this->petNeedsSpecialDiet($pet)) {
+            $signals[] = ['path' => 'care_skills', 'value' => 'SPECIAL_DIET', 'weight' => 4, 'accepted' => 'ACCEPTS_SPECIAL_DIET', 'accepted_weight' => 2, 'reason' => 'SPECIAL_DIET_CARE'];
+        }
+        if (in_array('POST_SURGERY', $support, true)) {
+            $signals[] = ['path' => 'care_skills', 'value' => 'POST_SURGERY', 'weight' => 4, 'accepted' => 'ACCEPTS_POST_SURGERY', 'accepted_weight' => 2, 'reason' => 'POST_SURGERY_CARE'];
+        }
+
+        return $signals;
+    }
+
+    private function petNeedsSpecialDiet(Pet $pet): bool
+    {
+        return filled($pet->food_allergies) || filled($pet->foods_to_avoid);
+    }
+
+    /** @param array<string, mixed> $filters @return list<string> */
+    private function smartMatchReasons(Listing $listing, Pet $pet, array $filters): array
+    {
+        $reasons = ['SPECIES_ACCEPTED', 'SIZE_ACCEPTED'];
+        $application = $listing->caregiverProfile?->application_data_json ?? [];
+        $skills = $application['care_skills'] ?? [];
+        $requirements = $application['pet_requirements'] ?? [];
+        $amenities = $application['amenities'] ?? [];
+
+        foreach ($this->smartMatchSignals($pet) as $signal) {
+            if ($signal['path'] === 'experience_species') {
+                if (in_array($signal['value'], $application['experience_species'] ?? [], true)) {
+                    $reasons[] = $signal['reason'];
+                }
+                continue;
+            }
+
+            if (in_array($signal['value'], $skills, true) || in_array($signal['accepted'] ?? '', $requirements, true)) {
+                $reasons[] = $signal['reason'];
+            }
+        }
+
+        if ($this->petNeedsSpecialDiet($pet) && in_array('SEPARATE_FOOD_STORAGE', $amenities, true)) {
+            $reasons[] = 'SEPARATE_FOOD_STORAGE';
+        }
+        if (isset($filters['space_type'])) {
+            $reasons[] = $filters['space_type'] === 'INDOOR' ? 'INDOOR_SPACE' : 'INDOOR_YARD_SPACE';
+        }
+
+        return array_values(array_unique($reasons));
     }
 
     public function show(string $id): PublicListingResource

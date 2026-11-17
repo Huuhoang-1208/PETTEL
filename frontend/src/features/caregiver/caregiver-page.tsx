@@ -103,7 +103,7 @@ export function CaregiverPage() {
               <h1 id="caregiver-hero-title">Biến tình yêu thú cưng thành <em>thu nhập linh hoạt</em> cùng PETTEL</h1>
               <p>Kiếm thêm từ <strong>8.000.000đ – 25.000.000đ/tháng</strong> bằng cách trông giữ bé cún, mèo tại căn hộ quen hoặc dắt cún đi dạo theo giờ rảnh rỗi. Được quỹ bảo lãnh y tế thú cưng đồng hành và đội ngũ chuyên gia hỗ trợ 24/7.</p>
               <div className={styles.actions}>
-                <Link className={styles.primaryAction} href="/register?next=%2Fcaregiver"><PettelIcon name="user" /> Đăng ký làm Sitter ngay</Link>
+                <Link className={styles.primaryAction} href="/register?next=%2Fcaregiver%2Fmanage"><PettelIcon name="user" /> Đăng ký làm Sitter ngay</Link>
                 <a className={styles.secondaryAction} href="#income-estimator"><PettelIcon name="sliders" /> Ước tính thu nhập của bạn</a>
               </div>
               <div className={styles.perks}>
@@ -155,7 +155,7 @@ export function CaregiverPage() {
               </div>
               <div className={styles.estimateFooter}>
                 <p><PettelIcon name="shield" /><span><strong>Phí dịch vụ 15% bao gồm những gì?</strong><small>Bảo hiểm thú cưng PETTEL Care, kết nối khách hàng đã xác minh và đội ngũ hỗ trợ đồng hành. Thu nhập thực tế thay đổi theo lịch nhận chăm sóc.</small></span></p>
-                <Link href="/register?next=%2Fcaregiver">Bắt đầu tạo hồ sơ Sitter <PettelIcon name="arrow" /></Link>
+                <Link href="/register?next=%2Fcaregiver%2Fmanage">Bắt đầu tạo hồ sơ Sitter <PettelIcon name="arrow" /></Link>
               </div>
             </div>
           </section>
@@ -213,14 +213,14 @@ export function CaregiverPage() {
               <span className={styles.applicationIcon}><PettelIcon name="paw" /></span>
               <h2 id="sitter-application-title">Sẵn sàng khởi đầu hành trình cùng PETTEL?</h2>
               <p className={styles.applicationLead}>Tạo tài khoản miễn phí chỉ trong 60 giây. Đội ngũ điều phối PETTEL sẽ liên hệ tư vấn và khảo sát hồ sơ của bạn trong vòng 24 giờ.</p>
-              <form className={styles.applicationForm} onSubmit={(event) => { event.preventDefault(); window.location.assign("/register?next=%2Fcaregiver"); }}>
+              <form className={styles.applicationForm} onSubmit={(event) => { event.preventDefault(); window.location.assign("/register?next=%2Fcaregiver%2Fmanage"); }}>
                 <label>Họ và tên của bạn <b>*</b><input name="name" required maxLength={100} autoComplete="name" placeholder="Ví dụ: Nguyễn Văn An" /></label>
                 <label>Số điện thoại liên hệ <b>*</b><input name="phone" required type="tel" autoComplete="tel" pattern="[0-9+(). -]{9,16}" placeholder="Ví dụ: 0905 123 456" /></label>
                 <label>Khu vực bạn sinh sống <b>*</b><select name="area" required defaultValue=""><option value="" disabled>Chọn Quận/Huyện tại Đà Nẵng</option><option>Hải Châu</option><option>Sơn Trà</option><option>Thanh Khê</option><option>Ngũ Hành Sơn</option><option>Cẩm Lệ</option><option>Liên Chiểu</option><option>Hòa Vang</option></select></label>
                 <label>Dịch vụ bạn quan tâm nhất<select name="service" defaultValue="all"><option value="all">Tất cả dịch vụ (Trông qua đêm, Daycare, Dắt dạo)</option><option value="boarding">Trông giữ qua đêm</option><option value="daycare">Daycare</option><option value="walk">Dắt chó đi dạo</option></select></label>
                 <button type="submit"><PettelIcon name="arrow" /> Gửi hồ sơ đăng ký Sitter</button>
               </form>
-              <p className={styles.applicationLogin}>Đã có tài khoản PETTEL? <Link href="/login?next=%2Fcaregiver">Đăng nhập để liên kết ngay</Link></p>
+              <p className={styles.applicationLogin}>Đã có tài khoản PETTEL? <Link href="/login?next=%2Fcaregiver%2Fmanage">Đăng nhập để liên kết ngay</Link></p>
             </div>
           </section>
         </main>

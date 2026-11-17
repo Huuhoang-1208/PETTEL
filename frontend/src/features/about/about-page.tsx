@@ -57,7 +57,7 @@ export function AboutPage() {
 
       <section className={styles.cta} aria-labelledby="about-cta-heading"><div className={styles.ctaInner}>
         <div><h2 id="about-cta-heading">Đồng hành cùng cộng đồng PETTEL</h2><p>Bạn muốn tìm người chăm sóc cho bé hay muốn trở thành một Pet Sitter tận tâm?</p></div>
-        <div className={styles.ctaActions}><Link className={styles.primary} href="/services"><PettelIcon name="search" /> Khám phá dịch vụ Sitter</Link><Link className={styles.secondary} href="/caregiver"><PettelIcon name="heart" /> Trở thành đối tác Sitter</Link></div>
+        <div className={styles.ctaActions}><Link className={styles.primary} href="/services"><PettelIcon name="search" /> Khám phá dịch vụ Sitter</Link><Link className={styles.secondary} href="/caregiver/manage"><PettelIcon name="heart" /> Trở thành đối tác Sitter</Link></div>
       </div></section>
     </main>
   </div>;

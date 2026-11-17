@@ -11,16 +11,16 @@ const parentLinks = [
 ];
 
 const sitterLinks = [
-  { label: "Đăng ký làm Sitter", href: "/caregiver" },
-  { label: "Tạo hồ sơ dịch vụ", href: "/caregiver" },
-  { label: "Quản lý lịch nhận chăm", href: "/caregiver" },
-  { label: "Quản lý đơn chăm sóc", href: "/bookings" },
+  { label: "Đăng ký làm Sitter", href: "/caregiver/manage" },
+  { label: "Tạo hồ sơ dịch vụ", href: "/caregiver/manage" },
+  { label: "Quản lý lịch nhận chăm", href: "/caregiver/manage" },
+  { label: "Quản lý đơn chăm sóc", href: "/caregiver/manage?tab=bookings" },
 ];
 
 const safetyLinks = [
   { label: "Tạo tài khoản PETTEL", href: "/login" },
-  { label: "Theo dõi trạng thái đơn", href: "/bookings" },
-  { label: "Trao đổi với người chăm", href: "/bookings" },
+  { label: "Theo dõi trạng thái đơn", href: "/owner-profile#history" },
+  { label: "Trao đổi với người chăm", href: "/owner-profile#history" },
   { label: "Xem thông tin dịch vụ", href: "/services" },
 ];
 
@@ -78,7 +78,7 @@ export function SiteFooter() {
         <nav aria-label="Liên kết nhanh">
           <Link href="/services">Tìm dịch vụ</Link>
           <Link href="/owner-profile#history">Hỗ trợ đơn đặt</Link>
-          <Link href="/caregiver">Trở thành Sitter</Link>
+          <Link href="/caregiver/manage">Trở thành Sitter</Link>
         </nav>
       </div>
     </footer>

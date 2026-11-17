@@ -7,6 +7,7 @@ use App\Models\Booking;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BookingQueryController extends Controller
 {
@@ -26,7 +27,14 @@ class BookingQueryController extends Controller
 
     public function show(Request $request, string $id): JsonResponse
     {
-        return response()->json(['data' => $this->resource($request, $this->accessible($request)->findOrFail($id))])
+        $booking = $this->accessible($request)->findOrFail($id);
+        $data = $this->resource($request, $booking);
+        $data['cancellation_reason_code'] = $booking->status === 'CANCELLED'
+            ? DB::table('booking_status_events')->where('booking_id', $booking->id)
+                ->where('to_status', 'CANCELLED')->orderByDesc('id')->value('reason_code')
+            : null;
+
+        return response()->json(['data' => $data])
             ->header('Cache-Control', 'private, no-store');
     }
 

@@ -99,15 +99,29 @@ export function OwnerDashboard() {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const payload: Record<string, unknown> = Object.fromEntries(form);
-    const photo = form.get("photo"); delete payload.photo;
-    payload.health_flags = { core_vaccines: form.has("health_core_vaccines"), rabies_vaccine: form.has("health_rabies_vaccine"), deworming: form.has("health_deworming") };
-    delete payload.health_core_vaccines; delete payload.health_rabies_vaccine; delete payload.health_deworming;
+    const photo = form.get("photo"); const vaccinationRecordPhoto = form.get("vaccination_record_photo");
+    delete payload.photo; delete payload.vaccination_record_photo;
+    delete payload["behavior_tags[]"]; delete payload["care_support_tags[]"];
+    const vaccinationStatuses = Object.fromEntries(
+      ["core_vaccines", "rabies_vaccine", "deworming"].map((key) => [key, form.get(`vaccination_statuses.${key}`) || "UNKNOWN"]),
+    );
+    for (const key of Object.keys(payload)) if (key.startsWith("vaccination_statuses.")) delete payload[key];
+    payload.vaccination_statuses = vaccinationStatuses;
+    payload.behavior_tags = form.getAll("behavior_tags[]");
+    payload.care_support_tags = form.getAll("care_support_tags[]");
+    payload.species_detail = form.get("species") === "OTHER" ? form.get("species_detail") : null;
+    payload.health_flags = Object.fromEntries(Object.entries(vaccinationStatuses).map(([key, value]) => [key, value === "DONE"]));
     setBusy(true); setError(undefined);
     try {
       if (photo instanceof File && photo.size > 0) {
         const upload = new FormData(); upload.append("file", photo);
         const media = await write<{ data: { id: string } }>("post", "/api/pets/media", upload); payload.photo_media_id = media.data.id;
       } else if (editingPet?.photo_media_id) payload.photo_media_id = editingPet.photo_media_id;
+      if (vaccinationRecordPhoto instanceof File && vaccinationRecordPhoto.size > 0) {
+        if (vaccinationRecordPhoto.size > 5 * 1024 * 1024 || !["image/jpeg", "image/png", "image/webp"].includes(vaccinationRecordPhoto.type)) throw new Error("Chọn ảnh sổ tiêm JPG, PNG hoặc WebP tối đa 5 MB.");
+        const upload = new FormData(); upload.append("file", vaccinationRecordPhoto);
+        const media = await write<{ data: { id: string } }>("post", "/api/pets/media", upload); payload.vaccination_record_media_id = media.data.id;
+      } else if (editingPet?.vaccination_record_media_id) payload.vaccination_record_media_id = editingPet.vaccination_record_media_id;
       await write(editingPet ? "patch" : "post", editingPet ? `/api/pets/${editingPet.id}` : "/api/pets", payload);
       petsResource.reload(); profileResource.reload(); setEditingPet(undefined); setNotice("Đã lưu hồ sơ thú cưng.");
     } catch (failure) { setError(failure); } finally { setBusy(false); }

@@ -64,7 +64,7 @@ export function useAuthForm() {
       const isStaffLogin = mode === "login" && (await api.get<User>("/api/user")).data.roles?.some(
         (assignedRole) => assignedRole.role === "ADMIN" || assignedRole.role === "SUPPORT",
       );
-      const next = isStaffLogin ? "/admin" : query.get("next") ?? (role === "CAREGIVER" ? "/caregiver" : "/");
+      const next = isStaffLogin ? "/admin" : query.get("next") ?? (role === "CAREGIVER" ? "/caregiver/manage" : "/");
       router.replace(
         next.startsWith("/") && !next.startsWith("//") && !next.includes("\\") ? next : "/",
       );
