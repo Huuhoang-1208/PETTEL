@@ -6,7 +6,7 @@
 
 Bàn giao bản demo P0 khép kín bốn hành trình: khám phá dịch vụ; đăng listing và admin duyệt; đặt lịch/thanh toán sandbox; gửi report và admin xử lý. P0 còn có hồ sơ pet, Smart Match theo quy tắc, tin nhắn/cập nhật ảnh và review sau hoàn tất. Không làm tiền thật, xác minh lý lịch thật, video/camera, AI matching hoặc P1. Các quy tắc nghiệp vụ P0 đã chốt trong [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>); chỉ chính sách ngoài sandbox và lựa chọn môi trường còn cần duyệt riêng.
 
-Stack đích: Laravel 13/PHP 8.3, Breeze API stack, Vue 3 SPA, Sanctum stateful cookie/CSRF, MySQL, Redis và Docker Compose. Filament dùng cho admin, Scramble cho OpenAPI, Pulse cho quan sát, Telescope chỉ ở local/dev. **Cập nhật 28/10/2026:** Laravel API shell và Identity/Breeze/Sanctum đã có; `frontend/` mới có `.gitkeep`, Vue SPA, Filament, Scramble và Pulse chưa được scaffold/cài. BE-T01 đã chốt contract và thêm schema P0 cho pet/listing, booking/payment, content và moderation; migration đã chạy trên MySQL 8.4 sạch. Các API/nghiệp vụ module chưa được triển khai chỉ vì schema đã tồn tại. Không có dữ liệu user từ repo cũ cần chuyển. N1–N20 vẫn là mốc kế hoạch ban đầu; khi khởi động muộn, dịch mốc theo phụ thuộc và cập nhật hạn nộp với nhóm.
+Stack được chọn: Laravel 13/PHP 8.3 + Breeze API stack cho backend; Next.js App Router/React cho frontend; Sanctum stateful cookie/CSRF; MySQL, Redis và Docker Compose. Filament dùng cho admin, Scramble cho OpenAPI, Pulse cho quan sát, Telescope chỉ ở local/dev. **Ảnh chụp lịch sử ngày 28/10/2026:** Laravel API shell và Identity/Breeze/Sanctum đã có; frontend và một số công cụ vẫn đang trong kế hoạch scaffold/cài đặt. Sau đó nhóm chọn Next.js/React và hoàn thiện các phần được ghi nhận trong repository hiện tại. BE-T01 đã chốt contract và thêm schema P0 cho pet/listing, booking/payment, content và moderation. Các mốc N1–N20 là kế hoạch ban đầu, không phải trạng thái hiện tại.
 
 ## 2. Năng lực và cách chia việc
 
@@ -14,9 +14,9 @@ Mỗi người dành 20 giờ/tuần, tổng 80 giờ/người hoặc 240 giờ 
 
 | Người | Backend tuần 1–3 | Frontend tuần 4 | QA/bàn giao tuần 4 | Reviewer chính |
 | --- | --- | --- | --- | --- |
-| Hoàng | Breeze/Sanctum, tạo booking, search/Smart Match, review, Scramble và API contract | Vue nền, auth/pet, khám phá/review | Hành trình owner, truy cập và mobile | Hào |
-| Thịnh | Schema/state, hồ sơ pet, listing/lịch, giữ chỗ/hủy, care update, report/audit | Vue booking, checkout và hoàn tất | Race/retry, payment và dữ liệu | Hoàng |
-| Hào | Docker/CI, caregiver/listing DRAFT, nhận booking, messaging/storage, payment sandbox, vòng đời hoàn tất, Pulse | Vue caregiver/messaging; Filament admin | Deploy, restore, README và demo | Thịnh |
+| Hoàng | Breeze/Sanctum, tạo booking, search/Smart Match, review, Scramble và API contract | Next.js/React nền, auth/pet, khám phá/review | Hành trình owner, truy cập và mobile | Hào |
+| Thịnh | Schema/state, hồ sơ pet, listing/lịch, giữ chỗ/hủy, care update, report/audit | Next.js/React booking, checkout và hoàn tất | Race/retry, payment và dữ liệu | Hoàng |
+| Hào | Docker/CI, caregiver/listing DRAFT, nhận booking, messaging/storage, payment sandbox, vòng đời hoàn tất, Pulse | Next.js/React caregiver/messaging; Filament admin | Deploy, restore, README và demo | Thịnh |
 
 Mỗi issue có một owner và một reviewer. Owner chịu trách nhiệm code, test và bằng chứng; reviewer kiểm tra quyền, trạng thái, dữ liệu và khả năng tích hợp. Quyết định schema/API chung được chốt trước khi các owner triển khai song song. Không hai người sửa cùng file dùng chung cùng lúc.
 
@@ -27,13 +27,13 @@ Mỗi issue có một owner và một reviewer. Owner chịu trách nhiệm code
 | N1–N5, tuần 1 | 26–30/10 | N1 xác nhận Laravel/Docker/CI baseline và chốt contract. N2 có schema/state và auth contract. N3 có pet/listing contract và fixture ACTIVE cho booking. N5 chạy được Breeze/Sanctum auth, pet, listing DRAFT và booking REQUESTED qua API trên database mới. |
 | N6–N10, tuần 2 | 02–06/11 | N6 có listing lifecycle/availability contract để booking/search tích hợp; N9 test accept cạnh tranh. N10 demo listing được admin duyệt → search → booking → accept/expire/cancel qua API. |
 | N11–N15, tuần 3 | 09–13/11 | N11 chốt callback/payment contract; N13 có sandbox và care update; N14 tích hợp contract review/report; N15 nghiệm thu trên code hoàn chỉnh và chạy bốn workflow qua API, OpenAPI được review, CI xanh và đạt Gate BE. |
-| N16–N20, tuần 4 | 16–20/11 | Sáng N16 chốt Vue shell/API client/auth flow; N17–N18 tích hợp Vue và Filament, Gate FE cuối N18; N19–N20 kiểm thử, sửa lỗi, deploy và bàn giao. |
+| N16–N20, tuần 4 | 16–20/11 | Sáng N16 chốt Next.js/React shell/API client/auth flow; N17–N18 tích hợp Next.js/React và Filament, Gate FE cuối N18; N19–N20 kiểm thử, sửa lỗi, deploy và bàn giao. |
 
 Không tính cuối tuần là ngày phát triển. Nếu một mốc phụ thuộc trượt, issue downstream chỉ làm phần độc lập hoặc dùng fixture/contract đã chốt; không đánh dấu tích hợp hoàn tất bằng mock. Các issue và timebox chi tiết ở [Chia task](<../PETTEL%20%E2%80%94%20Task%204%20tu%E1%BA%A7n%20(A%2C%20B%2C%20C)/Chia%20task.md>).
 
 ## 4. Tuần 1 — Khởi tạo backend từ Laravel API shell
 
-**Hoàng:** khởi tạo Breeze API + Sanctum stateful trên Laravel API shell; rà User/auth config/routes/migrations để xác nhận baseline sạch và phù hợp M01. Xác định role contract, admin provisioning, session/CSRF/throttle, đăng ký/đăng nhập/đăng xuất/reset password; kiểm thử 401/403/419. Không chuyển user từ repo cũ và không xây Vue UI ở tuần này. Policy truy cập pet/listing cụ thể thuộc các issue module tương ứng.
+**Hoàng:** khởi tạo Breeze API + Sanctum stateful trên Laravel API shell; rà User/auth config/routes/migrations để xác nhận baseline sạch và phù hợp M01. Xác định role contract, admin provisioning, session/CSRF/throttle, đăng ký/đăng nhập/đăng xuất/reset password; kiểm thử 401/403/419. Không chuyển user từ repo cũ và không xây Next.js/React UI ở tuần này. Policy truy cập pet/listing cụ thể thuộc các issue module tương ứng.
 
 **Thịnh:** thiết kế schema mới, chốt trạng thái Listing/Booking/Payment, đơn vị VND nguyên, UTC, khoảng `[start,end)`, lỗi API và idempotency; hoàn thiện hồ sơ pet theo quyền owner.
 
@@ -65,9 +65,9 @@ Không tính cuối tuần là ngày phát triển. Nếu một mốc phụ thu�
 
 **Gate BE (cuối N15):** bốn workflow chạy bằng API/service và seed demo; kiểm thử quyền, trạng thái, lịch trùng, callback lặp và file riêng tư đạt; CI xanh; OpenAPI khớp API đã test; worker/scheduler chạy; không còn lỗi P0 chặn luồng hoặc rò dữ liệu. Cả ba xác nhận bằng commit, kết quả test và danh sách giới hạn. Nếu chưa đạt, sửa backend trước khi mở issue FE.
 
-## 7. Tuần 4 — Vue, Filament, QA và bàn giao
+## 7. Tuần 4 — Next.js/React, Filament, QA và bàn giao
 
-**N16:** Hoàng tạo Vue SPA shell, router, API client gửi cookie/CSRF và xử lý 401/419; cung cấp component và contract dùng chung sớm trong ngày. Thịnh/Hào chuẩn bị màn hình bằng API đã khóa, không phụ thuộc vào component chưa bàn giao.
+**N16:** Hoàng tạo Next.js/React frontend shell, router, API client gửi cookie/CSRF và xử lý 401/419; cung cấp component và contract dùng chung sớm trong ngày. Thịnh/Hào chuẩn bị màn hình bằng API đã khóa, không phụ thuộc vào component chưa bàn giao.
 
 **N17–N18:** Hoàng hoàn thiện auth/pet/search/review; Thịnh làm booking/checkout/completion; Hào làm caregiver listing/lịch, messaging/care update và Filament panel duyệt listing/report. Tất cả giao diện lấy trạng thái/giá/quyền từ server. **Gate FE cuối N18:** bốn workflow chạy trên bản tích hợp bằng dữ liệu thật; không còn route hoặc form trống chặn hành trình.
 
@@ -77,6 +77,6 @@ Không tính cuối tuần là ngày phát triển. Nếu một mốc phụ thu�
 
 ## 8. Phụ thuộc, thay đổi và quyết định còn mở
 
-Đường găng: BE-T01 + BE-H01 + BE-T02/BE-HA02 fixture/contract → BE-H02 → BE-T03/BE-HA03 → BE-T04/BE-HA05 → BE-HA06 → BE-H05 → Gate BE → Vue/Filament → Gate FE → QA/deploy. Hoàng và Hào có thể phát triển search, messaging, payment song song khi contract đã ổn định. Mọi thay đổi API/schema sau N15 cần có lý do lỗi chặn, reviewer của các owner liên quan và test hồi quy.
+Đường găng: BE-T01 + BE-H01 + BE-T02/BE-HA02 fixture/contract → BE-H02 → BE-T03/BE-HA03 → BE-T04/BE-HA05 → BE-HA06 → BE-H05 → Gate BE → Next.js/React/Filament → Gate FE → QA/deploy. Hoàng và Hào có thể phát triển search, messaging, payment song song khi contract đã ổn định. Mọi thay đổi API/schema sau N15 cần có lý do lỗi chặn, reviewer của các owner liên quan và test hồi quy.
 
 Quy tắc P0 về công suất, giá, giữ chỗ, hủy/void/refund sandbox, owner xác nhận, chat, role caregiver và badge đã chốt trong [P0 Decision Contract](<../02 — Domain Documentation/05 — P0 Decision Contract.md>). N1–N2 kiểm tra package, hosting/storage và phân công triển khai theo contract; thay đổi quy tắc phải cập nhật Domain Docs, API và database design cùng lúc.

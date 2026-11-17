@@ -162,12 +162,12 @@ backend/                    # Laravel JSON API
 ├── tests/                  # Backend tests được bổ sung cùng tính năng
 ├── composer.json
 └── Dockerfile
-frontend/                   # Vue 3 SPA (sẽ scaffold theo Implementation Plan)
+frontend/                   # Next.js App Router + React UI
 docs/                       # Yêu cầu, thiết kế và kế hoạch PETTEL
 compose.yaml                # Docker Compose
 ```
 
-`backend/public/index.php` là entry point của Laravel và vẫn cần cho API. Giao diện Vue thuộc `frontend/`; không đặt component giao diện Vue trong `backend/resources`.
+`backend/public/index.php` là entry point của Laravel và vẫn cần cho API. Giao diện Next.js/React thuộc `frontend/`; không đặt component giao diện này trong `backend/resources`. Filament vẫn dùng Blade/Livewire nội bộ cho trang quản trị Laravel.
 
 ## Tài liệu
 

@@ -52,8 +52,7 @@ class PublicListingController extends Controller
         }
 
         if ($pet !== null && isset($filters['space_type'])) {
-            $query->whereRelation('caregiverProfile', fn (Builder $profile) =>
-                $profile->whereJsonContains('application_data_json->space_type', $filters['space_type'])
+            $query->whereRelation('caregiverProfile', fn (Builder $profile) => $profile->whereJsonContains('application_data_json->space_type', $filters['space_type'])
             );
         }
 
@@ -255,6 +254,7 @@ class PublicListingController extends Controller
                 if (in_array($signal['value'], $application['experience_species'] ?? [], true)) {
                     $reasons[] = $signal['reason'];
                 }
+
                 continue;
             }
 
@@ -325,6 +325,7 @@ class PublicListingController extends Controller
             $dateKey = $date->format('Y-m-d');
             if ($date->lessThan($today)) {
                 $days[] = ['date' => $dateKey, 'status' => 'FULL', 'time_slots' => []];
+
                 continue;
             }
 

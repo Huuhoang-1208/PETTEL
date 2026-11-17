@@ -8,23 +8,19 @@ use Illuminate\Contracts\Broadcasting\ShouldRescue;
 use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Foundation\Events\Dispatchable;
 
-class BookingMessageSent implements
-    ShouldBroadcast,
-    ShouldDispatchAfterCommit,
-    ShouldRescue
+class BookingMessageSent implements ShouldBroadcast, ShouldDispatchAfterCommit, ShouldRescue
 {
     use Dispatchable;
 
     public function __construct(
         private string $bookingId,
         private string $messageId,
-    ) {
-    }
+    ) {}
 
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('bookings.' . $this->bookingId),
+            new PrivateChannel('bookings.'.$this->bookingId),
         ];
     }
 

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\MediaObject;
-use App\Models\Booking;
 use App\Http\Resources\BookingResource;
+use App\Models\Booking;
+use App\Models\MediaObject;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +16,7 @@ class OwnerProfileController extends Controller
     {
         $request->validate(['page' => ['sometimes', 'integer', 'min:1']]);
         $page = Booking::query()->where('owner_id', $request->user()->id)->latest('id')->paginate(20);
+
         return response()->json([
             'data' => $page->getCollection()->map(fn (Booking $booking) => [
                 ...BookingResource::make($booking)->resolve($request),
@@ -81,7 +82,9 @@ class OwnerProfileController extends Controller
                     $profile[$field] = is_string($data[$field]) ? trim($data[$field]) : $data[$field];
                 }
             }
-            if (isset($data['name'])) $user->name = trim($data['name']);
+            if (isset($data['name'])) {
+                $user->name = trim($data['name']);
+            }
             $user->owner_profile_json = $profile;
             $user->save();
         });

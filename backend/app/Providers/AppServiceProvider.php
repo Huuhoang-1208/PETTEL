@@ -18,6 +18,8 @@ use Dedoc\Scramble\Support\Generator\Path;
 use Dedoc\Scramble\Support\Generator\RequestBodyObject;
 use Dedoc\Scramble\Support\Generator\Response;
 use Dedoc\Scramble\Support\Generator\Schema;
+use Dedoc\Scramble\Support\Generator\SecurityRequirement;
+use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Dedoc\Scramble\Support\Generator\Types\ArrayType;
 use Dedoc\Scramble\Support\Generator\Types\BooleanType;
 use Dedoc\Scramble\Support\Generator\Types\IntegerType;
@@ -32,6 +34,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Laravel\Telescope\TelescopeServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -45,9 +48,9 @@ class AppServiceProvider extends ServiceProvider
 
         if (
             $this->app->environment('local')
-            && class_exists(\Laravel\Telescope\TelescopeServiceProvider::class)
+            && class_exists(TelescopeServiceProvider::class)
         ) {
-            $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
+            $this->app->register(TelescopeServiceProvider::class);
             $this->app->register(\App\Providers\TelescopeServiceProvider::class);
         }
     }
@@ -64,12 +67,52 @@ class AppServiceProvider extends ServiceProvider
             ]);
 
             return rtrim(config('app.frontend_url'), '/')
-                . '/reset-password?'
-                . $query;
+                .'/reset-password?'
+                .$query;
         });
 
         $this->app->booted(function (): void {
             Scramble::afterOpenApiGenerated(function (OpenApi $openApi): void {
+                $openApi->components->addSecurityScheme(
+                    'bearerAuth',
+                    SecurityScheme::http('bearer')
+                        ->as('bearerAuth')
+                        ->setDescription('Sanctum personal access token. The /user endpoint requires the profile:read ability.'),
+                );
+
+                $bearerAbilities = [
+                    'user' => ['get' => 'profile:read'],
+                    'owner-profile' => ['get' => 'profile:read'],
+                    'owner-profile/bookings' => ['get' => 'bookings:read'],
+                    'bookings' => ['get' => 'bookings:read'],
+                    'bookings/{id}' => ['get' => 'bookings:read'],
+                    'pets' => ['get' => 'pets:read'],
+                    'pets/{pet}' => ['get' => 'pets:read'],
+                ];
+
+                foreach ($openApi->paths as $path) {
+                    $pathName = ltrim($path->path, '/');
+                    if (str_starts_with($pathName, 'api/')) {
+                        $pathName = substr($pathName, 4);
+                    }
+
+                    foreach ($path->operations as $method => $operation) {
+                        $ability = $bearerAbilities[$pathName][strtolower($method)] ?? null;
+                        if ($ability === null) {
+                            continue;
+                        }
+
+                        $operation->security = [
+                            new SecurityRequirement(['sanctumSession' => []]),
+                            new SecurityRequirement(['bearerAuth' => []]),
+                        ];
+                        $operation->description = trim(
+                            $operation->description
+                            ."\n\nA Sanctum bearer token must include the `{$ability}` ability. First-party frontend sessions may also authenticate with the Sanctum session cookie and CSRF protection."
+                        );
+                    }
+                }
+
                 $excludedRequestProperties = [
                     'App\\Http\\Requests\\StoreBookingRequest' => ['Idempotency-Key'],
                     'App\\Http\\Requests\\CancelBookingRequest' => ['Idempotency-Key'],
@@ -125,7 +168,7 @@ class AppServiceProvider extends ServiceProvider
                             [$idempotencyPath, 'Idempotency-Key', '^[a-z0-9._:-]{1,128}$', 'Required request replay key.'],
                             [$callbackPath, 'X-Payment-Signature', null, 'Required HMAC signature of the callback payload.'],
                         ] as [$applies, $name, $pattern, $description]) {
-                            if (!$applies) {
+                            if (! $applies) {
                                 continue;
                             }
 
@@ -152,10 +195,10 @@ class AppServiceProvider extends ServiceProvider
 
                     $firstAttachmentOperation = clone $attachmentOperation;
                     $firstAttachmentOperation->setOperationId('bookings.messages.attachment.first');
-                    $firstAttachmentOperation->description = trim($firstAttachmentOperation->description . "\n\nWhen `mediaId` is omitted, the API streams the first visible attachment on this message.");
+                    $firstAttachmentOperation->description = trim($firstAttachmentOperation->description."\n\nWhen `mediaId` is omitted, the API streams the first visible attachment on this message.");
                     $firstAttachmentOperation->parameters = array_values(array_filter(
                         $firstAttachmentOperation->parameters,
-                        fn($parameter): bool => !($parameter instanceof Parameter && $parameter->in === 'path' && $parameter->name === 'mediaId'),
+                        fn ($parameter): bool => ! ($parameter instanceof Parameter && $parameter->in === 'path' && $parameter->name === 'mediaId'),
                     ));
 
                     $openApi->addPath(
@@ -228,9 +271,9 @@ class AppServiceProvider extends ServiceProvider
                         }
                         foreach ($operation->responses ?? [] as $response) {
                             if (
-                                !$response instanceof Response
+                                ! $response instanceof Response
                                 || (string) $response->code !== $status
-                                || !array_key_exists('application/json', $response->content)
+                                || ! array_key_exists('application/json', $response->content)
                             ) {
                                 continue;
                             }
@@ -252,7 +295,7 @@ class AppServiceProvider extends ServiceProvider
                         $operation = $path->operations[strtolower($method)] ?? null;
                         if (
                             $operation === null || collect($operation->responses ?? [])->contains(
-                                fn($response): bool => $response instanceof Response && (string) $response->code === '201',
+                                fn ($response): bool => $response instanceof Response && (string) $response->code === '201',
                             )
                         ) {
                             return;
@@ -281,7 +324,7 @@ class AppServiceProvider extends ServiceProvider
                     if (trim($path->path, '/') === 'bookings/{id}/reviews' && isset($path->operations['post'])) {
                         $path->operations['post']->responses = array_values(array_filter(
                             $path->operations['post']->responses ?? [],
-                            fn($response): bool => !($response instanceof Response && (string) $response->code === '200'),
+                            fn ($response): bool => ! ($response instanceof Response && (string) $response->code === '200'),
                         ));
                     }
                 }
@@ -430,7 +473,7 @@ class AppServiceProvider extends ServiceProvider
                     $operation = $path->operations['post'] ?? null;
                     if (
                         $operation === null || collect($operation->responses ?? [])->contains(
-                            fn($response): bool => $response instanceof Response && (string) $response->code === '202',
+                            fn ($response): bool => $response instanceof Response && (string) $response->code === '202',
                         )
                     ) {
                         break;
@@ -573,8 +616,8 @@ class AppServiceProvider extends ServiceProvider
                         }
                         foreach ($operation->responses ?? [] as $response) {
                             if (
-                                !$response instanceof Response
-                                || !array_key_exists('application/json', $response->content)
+                                ! $response instanceof Response
+                                || ! array_key_exists('application/json', $response->content)
                             ) {
                                 continue;
                             }
@@ -604,6 +647,15 @@ class AppServiceProvider extends ServiceProvider
                     'sandbox/payment-callback' => ['M06 Payment Sandbox', 'Public callback endpoint. A valid `X-Payment-Signature` is required; callback replay is processed idempotently against the payment attempt and event.'],
                 ];
                 $operationNotes = [
+                    'user|get' => 'Bearer tokens must include the `profile:read` ability. First-party frontend sessions may use the Sanctum session cookie and CSRF protection.',
+                    'owner-profile|get' => 'Bearer tokens must include the `profile:read` ability; first-party frontend sessions may use the Sanctum session cookie.',
+                    'owner-profile/bookings|get' => 'Bearer tokens must include the `bookings:read` ability; first-party frontend sessions may use the Sanctum session cookie.',
+                    'bookings|get' => 'Bearer tokens must include the `bookings:read` ability; first-party frontend sessions may use the Sanctum session cookie.',
+                    'bookings/{id}|get' => 'Bearer tokens must include the `bookings:read` ability; first-party frontend sessions may use the Sanctum session cookie.',
+                    'pets|get' => 'Bearer tokens must include the `pets:read` ability; first-party frontend sessions may use the Sanctum session cookie.',
+                    'pets/{pet}|get' => 'Bearer tokens must include the `pets:read` ability; first-party frontend sessions may use the Sanctum session cookie.',
+                    'tokens|post' => 'Requires an authenticated first-party session. The plaintext bearer token is shown only in this response; store it securely. Tokens expire after 30 days and accept only the documented read abilities.',
+                    'tokens/{tokenId}|delete' => 'Requires an authenticated first-party session and revokes only a token owned by the caller.',
                     'reports|post' => 'Creates a report for exactly one target. Booking and message targets are available only to a booking participant; the response does not expose private evidence.',
                     'reports/mine|get' => 'Returns only reports filed by the authenticated caller.',
                     'admin/reports|get' => 'Returns the paginated administrative report queue; status filtering is supported.',
@@ -686,12 +738,30 @@ class AppServiceProvider extends ServiceProvider
                 $openApi->components->schemas['ApiErrorEnvelope'] = $errorSchema;
 
                 foreach ($openApi->paths as $path) {
+                    if (trim($path->path, '/') !== 'tokens') {
+                        continue;
+                    }
+
+                    $tokenOperation = $path->operations['post'] ?? null;
+                    foreach ($tokenOperation?->responses ?? [] as $response) {
+                        if ($response instanceof Response && (string) $response->code === '201') {
+                            $response->setContent('application/json', Schema::fromType($object([
+                                'token' => $string(),
+                                'token_type' => $string('', ['Bearer']),
+                                'abilities' => $array($string()),
+                                'expires_at' => $string('date-time', [], true),
+                            ], ['token', 'token_type', 'abilities', 'expires_at'])));
+                        }
+                    }
+                }
+
+                foreach ($openApi->paths as $path) {
                     $route = trim($path->path, '/');
                     foreach ($path->operations as $method => $operation) {
                         $method = strtolower($method);
                         $group = null;
                         foreach ($moduleByPath as $prefix => $details) {
-                            if ($route === $prefix || str_starts_with($route, rtrim($prefix, '/') . '/')) {
+                            if ($route === $prefix || str_starts_with($route, rtrim($prefix, '/').'/')) {
                                 $group = $details;
                                 break;
                             }
@@ -705,10 +775,10 @@ class AppServiceProvider extends ServiceProvider
                         } elseif ($method === 'post' && preg_match('/\/quote$/', $route)) {
                             $action = 'Quote';
                         }
-                        $operation->summary = $action . ' ' . ucwords(str_replace('/', ' ', $humanPath));
+                        $operation->summary = $action.' '.ucwords(str_replace('/', ' ', $humanPath));
                         $operation->description = trim(implode("\n\n", array_filter([
-                            '**Module:** ' . $group[0] . '. ' . $group[1],
-                            $operationNotes[$route . '|' . $method] ?? null,
+                            '**Module:** '.$group[0].'. '.$group[1],
+                            $operationNotes[$route.'|'.$method] ?? null,
                             'JSON errors use the API error envelope: `error.code`, `error.message`, optional `error.details`, and `error.request_id`. The listed response codes reflect the current Scramble source analysis and may not include every domain failure; see the BE-H06 route and contract matrix for gaps and owner decisions.',
                         ])));
 
@@ -779,10 +849,11 @@ class AppServiceProvider extends ServiceProvider
             });
         });
 
-        Gate::define('viewApiDocs', fn(User $user): bool => $user->status === 'ACTIVE' && $user->hasRole('ADMIN'));
+        Gate::define('viewApiDocs', fn (User $user): bool => $user->status === 'ACTIVE' && $user->hasRole('ADMIN'));
+        Gate::define('viewTelescope', fn (User $user): bool => $user->status === 'ACTIVE' && $user->hasRole('ADMIN'));
         Gate::define(
             'viewPulse',
-            static fn(User $user): bool => $user->status === 'ACTIVE'
+            static fn (User $user): bool => $user->status === 'ACTIVE'
                 && $user->hasRole('ADMIN')
         );
 
@@ -794,14 +865,14 @@ class AppServiceProvider extends ServiceProvider
 
         DB::prohibitDestructiveCommands(app()->isProduction());
 
-        ResetPassword::createUrlUsing(fn(CanResetPassword $notifiable, string $token): string => rtrim(config('app.frontend_url'), '/')
-            . '/reset-password?' . http_build_query([
+        ResetPassword::createUrlUsing(fn (CanResetPassword $notifiable, string $token): string => rtrim(config('app.frontend_url'), '/')
+            .'/reset-password?'.http_build_query([
                 'token' => $token,
                 'email' => $notifiable->getEmailForPasswordReset(),
             ]));
 
         Password::defaults(
-            fn(): ?Password => app()->isProduction()
+            fn (): ?Password => app()->isProduction()
                 ? Password::min(12)
                     ->mixedCase()
                     ->letters()

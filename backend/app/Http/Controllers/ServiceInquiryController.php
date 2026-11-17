@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\InquiryMessageSent;
 use App\Models\Listing;
 use App\Models\Pet;
-use App\Events\InquiryMessageSent;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
@@ -103,6 +103,7 @@ class ServiceInquiryController extends Controller
         $data = $request->validate(['body' => ['required', 'string', 'max:2000', 'regex:/\S/u'], 'request_key' => ['required', 'uuid']]);
         $messageId = DB::transaction(function () use ($request, $id, $data) {
             DB::table('service_inquiries')->where('id', $id)->lockForUpdate()->firstOrFail();
+
             return $this->saveMessage($request, $id, $data);
         });
 
@@ -129,6 +130,7 @@ class ServiceInquiryController extends Controller
         $existing = DB::table('inquiry_messages')->where('inquiry_id', $id)->where('sender_id', $request->user()->id)->where('request_key', $data['request_key'])->first();
         if ($existing) {
             abort_unless(hash_equals($existing->payload_hash, $hash), 409, 'Mã gửi tin đã được sử dụng cho nội dung khác.');
+
             return (string) $existing->id;
         }
         $messageId = DB::table('inquiry_messages')->insertGetId([

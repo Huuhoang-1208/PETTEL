@@ -4,16 +4,16 @@
 
 # 1\. Mục tiêu và điều kiện lập kế hoạch
 
-Hoàn thiện backend trong tuần 1–3, sau đó cả ba chuyển sang Vue SPA và Filament admin ở tuần 4. Cuối tuần 4 kiểm thử toàn luồng, triển khai và bàn giao bản demo. Stack đích là Laravel 13/PHP 8.3, Breeze API, Sanctum stateful cookie/CSRF, Vue 3, MySQL, Redis và Docker Compose; Scramble sinh OpenAPI, Pulse theo dõi hiệu năng, Telescope chỉ ở local/dev.
+Hoàn thiện backend trong tuần 1–3, sau đó cả ba chuyển sang frontend Next.js App Router/React và Filament admin ở tuần 4. Cuối tuần 4 kiểm thử toàn luồng, triển khai và bàn giao bản demo. Stack đích là Laravel 13/PHP 8.3 cho JSON API, Next.js App Router/React cho giao diện, Breeze API, Sanctum stateful cookie/CSRF, MySQL, Redis và Docker Compose; Scramble sinh OpenAPI, Pulse theo dõi hiệu năng, Telescope chỉ ở local/dev.
 
-Màn hình Vue và Filament chỉ triển khai sau Gate BE. Tuần 1–3 làm database, API/service, Policy, package setup, lưu trữ, worker/scheduler và kiểm thử bằng API client/test tự động.
+Màn hình Next.js/React và Filament chỉ triển khai sau Gate BE. Tuần 1–3 làm database, API/service, Policy, package setup, lưu trữ, worker/scheduler và kiểm thử bằng API client/test tự động.
 
 Lịch tính theo 20 ngày làm việc từ 26/10 đến 20/11/2026 (Asia/Ho_Chi_Minh); 21–22/11 là khoảng bàn giao, không mặc định làm cuối tuần:
 
 * Tuần 1: N1–N5 (26–30/10) — nền tảng backend.
 * Tuần 2: N6–N10 (02–06/11) — nghiệp vụ lõi.
 * Tuần 3: N11–N15 (09–13/11) — hoàn tất backend và Gate BE.
-* Tuần 4: N16–N18 (16–18/11) — Vue/Filament; N19–N20 (19–20/11) — kiểm thử, sửa lỗi và bàn giao.
+* Tuần 4: N16–N18 (16–18/11) — Next.js/React và Filament; N19–N20 (19–20/11) — kiểm thử, sửa lỗi và bàn giao.
 
 Không mặc định làm cuối tuần. Khi đổi ngày bắt đầu, giữ thứ tự phụ thuộc và dịch các mốc tương ứng. Thứ tự trình bày và phân công trong mỗi nhóm issue là **Hoàng → Thịnh → Hào**; các phần độc lập vẫn triển khai song song theo phụ thuộc.
 
@@ -48,7 +48,7 @@ Trong phạm vi: tài khoản/quyền, pet, caregiver/listing, tìm kiếm/Smart
 
 Để sau: video/camera, AI matching, xác minh lý lịch thật, thanh toán thật và tính năng P1.
 
-Cập nhật 28/10/2026: `backend/` vẫn là Laravel 13 API shell; Identity/Breeze/Sanctum đã được triển khai. BE-T01 đã chốt contract và thêm schema P0 cho pet/listing, booking/payment, content và moderation; migration đã chạy trên MySQL 8.4 sạch. `frontend/` vẫn chỉ có `.gitkeep`; Vue SPA, Filament, Scramble và Pulse chưa được cài/scaffold. Không có dữ liệu user từ repo cũ cần chuyển hoặc bảo toàn. API/nghiệp vụ của các module vẫn là việc cần làm theo issue; migration không có nghĩa là workflow đã hoạt động. Ngày N1–N20 trong backlog là mốc ban đầu và cần dịch theo ngày bắt đầu thực tế.
+Cập nhật lịch sử ngày 28/10/2026: tại thời điểm đó `frontend/` mới có `.gitkeep` và UI chưa được scaffold; kế hoạch ban đầu chưa chốt frontend cụ thể. Nhóm sau đó chọn Next.js App Router/React và đã triển khai giao diện tại `frontend/`. Laravel 13 JSON API, Identity/Breeze/Sanctum, Filament, Scramble và Pulse hiện có trong repository. BE-T01 đã chốt contract và thêm schema P0 cho pet/listing, booking/payment, content và moderation. Không có dữ liệu user từ repo cũ cần chuyển hoặc bảo toàn. Ngày N1–N20 trong backlog là mốc kế hoạch ban đầu.
 
 Mã issue dưới đây là mã kế hoạch. Khi đưa lên tracker, tìm issue tương đương để cập nhật hoặc liên kết, tránh tạo trùng.
 
@@ -64,7 +64,7 @@ Quy ước mã issue: **H \= Hoàng**, **T \= Thịnh**, **HA \= Hào**. Ví d�
 
 Hoàng điều phối bố cục và thành phần frontend dùng chung sau Gate BE. Thịnh điều phối schema và thứ tự migration; mỗi owner viết migration của module mình. Hào điều phối môi trường chạy và CI.
 
-Không hai người sửa cùng file dùng chung đồng thời. N2 Thịnh công bố schema/state; N3 Thịnh công bố pet contract, Hoàng làm booking theo fixture pet/listing ACTIVE; N6 Thịnh công bố availability/listing lifecycle contract, Hào tích hợp nhận booking; N11 Hào công bố payment callback contract; sáng N16 Hoàng bàn giao Vue shell/API client. Thay đổi input/output phải báo owner liên quan và cập nhật OpenAPI trước khi tích hợp.
+Không hai người sửa cùng file dùng chung đồng thời. N2 Thịnh công bố schema/state; N3 Thịnh công bố pet contract, Hoàng làm booking theo fixture pet/listing ACTIVE; N6 Thịnh công bố availability/listing lifecycle contract, Hào tích hợp nhận booking; N11 Hào công bố payment callback contract; sáng N16 Hoàng bàn giao Next.js/React shell/API client. Thay đổi input/output phải báo owner liên quan và cập nhật OpenAPI trước khi tích hợp.
 
 # 4\. Quyết định P0 và việc cần kiểm tra đầu tuần 1
 
@@ -91,7 +91,7 @@ Hoàng chuẩn bị auth và booking; Thịnh chuẩn bị schema, pet, listing/
 
 Toàn bộ issue frontend giữ Blocked đến khi Gate BE đạt. Nếu Gate BE trượt, cả ba tiếp tục sửa backend trước khi làm giao diện.
 
-**Gate FE cuối N18:** Vue SPA và Filament admin dùng dữ liệu thật; bốn workflow thao tác được; 401/419, biểu mẫu, lỗi, trạng thái rỗng và quyền truy cập được kiểm tra.
+**Gate FE cuối N18:** frontend Next.js/React và Filament admin dùng dữ liệu thật; bốn workflow thao tác được; 401/419, biểu mẫu, lỗi, trạng thái rỗng và quyền truy cập được kiểm tra.
 
 **Gate bàn giao cuối N20:** có bản demo, CI xanh, kết quả kiểm thử theo commit, README, tài khoản mẫu, kịch bản demo và danh sách giới hạn còn lại.
 
@@ -465,7 +465,7 @@ Contract triển khai cho [issue #21](https://github.com/Huuhoang-1208/PETTEL/is
 
 ☐ Kiểm tra truy vấn, phân trang, cache công khai và invalidation khi listing/review đổi; ghi số đo trên dữ liệu mẫu.
 
-☐ Cài Scramble, sinh OpenAPI; tổng hợp endpoint/service, input/output, quyền và lỗi từ từng owner; review bản hợp đồng dùng cho Vue và giới hạn truy cập docs ở demo.
+☐ Cài Scramble, sinh OpenAPI; tổng hợp endpoint/service, input/output, quyền và lỗi từ từng owner; review bản hợp đồng dùng cho frontend Next.js/React và giới hạn truy cập docs ở demo.
 
 ☐ Cả ba chạy bốn workflow và các nhánh lỗi; ghi Pass/Fail/Blocked/Not tested cùng kết quả kiểm thử.
 
@@ -523,7 +523,7 @@ Contract triển khai cho [issue #21](https://github.com/Huuhoang-1208/PETTEL/is
 
 **Lịch:** N16–N17 \| **Timebox:** 6 giờ
 
-**Phụ thuộc:** Gate BE đạt; BE-H01, BE-T02. Bàn giao Vue shell/router/API client sáng N16 cho FE-T01 và FE-HA01
+**Phụ thuộc:** Gate BE đạt; BE-H01, BE-T02. Bàn giao Next.js App Router/React shell/API client sáng N16 cho FE-T01 và FE-HA01
 
 **Phạm vi:** Layout, auth và pet UI
 
@@ -531,7 +531,7 @@ Contract triển khai cho [issue #21](https://github.com/Huuhoang-1208/PETTEL/is
 
 **Tasks to do:**
 
-☐ Dựng Vue SPA shell/router/API client; chốt layout, điều hướng theo vai trò, thành phần form và cách hiển thị lỗi dùng chung sáng N16.
+☐ Dựng Next.js App Router/React shell/API client; chốt layout, điều hướng theo vai trò, thành phần form và cách hiển thị lỗi dùng chung sáng N16.
 
 ☐ Làm giao diện đăng ký, đăng nhập, đăng xuất, yêu cầu/hoàn tất đặt lại mật khẩu và quản lý pet bằng JSON API đã nghiệm thu; xử lý 401/419 và CSRF cookie.
 
@@ -545,7 +545,7 @@ Contract triển khai cho [issue #21](https://github.com/Huuhoang-1208/PETTEL/is
 
 **Lịch:** N17 \| **Timebox:** 6 giờ
 
-**Phụ thuộc:** Gate BE đạt; BE-H02, BE-HA03, BE-T04; Vue shell/API client từ FE-H01 bàn giao N16
+**Phụ thuộc:** Gate BE đạt; BE-H02, BE-HA03, BE-T04; Next.js/React shell/API client từ FE-H01 bàn giao N16
 
 **Phạm vi:** Booking UI cho owner/caregiver
 
@@ -567,7 +567,7 @@ Contract triển khai cho [issue #21](https://github.com/Huuhoang-1208/PETTEL/is
 
 **Lịch:** N17 \| **Timebox:** 6 giờ
 
-**Phụ thuộc:** Gate BE đạt; BE-HA02, BE-T03; Vue shell/API client từ FE-H01 bàn giao N16
+**Phụ thuộc:** Gate BE đạt; BE-HA02, BE-T03; Next.js/React shell/API client từ FE-H01 bàn giao N16
 
 **Phạm vi:** Caregiver và listing moderation UI
 
@@ -581,7 +581,7 @@ Contract triển khai cho [issue #21](https://github.com/Huuhoang-1208/PETTEL/is
 
 ☐ Hiển thị lý do từ chối, trạng thái duyệt lại, lỗi lịch/ảnh và dữ liệu rỗng.
 
-**Acceptance criteria:** Luồng Vue tạo → gửi duyệt → Filament duyệt → công khai chạy được; người không phải admin không mở được panel; giao diện không có đường bỏ qua quyền hoặc quy tắc trạng thái.
+**Acceptance criteria:** Luồng Next.js/React tạo → gửi duyệt → Filament duyệt → công khai chạy được; người không phải admin không mở được panel; giao diện không có đường bỏ qua quyền hoặc quy tắc trạng thái.
 
 ### FE-H02 — Giao diện khám phá, Smart Match và review
 
@@ -589,7 +589,7 @@ Contract triển khai cho [issue #21](https://github.com/Huuhoang-1208/PETTEL/is
 
 **Lịch:** N17–N18 \| **Timebox:** 6 giờ
 
-**Phụ thuộc:** Vue shell/API client từ FE-H01 bàn giao N16; BE-H03–BE-H05. Tích hợp sau auth/pet FE-H01
+**Phụ thuộc:** Next.js/React shell/API client từ FE-H01 bàn giao N16; BE-H03–BE-H05. Tích hợp sau auth/pet FE-H01
 
 **Phạm vi:** Search, listing detail và review UI
 
@@ -643,7 +643,7 @@ Contract triển khai cho [issue #21](https://github.com/Huuhoang-1208/PETTEL/is
 
 ☐ Giao diện hội thoại, tải thêm tin, gửi và xem ảnh cập nhật; dùng tải lại/poll nhẹ.
 
-☐ Form Vue gửi report và trang Filament admin xử lý, ghi lý do, xem lịch sử; không lộ dữ liệu riêng của booking khác.
+☐ Form Next.js/React gửi report và trang Filament admin xử lý, ghi lý do, xem lịch sử; không lộ dữ liệu riêng của booking khác.
 
 ☐ Kiểm tra quyền tệp, lỗi upload, trạng thái booking và cập nhật dữ liệu sau thao tác.
 
@@ -709,13 +709,13 @@ Contract triển khai cho [issue #21](https://github.com/Huuhoang-1208/PETTEL/is
 
 **Tasks to do:**
 
-☐ Triển khai Vue build + Laravel/Filament ở cùng origin demo; kiểm frontend, backend, database, worker/scheduler, Pulse dashboard theo quyền và private storage.
+☐ Triển khai Next.js/React build + Laravel/Filament ở cùng origin demo; kiểm frontend, backend, database, worker/scheduler, Pulse dashboard theo quyền và private storage.
 
 ☐ Thử backup/restore trên môi trường riêng; smoke test bốn workflow và sửa lỗi thuộc phần Hào.
 
 ☐ Tổng hợp README, tài khoản mẫu, migrations/seed, kết quả CI/test, kịch bản demo và giới hạn; cả ba kiểm tra trước bàn giao.
 
-**Acceptance criteria:** Bản demo truy cập được; Vue/Filament/API hoạt động qua cùng origin; dựng lại được theo README; có bằng chứng restore và kiểm thử; không còn lỗi chặn luồng chính hoặc rò dữ liệu.
+**Acceptance criteria:** Bản demo truy cập được; Next.js/React, Filament và API hoạt động qua cấu hình domain/origin đã triển khai; dựng lại được theo README; có bằng chứng restore và kiểm thử; không còn lỗi chặn luồng chính hoặc rò dữ liệu.
 
 # 7\. Quy tắc trạng thái, review và bàn giao
 

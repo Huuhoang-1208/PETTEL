@@ -4,7 +4,7 @@ PETTEL — Non-functional Requirements \| Các yêu cầu dưới đây là thi�
 
 # Kiểm soát truy cập
 
-Mọi request ghi phải xác thực và dùng policy theo role, owner ID, booking relationship và state. Admin có tài khoản riêng; role admin không tự đăng ký. Session cookie Secure/HttpOnly/SameSite phù hợp, Sanctum stateful + CSRF cho Vue SPA, throttle login và các API nhạy cảm. SPA không giữ personal access token. Không tin giá, trạng thái, owner ID từ client.
+Mọi request ghi phải xác thực và dùng policy theo role, owner ID, booking relationship và state. Admin có tài khoản riêng; role admin không tự đăng ký. Session cookie Secure/HttpOnly/SameSite phù hợp, Sanctum stateful + CSRF cho frontend Next.js/React, throttle login và các API nhạy cảm. Trình duyệt không giữ personal access token. Không tin giá, trạng thái, owner ID từ client.
 
 # Dữ liệu và quyền riêng tư
 

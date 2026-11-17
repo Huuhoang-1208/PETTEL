@@ -4,7 +4,7 @@ PETTEL — Architecture & Technical Design \| Bản thảo 26/10/2026
 
 # Dịch vụ Compose
 
-`frontend` (Nginx hoặc reverse proxy) phục vụ bản build Vue SPA và chuyển `/api`, `/sanctum`, auth route, `/admin` đến Laravel; là cổng duy nhất công khai; `backend` chạy PHP-FPM/Laravel; `worker` chạy queue:work cùng image backend; `scheduler` chạy lịch tác vụ; `db` MySQL; `redis` cache/queue. `sandbox` có thể là adapter nội bộ trong backend, không cần container riêng. File media ở volume private hoặc object storage. Filament và Pulse dashboard nằm sau xác thực/phân quyền.
+`web` chạy bản build Next.js/React; `frontend` chạy Nginx làm reverse proxy cho Laravel API ở `/api`, `/sanctum` và các auth route; `backend` chạy PHP-FPM/Laravel; `worker` chạy queue:work cùng image backend; `scheduler` chạy lịch tác vụ; `db` MySQL; `redis` cache/queue. Chỉ mở các cổng web cần thiết ra host. `sandbox` có thể là adapter nội bộ trong backend, không cần container riêng. File media ở volume private hoặc object storage. Filament và Pulse dashboard nằm sau xác thực/phân quyền.
 
 # Mạng, volume và cấu hình
 

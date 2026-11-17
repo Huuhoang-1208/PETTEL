@@ -4,11 +4,11 @@ PETTEL — Architecture & Technical Design \| Thiết kế đề xuất.
 
 # Frontend
 
-Dùng Vue 3 SPA ở `frontend/` cho giao diện responsive; Laravel 13 ở `backend/` cung cấp JSON API. Laravel Breeze API stack scaffold auth; Sanctum xác thực SPA bằng session cookie. Filament dựng admin panel riêng. Trang Vue: public search/listing detail; owner pets/bookings/conversation; caregiver profile/listings/calendar/bookings. Trang Filament: admin review/reports. Các component dùng chung: search filters, listing card, status badge, price summary, confirmation dialog, form errors. Không nhúng quy tắc giá/quyền vào JS; server trả dữ liệu đã kiểm tra.
+Dùng Next.js App Router/React frontend ở `frontend/` cho giao diện responsive; Laravel 13 ở `backend/` cung cấp JSON API. Laravel Breeze API stack scaffold auth; Sanctum xác thực SPA bằng session cookie. Filament dựng admin panel riêng. Trang Next.js/React: public search/listing detail; owner pets/bookings/conversation; caregiver profile/listings/calendar/bookings. Trang Filament: admin review/reports. Các component dùng chung: search filters, listing card, status badge, price summary, confirmation dialog, form errors. Không nhúng quy tắc giá/quyền vào JS; server trả dữ liệu đã kiểm tra.
 
 # Backend
 
-`routes/api.php` cho dữ liệu nghiệp vụ JSON và `auth:sanctum` trên endpoint riêng tư; `routes/web.php` giữ auth/session/csrf của Breeze và route phục vụ SPA. Vue dùng API client gửi cookie/CSRF, xử lý 401/419. app/Domain/{Identity,Pet,Listing,Booking,Payment,...} hoặc cấu trúc module tương đương gồm Models, Services, Policies, DTO/Events; app/Http/{Controllers,Requests,Resources}. FormRequest validate cú pháp; Policy kiểm tra quyền; Service thực thi quy tắc và transaction; Model giữ quan hệ. Không viết nghiệp vụ trọng yếu trực tiếp trong controller/Vue/Filament Resource.
+`routes/api.php` cho dữ liệu nghiệp vụ JSON và `auth:sanctum` trên endpoint riêng tư; `routes/web.php` giữ các route auth/session/CSRF do Breeze cung cấp. Trang frontend nằm trong Next.js App Router; API client gửi cookie/CSRF và xử lý 401/419. `app/Domain/{Identity,Pet,Listing,Booking,Payment,...}` hoặc cấu trúc module tương đương gồm Models, Services, Policies, DTO/Events; `app/Http/{Controllers,Requests,Resources}`. FormRequest validate cú pháp; Policy kiểm tra quyền; Service thực thi quy tắc và transaction; Model giữ quan hệ. Không viết nghiệp vụ trọng yếu trực tiếp trong controller/Next.js/React/Filament Resource.
 
 # Xử lý bất đồng bộ
 

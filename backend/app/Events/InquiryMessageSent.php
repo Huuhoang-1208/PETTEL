@@ -15,8 +15,7 @@ class InquiryMessageSent implements ShouldBroadcast, ShouldDispatchAfterCommit, 
     public function __construct(
         private string $inquiryId,
         private string $messageId,
-    ) {
-    }
+    ) {}
 
     public function broadcastOn(): array
     {

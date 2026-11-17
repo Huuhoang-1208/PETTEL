@@ -65,7 +65,7 @@ Ký hiệu `!` = NOT NULL, `?` = nullable, `UQ` = unique. Ngoài các cột li�
 | `users` (đã có, mở rộng) | `id`, `name!`, `email!`, `password!`, `email_verified_at?`, `remember_token?`, `status!` (`ACTIVE`, `SUSPENDED`, `DELETION_PENDING`, `DEACTIVATED`), `deletion_requested_at?`, timestamps | `UQ(email)` hiện có. `status` mới mặc định `ACTIVE`. Quyền và thời hạn xử lý `DELETION_PENDING` theo [P0 §5–6](<../02 — Domain Documentation/05 — P0 Decision Contract.md#5-chat-care-update-và-quyền-caregiver>). Admin provisioning riêng. Không coi `email_verified_at` là email đã xác minh khi luồng verification chưa bật. |
 | `user_roles` | `user_id!`, `role!` (`OWNER`, `CAREGIVER`, `ADMIN`), `assigned_at!`, `assigned_by_user_id?` | PK `(user_id,role)`; FK user và assigner. Cột role/status là VARCHAR có CHECK trên MySQL 8.4, không dùng ENUM. Đăng ký thường gán OWNER phía server; user có thể đồng thời OWNER/CAREGIVER; ADMIN chỉ cấp ngoài luồng tự đăng ký. User tự bật CAREGIVER với audit; chỉ listing cần admin duyệt. |
 
-Giữ nguyên bảng Laravel `password_reset_tokens` và `sessions`; không tạo token SPA riêng. Nếu dùng Sanctum stateful cookie, `personal_access_tokens` chỉ xuất hiện nếu package/migration yêu cầu cho client bên ngoài, không dùng cho Vue P0.
+Giữ nguyên bảng Laravel `password_reset_tokens` và `sessions`; không tạo token riêng cho SPA. Sanctum dùng `personal_access_tokens` cho bearer token của API client; token được lưu dạng hash và không dùng làm cơ chế đăng nhập của frontend Next.js/React.
 
 ### M02 — Pet Profiles
 

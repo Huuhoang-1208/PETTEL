@@ -67,6 +67,11 @@ RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/fra
     && composer dump-autoload --optimize \
     && chown -R www-data:www-data storage bootstrap/cache
 
+FROM backend AS test
+
+RUN pecl install pcov \
+    && docker-php-ext-enable pcov
+
 FROM nginx:1-alpine AS frontend
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY --from=backend /var/www/html/public /var/www/html/public

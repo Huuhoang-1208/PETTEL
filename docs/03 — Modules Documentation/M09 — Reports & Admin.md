@@ -4,7 +4,7 @@ PETTEL — Modules Documentation \| Bản thảo 26/10/2026
 
 # Trách nhiệm
 
-Người dùng gửi report từ Vue SPA về listing, review, message hoặc booking; admin thao tác trong Filament panel và phân loại, xem chứng cứ có liên quan, quyết định giữ nguyên/ẩn/suspend và ghi lý do. Admin duyệt listing trước khi ACTIVE.
+Người dùng gửi report từ frontend Next.js/React về listing, review, message hoặc booking; admin thao tác trong Filament panel và phân loại, xem chứng cứ có liên quan, quyết định giữ nguyên/ẩn/suspend và ghi lý do. Admin duyệt listing trước khi ACTIVE.
 
 # Quy tắc
 

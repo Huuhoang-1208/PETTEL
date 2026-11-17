@@ -19,7 +19,7 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
-      target: backend
+      target: test
     environment:
       APP_ENV: testing
       APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
@@ -39,13 +39,24 @@ services:
     depends_on:
       db-test:
         condition: service_healthy
+    volumes:
+      - ./artifacts/coverage:/coverage
     command:
       - sh
       - -ec
       - |
         touch .env
         php artisan config:clear
-        composer ci:check
         php artisan migrate:fresh --seed --force
         php artisan db:seed --force
-        php artisan test
+        mkdir -p /coverage
+        set +e
+        vendor/bin/phpunit \
+          --coverage-text \
+          --coverage-clover=/coverage/clover.xml \
+          --coverage-html=/coverage/html
+        phpunit_status=$$?
+        composer ci:check
+        checks_status=$$?
+        if [ "$$phpunit_status" -ne 0 ]; then exit "$$phpunit_status"; fi
+        exit "$$checks_status"

@@ -47,9 +47,16 @@ class ApiDocumentationAccessTest extends TestCase
             ->assertJsonPath('components.securitySchemes.sanctumSession.type', 'apiKey')
             ->assertJsonPath('components.securitySchemes.sanctumSession.in', 'cookie')
             ->assertJsonPath('components.securitySchemes.sanctumSession.name', config('session.cookie'))
+            ->assertJsonPath('components.securitySchemes.bearerAuth.type', 'http')
+            ->assertJsonPath('components.securitySchemes.bearerAuth.scheme', 'bearer')
             ->assertJsonPath('security.0.sanctumSession', [])
             ->assertJsonPath('paths./listings.get.security', [])
-            ->assertJsonMissingPath('components.securitySchemes.bearerAuth');
+            ->assertJsonPath('paths./user.get.security.0.sanctumSession', [])
+            ->assertJsonPath('paths./user.get.security.1.bearerAuth', [])
+            ->assertJsonPath('paths./user.get.description', fn (string $description): bool => str_contains($description, 'profile:read'))
+            ->assertJsonPath('paths./pets.get.security.1.bearerAuth', [])
+            ->assertJsonPath('paths./pets.get.description', fn (string $description): bool => str_contains($description, 'pets:read'))
+            ->assertJsonPath('paths./tokens.post.responses.201.content.application/json.schema.properties.abilities.items.type', 'string');
 
         $paths = $specification->json('paths');
         $reportOperations = [

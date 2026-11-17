@@ -26,7 +26,7 @@ Tài liệu này là lộ trình thực hiện issue, **không phải báo cáo 
 | Mốc | Ngân sách | Công việc và đầu ra kiểm được |
 | --- | ---: | --- |
 | N1 — rà baseline và schema | 2 giờ | Đã đối chiếu `User`, auth/session config, bootstrap, routes và migration nền với Database Design M01. Không có passkeys/2FA hoặc dữ liệu user cũ cần backfill. Migration users/roles/audit dùng chung đã được thêm theo contract. |
-| N1–N2 — scaffold auth | 3 giờ | Đã cài Breeze API stack + Sanctum; hoàn thiện đăng ký, login, logout, yêu cầu/hoàn tất reset. API riêng tư dùng `auth:sanctum`; kiểm tra `/sanctum/csrf-cookie`, session cookie, CSRF hợp lệ/sai và throttle login/reset. Chưa tạo Vue UI. |
+| N1–N2 — scaffold auth | 3 giờ | Đã cài Breeze API stack + Sanctum; hoàn thiện đăng ký, login, logout, yêu cầu/hoàn tất reset. API riêng tư dùng `auth:sanctum`; kiểm tra `/sanctum/csrf-cookie`, session cookie, CSRF hợp lệ/sai và throttle login/reset. Chưa tạo Next.js/React UI. |
 | N2 — schema Identity và quyền nền | 2 giờ | Đã thêm `users.status`/`deletion_requested_at`, `user_roles` và `audit_logs`; đăng ký tạo `OWNER` phía server trong transaction. Endpoint tự bật `CAREGIVER` kiểm tra status, idempotent và có audit; CLI cấp/thu hồi `ADMIN` có lý do/audit. |
 | N2–N3 — feature tests và sửa lỗi | 2 giờ | 15 feature test đạt: migration SQLite test, đăng ký/login/logout/reset/throttle, session cookie hết hạn, 401/403, role OWNER mặc định, caregiver tự bật, user thiếu ADMIN bị từ chối, chống tự cấp ADMIN, chặn thu hồi admin cuối cùng, admin provisioning và reset response không tiết lộ email. MySQL 8.4 up/down/up và HTTP CSRF 204/419 được kiểm tra riêng. |
 | N3 — review và bàn giao | 1 giờ | Chờ Hào review auth, quyền và migration; cần ghi PR/commit, kết quả review và blocker downstream trước khi đóng issue. |
@@ -35,7 +35,7 @@ Nếu origin/session, mail hoặc migration audit dùng chung chưa sẵn sàng,
 
 ## 3. Hợp đồng phải bàn giao
 
-- **Auth:** Vue SPA lấy `/sanctum/csrf-cookie`, gửi cookie và CSRF cho auth/request ghi; API riêng tư dùng `auth:sanctum`. Logout hủy session. SPA không lưu bearer/personal access token.
+- **Auth:** Next.js/React frontend lấy `/sanctum/csrf-cookie`, gửi cookie và CSRF cho auth/request ghi; API riêng tư dùng `auth:sanctum`. Logout hủy session. SPA không lưu bearer/personal access token.
 - **Phân quyền:** public chỉ xem listing ACTIVE; user mới có `OWNER`; user `ACTIVE` có thể tự bật `CAREGIVER` qua endpoint riêng có audit, không trở thành người chăm “đã xác minh”. `ADMIN` không tự đăng ký và chỉ cấp theo quy trình tin cậy có audit. Backend kiểm tra role, trạng thái user và ownership/state ở policy của từng module; ẩn nút trên UI không thay kiểm tra server.
 - **Lỗi:** API riêng tư chưa đăng nhập hoặc hết session trả 401; đã đăng nhập nhưng thiếu quyền trả 403; CSRF không hợp lệ trả 419. Với JSON API, đối chiếu khuôn `error: { code, message, details?, request_id }` trong [API Contracts](<../08 — Architecture & Technical Design/04 — API Contracts & Error Conventions.md>); xác nhận cách chuyển lỗi mặc định của Breeze/Laravel trước khi chốt contract với frontend.
 - **Bảo mật:** throttle login/reset; reset response không tiết lộ tài khoản; không log mật khẩu, token, session ID hoặc PII. Cookie Secure/HttpOnly/SameSite phù hợp môi trường, demo public dùng HTTPS. Không bật verification khi mail chưa sẵn sàng.
@@ -50,7 +50,7 @@ Nếu origin/session, mail hoặc migration audit dùng chung chưa sẵn sàng,
 - [x] Password reset có throttle và phản hồi không tiết lộ email tồn tại; email verification chưa bật do luồng mail chưa được chốt.
 - [ ] Hào review; ghi commit/PR, môi trường, lệnh test, expected/actual, kết quả và giới hạn còn lại. Chỉ đánh dấu Done sau review và tích hợp theo quy tắc backlog.
 
-**Bàn giao phụ thuộc:** BE-T02, BE-H02 và BE-HA02 nhận contract quyền ở N2, nghiệm thu sau BE-H01 N3. FE-H01 nhận API auth/session/CSRF đã nghiệm thu ở Gate BE, rồi mới dựng Vue auth UI trong tuần 4. Kiểm thử IDOR của pet/listing, Policy theo booking/message/review/report, Filament admin UI và quyền đọc dữ liệu riêng tư thuộc issue module sau.
+**Bàn giao phụ thuộc:** BE-T02, BE-H02 và BE-HA02 nhận contract quyền ở N2, nghiệm thu sau BE-H01 N3. FE-H01 nhận API auth/session/CSRF đã nghiệm thu ở Gate BE, rồi mới dựng Next.js/React auth UI trong tuần 4. Kiểm thử IDOR của pet/listing, Policy theo booking/message/review/report, Filament admin UI và quyền đọc dữ liệu riêng tư thuộc issue module sau.
 
 ## Tài liệu đối chiếu
 

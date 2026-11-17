@@ -4,13 +4,11 @@ use App\Http\Controllers\AcceptBookingController;
 use App\Http\Controllers\Admin\BookingCancellationQueueController;
 use App\Http\Controllers\Admin\BookingCompletionReviewController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
+use App\Http\Controllers\ApiTokenController;
 use App\Http\Controllers\Auth\EnableCaregiverRoleController;
 use App\Http\Controllers\BookingCareLifecycleController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BookingMessageController;
-use App\Http\Controllers\ServiceInquiryController;
-use App\Http\Controllers\OwnerProfileController;
-use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\BookingQueryController;
 use App\Http\Controllers\CancelBookingController;
 use App\Http\Controllers\CaregiverListingController;
@@ -21,12 +19,15 @@ use App\Http\Controllers\ListingAvailabilityController;
 use App\Http\Controllers\ListingChangeRequestController;
 use App\Http\Controllers\ListingLifecycleController;
 use App\Http\Controllers\ListingMediaController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OwnerProfileController;
 use App\Http\Controllers\PetController;
 use App\Http\Controllers\PublicListingController;
 use App\Http\Controllers\RejectBookingController;
 use App\Http\Controllers\ReopenExpiredBookingPaymentController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SandboxPaymentCallbackController;
+use App\Http\Controllers\ServiceInquiryController;
 use App\Http\Controllers\SimulateSandboxPaymentController;
 use App\Http\Controllers\StartSandboxPaymentController;
 use App\Http\Controllers\StoreBookingReviewController;
@@ -45,8 +46,15 @@ Route::get('/listings/{id}/media/{mediaId}/content', [ListingMediaController::cl
 Route::post('/sandbox/payment-callback', SandboxPaymentCallbackController::class)
     ->name('sandbox.payment-callback');
 
-Route::middleware(['auth:sanctum', 'account.active'])->get('/user', function (Request $request) {
+Route::middleware(['auth:sanctum', 'account.active', 'abilities:profile:read'])->get('/user', function (Request $request) {
     return $request->user()->load('roles');
+});
+
+Route::middleware(['auth:sanctum', 'account.active', 'throttle:5,1'])->group(function () {
+    Route::post('/tokens', [ApiTokenController::class, 'store'])->name('tokens.store');
+    Route::delete('/tokens/{tokenId}', [ApiTokenController::class, 'destroy'])
+        ->whereNumber('tokenId')
+        ->name('tokens.destroy');
 });
 
 Route::post('/user/roles/caregiver', EnableCaregiverRoleController::class)
@@ -57,8 +65,10 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
-    Route::get('/owner-profile', [OwnerProfileController::class, 'show']);
-    Route::get('/owner-profile/bookings', [OwnerProfileController::class, 'bookings']);
+    Route::get('/owner-profile', [OwnerProfileController::class, 'show'])
+        ->middleware('abilities:profile:read');
+    Route::get('/owner-profile/bookings', [OwnerProfileController::class, 'bookings'])
+        ->middleware('abilities:bookings:read');
     Route::patch('/owner-profile', [OwnerProfileController::class, 'update'])->middleware('throttle:20,1');
     Route::post('/owner-profile/media', [ListingMediaController::class, 'upload'])->middleware('throttle:20,1');
     Route::get('/owner-profile/media/{mediaId}/content', [ListingMediaController::class, 'ownerContent'])->whereNumber('mediaId');
@@ -66,8 +76,10 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::get('/inquiries/{id}', [ServiceInquiryController::class, 'show'])->whereNumber('id');
     Route::get('/inquiries/{id}/messages', [ServiceInquiryController::class, 'messages'])->whereNumber('id');
     Route::post('/inquiries/{id}/messages', [ServiceInquiryController::class, 'send'])->whereNumber('id')->middleware('throttle:30,1');
-    Route::get('/bookings', [BookingQueryController::class, 'index']);
-    Route::get('/bookings/{id}', [BookingQueryController::class, 'show'])->whereNumber('id');
+    Route::get('/bookings', [BookingQueryController::class, 'index'])
+        ->middleware('abilities:bookings:read');
+    Route::get('/bookings/{id}', [BookingQueryController::class, 'show'])
+        ->whereNumber('id')->middleware('abilities:bookings:read');
     Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
     Route::get('/reports/mine', [ReportController::class, 'mine'])->name('reports.mine');
 });
@@ -86,12 +98,15 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:OWNER'])->group(funct
         ->whereNumber('id')
         ->name('bookings.confirm-completion');
 
-    Route::get('/pets', [PetController::class, 'index'])->name('pets.index');
+    Route::get('/pets', [PetController::class, 'index'])
+        ->middleware('abilities:pets:read')
+        ->name('pets.index');
     Route::post('/pets', [PetController::class, 'store'])->name('pets.store');
     Route::post('/pets/media', [ListingMediaController::class, 'upload'])->name('pets.media.upload');
     Route::get('/pets/media/{mediaId}/content', [ListingMediaController::class, 'ownerContent'])
         ->whereNumber('mediaId')->name('pets.media.content');
-    Route::get('/pets/{pet}', [PetController::class, 'show'])->name('pets.show');
+    Route::get('/pets/{pet}', [PetController::class, 'show'])
+        ->middleware('abilities:pets:read')->name('pets.show');
     Route::patch('/pets/{pet}', [PetController::class, 'update'])->name('pets.update');
     Route::patch('/pets/{pet}/archive', [PetController::class, 'archive'])->name('pets.archive');
     Route::patch('/pets/{pet}/activate', [PetController::class, 'activate'])->name('pets.activate');

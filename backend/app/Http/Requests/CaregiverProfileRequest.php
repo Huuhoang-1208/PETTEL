@@ -2,13 +2,13 @@
 
 namespace App\Http\Requests;
 
+use App\Models\MediaObject;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Normalizer;
-use App\Models\MediaObject;
 
 class CaregiverProfileRequest extends FormRequest
 {

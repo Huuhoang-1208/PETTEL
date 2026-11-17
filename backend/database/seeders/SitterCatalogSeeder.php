@@ -374,7 +374,7 @@ class SitterCatalogSeeder extends Seeder
     }
 
     /** @param array<string, mixed> $record
-     *  @return array<int, array{title: string, description: string}>
+     * @return array<int, array{title: string, description: string}>
      */
     private function demoCarePrinciples(array $record): array
     {
@@ -396,7 +396,7 @@ class SitterCatalogSeeder extends Seeder
     }
 
     /** @param array<string, mixed> $record
-     *  @return array<int, array{title: string, description: string}>
+     * @return array<int, array{title: string, description: string}>
      */
     private function demoSpaceAmenities(array $record, string $district): array
     {
