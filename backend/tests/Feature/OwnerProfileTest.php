@@ -26,7 +26,7 @@ class OwnerProfileTest extends TestCase
         $this->assertSame('ACTIVE', $owner->fresh()->status);
         $this->assertNull($other->fresh()->owner_profile_json);
         $this->getJson('/api/owner-profile')->assertOk()->assertJsonPath('data.phone', '0901234567');
-        $this->actingAs($other)->getJson('/api/owner-profile')->assertOk()->assertJsonPath('data.bio', null);
+        $this->actingAs($other, 'web')->getJson('/api/owner-profile')->assertOk()->assertJsonPath('data.bio', null);
     }
 
     public function test_avatar_must_belong_to_the_current_user(): void
@@ -55,7 +55,7 @@ class OwnerProfileTest extends TestCase
             ->assertJsonPath('data.emergency_contacts', fn (array $actual): bool => $actual == $contacts)
             ->assertJsonPath('data.bio', 'Giới thiệu của chủ nuôi');
         $this->getJson('/api/owner-profile')->assertOk()->assertJsonPath('data.emergency_contacts.secondary.available_24h', true);
-        $this->actingAs($other)->getJson('/api/owner-profile')->assertOk()->assertJsonPath('data.emergency_contacts', null);
+        $this->actingAs($other, 'web')->getJson('/api/owner-profile')->assertOk()->assertJsonPath('data.emergency_contacts', null);
         $this->assertNull($other->fresh()->owner_profile_json);
     }
 

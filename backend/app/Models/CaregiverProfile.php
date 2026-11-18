@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property array<string, mixed>|null $application_data_json
+ * @property array<string, mixed>|null $demo_profile_json
+ */
 class CaregiverProfile extends Model
 {
     use SoftDeletes;

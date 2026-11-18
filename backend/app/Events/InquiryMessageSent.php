@@ -27,6 +27,7 @@ class InquiryMessageSent implements ShouldBroadcast, ShouldDispatchAfterCommit, 
         return 'inquiry.message.sent';
     }
 
+    /** @return array<string, string> */
     public function broadcastWith(): array
     {
         return [

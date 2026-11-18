@@ -134,7 +134,7 @@ class ListingChangeRequestContractTest extends TestCase
         $this->assertEquals($eventsBefore, DB::table('booking_status_events')->where('booking_id', $fixture['booking']->id)->get()->toArray());
         $this->assertSame(1, DB::table('audit_logs')->where('action', 'LISTING_CHANGE_APPROVED')->where('resource_id', $id)->count());
 
-        $this->postJson("/api/admin/listings/{$id}/change-requests/{$requestId}/approve")->assertConflict();
+        $this->actingAs($admin, 'web')->postJson("/api/admin/listings/{$id}/change-requests/{$requestId}/approve")->assertConflict();
         $this->assertDatabaseHas('listings', ['id' => $id, 'title' => 'Approved title', 'version' => 2]);
         $this->assertSame(1, DB::table('audit_logs')->where('action', 'LISTING_CHANGE_APPROVED')->where('resource_id', $id)->count());
     }
@@ -157,7 +157,7 @@ class ListingChangeRequestContractTest extends TestCase
 
         $this->actingAs($admin)->postJson("/api/admin/listings/{$id}/change-requests/{$requestId}/reject")
             ->assertUnprocessable();
-        $this->postJson("/api/admin/listings/{$id}/change-requests/{$requestId}/reject", ['reason' => 'Please retain the current approved content.'])
+        $this->actingAs($admin, 'web')->postJson("/api/admin/listings/{$id}/change-requests/{$requestId}/reject", ['reason' => 'Please retain the current approved content.'])
             ->assertOk()->assertJsonPath('data.status', 'REJECTED');
         $this->getJson("/api/listings/{$id}")->assertOk()->assertJsonPath('data.title', 'Test daycare')->assertJsonPath('data.media', []);
         $this->assertDatabaseHas('listings', ['id' => $id, 'title' => 'Test daycare', 'version' => 1]);
@@ -300,7 +300,7 @@ class ListingChangeRequestContractTest extends TestCase
 
         $this->actingAs($admin)->getJson('/api/admin/listings')
             ->assertOk()->assertJsonPath('meta.total', 0);
-        $this->getJson('/api/admin/listings?status=ALL&per_page=1')
+        $this->actingAs($admin, 'web')->getJson('/api/admin/listings?status=ALL&per_page=1')
             ->assertOk()->assertJsonStructure(['data', 'links', 'meta'])
             ->assertJsonPath('meta.total', 3)->assertJsonPath('meta.per_page', 1);
         $this->getJson('/api/admin/listings?status=INVALID')
@@ -313,7 +313,7 @@ class ListingChangeRequestContractTest extends TestCase
         $requestId = $created->json('data.id');
         $this->assertSame($this->latestChangeId($id), $requestId);
 
-        $this->getJson("/api/caregiver/listings/{$id}")->assertOk()
+        $this->actingAs($caregiver, 'web')->getJson("/api/caregiver/listings/{$id}")->assertOk()
             ->assertJsonPath('data.pending_change_request_id', (string) $requestId)
             ->assertJsonPath('data.latest_decision', null);
         $history = $this->getJson("/api/caregiver/listings/{$id}/change-requests?per_page=1")
@@ -332,15 +332,15 @@ class ListingChangeRequestContractTest extends TestCase
         $this->actingAs($admin)->getJson("/api/admin/listings/{$id}")->assertOk()
             ->assertJsonPath('data.pending_change_request_id', (string) $requestId)
             ->assertJsonPath('data.latest_decision', null);
-        $this->postJson("/api/admin/listings/{$id}/change-requests/{$requestId}/approve")
+        $this->actingAs($admin, 'web')->postJson("/api/admin/listings/{$id}/change-requests/{$requestId}/approve")
             ->assertOk()->assertJsonPath('data.id', (string) $requestId)
             ->assertJsonPath('data.reviewed_by_user_id', (string) $admin->id);
 
-        $detail = $this->actingAs($caregiver)->getJson("/api/caregiver/listings/{$id}")->assertOk()
+        $detail = $this->actingAs($caregiver, 'web')->getJson("/api/caregiver/listings/{$id}")->assertOk()
             ->assertJsonPath('data.pending_change_request_id', null)
             ->assertJsonPath('data.latest_decision.action', 'LISTING_CHANGE_APPROVED');
         $this->assertMatchesRegularExpression('/Z$/', $detail->json('data.latest_decision.decided_at'));
-        $this->actingAs($admin)->getJson('/api/admin/listing-change-requests?status=ALL&per_page=1')
+        $this->actingAs($admin, 'web')->getJson('/api/admin/listing-change-requests?status=ALL&per_page=1')
             ->assertOk()->assertJsonStructure(['data', 'links', 'meta'])
             ->assertJsonPath('meta.per_page', 1)
             ->assertJsonPath('data.0.id', (string) $requestId);

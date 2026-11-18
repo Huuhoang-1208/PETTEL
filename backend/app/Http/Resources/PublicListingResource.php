@@ -17,8 +17,8 @@ class PublicListingResource extends JsonResource
         $average = $this->getAttributes()['rating_average'] ?? null;
         $caregiver = $this->whenLoaded('caregiverProfile', function (): array {
             $profile = $this->caregiverProfile;
-            $demo = $profile->demo_profile_json ?? [];
-            $application = $profile->application_data_json ?? [];
+            $demo = is_array($profile->demo_profile_json) ? $profile->demo_profile_json : [];
+            $application = is_array($profile->application_data_json) ? $profile->application_data_json : [];
 
             return [
                 'display_name' => $profile->display_name,
@@ -50,7 +50,9 @@ class PublicListingResource extends JsonResource
             ];
         });
 
-        $demo = $this->caregiverProfile?->demo_profile_json ?? [];
+        $demo = is_array($this->caregiverProfile?->demo_profile_json)
+            ? $this->caregiverProfile->demo_profile_json
+            : [];
 
         return [
             'id' => (string) $this->id,

@@ -26,7 +26,10 @@ class ServiceInquiryController extends Controller
 
     public function show(Request $request, string $id): JsonResponse
     {
-        return response()->json(['data' => $this->thread($this->accessible($request)->where('id', $id)->firstOrFail())])
+        /** @var object{id: int|string, listing_id: int|string, listing_title: string, sitter_name: string} $thread */
+        $thread = $this->accessible($request)->where('id', $id)->firstOrFail();
+
+        return response()->json(['data' => $this->thread($thread)])
             ->header('Cache-Control', 'private, no-store');
     }
 
@@ -45,11 +48,11 @@ class ServiceInquiryController extends Controller
                 ->from('listing_change_requests')
                 ->whereColumn('listing_change_requests.listing_id', 'listings.id')
                 ->where('listing_change_requests.status', 'PENDING_REVIEW'))
-            ->findOrFail($data['listing_id']);
+            ->findOrFail((int) $data['listing_id']);
         $profile = $listing->caregiverProfile;
         abort_unless($profile && $profile->user?->status === 'ACTIVE' && $profile->user->hasRole('CAREGIVER'), 404);
         abort_if((string) $profile->user_id === (string) $request->user()->id, 422, 'Bạn không thể nhắn tin cho chính mình.');
-        $pet = isset($data['pet_id']) ? Pet::query()->where('user_id', $request->user()->id)->where('status', 'ACTIVE')->findOrFail($data['pet_id']) : null;
+        $pet = isset($data['pet_id']) ? Pet::query()->where('user_id', $request->user()->id)->where('status', 'ACTIVE')->findOrFail((int) $data['pet_id']) : null;
         $context = [
             'pet_name' => $pet?->name,
             'pet_breed' => $pet?->breed,
@@ -62,7 +65,7 @@ class ServiceInquiryController extends Controller
             // Serialize sends by this owner so repeated clicks reuse the same thread.
             DB::table('users')->where('id', $request->user()->id)->lockForUpdate()->first();
             $thread = DB::table('service_inquiries')->where('owner_id', $request->user()->id)->where('listing_id', $listing->id)->first();
-            $id = $thread?->id ?? DB::table('service_inquiries')->insertGetId([
+            $id = isset($thread->id) ? $thread->id : DB::table('service_inquiries')->insertGetId([
                 'owner_id' => $request->user()->id,
                 'caregiver_user_id' => $profile->user_id,
                 'listing_id' => $listing->id,
@@ -87,7 +90,7 @@ class ServiceInquiryController extends Controller
         $page = DB::table('inquiry_messages')->where('inquiry_id', $id)->orderByDesc('id')->cursorPaginate($data['per_page'] ?? 50);
 
         return response()->json([
-            'data' => $page->getCollection()->map(fn ($message) => [
+            'data' => collect($page->items())->map(fn ($message) => [
                 'id' => (string) $message->id, 'sender_id' => (string) $message->sender_id,
                 'body' => $message->body, 'created_at' => CarbonImmutable::parse($message->created_at, 'UTC')->toISOString(),
                 'context' => $message->context_json ? json_decode($message->context_json, true) : null,
@@ -118,12 +121,20 @@ class ServiceInquiryController extends Controller
             ->where('owner_id', $request->user()->id)->orWhere('caregiver_user_id', $request->user()->id));
     }
 
+    /**
+     * @param  object{id: int|string, listing_id: int|string, listing_title: string, sitter_name: string}  $thread
+     * @return array{id: string, listing_id: string, listing_title: string, sitter_name: string}
+     */
     private function thread(object $thread): array
     {
         return ['id' => (string) $thread->id, 'listing_id' => (string) $thread->listing_id,
             'listing_title' => $thread->listing_title, 'sitter_name' => $thread->sitter_name];
     }
 
+    /**
+     * @param  array{body: string, request_key: string}  $data
+     * @param  array<string, mixed>|null  $context
+     */
     private function saveMessage(Request $request, string $id, array $data, ?array $context = null): string
     {
         $hash = hash('sha256', json_encode([$data['body'], $context], JSON_THROW_ON_ERROR));

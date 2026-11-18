@@ -15,6 +15,7 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Normalizer;
+use stdClass;
 
 class StoreBookingRequest extends FormRequest
 {
@@ -67,7 +68,17 @@ class StoreBookingRequest extends FormRequest
     }
 
     // Call after replay handling and inside the create transaction in task 4/5.
-    /** @return array{pet: Pet, listing: \stdClass, start: CarbonImmutable, end: CarbonImmutable, pricing: array<string, int|string>} */
+    /** @return array{pet: Pet, listing: stdClass, start: CarbonImmutable, end: CarbonImmutable, pricing: array<string, int|string>} */
+    /**
+     * @return array{
+     *     pet: Pet,
+     *     listing: stdClass,
+     *     start: CarbonImmutable,
+     *     end: CarbonImmutable,
+     *     pricing: array{price_total_vnd: int, unit_price_vnd: int, price_unit: string, quantity: int, pricing_version: int, cancellation_policy_version: int, base_price_total_vnd: int, addons_total_vnd: int},
+     *     addons: list<string>
+     * }
+     */
     public function validateSources(bool $lockForCreation = false): array
     {
         $owner = $this->user();
@@ -169,11 +180,12 @@ class StoreBookingRequest extends FormRequest
             $start,
             $end,
         );
+        /** @var list<string> $selectedAddons */
         $selectedAddons = array_values($data['addons'] ?? []);
         $addonsTotal = array_sum(array_map(fn (string $addon): int => self::ADDON_PRICES_VND[$addon], $selectedAddons));
         $pricing['base_price_total_vnd'] = $pricing['price_total_vnd'];
         $pricing['addons_total_vnd'] = $addonsTotal;
-        $pricing['price_total_vnd'] += $addonsTotal;
+        $pricing['price_total_vnd'] = (int) $pricing['price_total_vnd'] + $addonsTotal;
         $available = app(ApplyListingAvailability::class)->apply(
             Listing::query()->whereKey($listing->id),
             $start,

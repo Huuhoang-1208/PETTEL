@@ -108,7 +108,12 @@ class PublicListingController extends Controller
 
         if ($pet !== null) {
             [$scoreExpression, $scoreBindings] = $this->smartMatchScoreExpression($pet);
-            $query->selectRaw($scoreExpression.' AS smart_match_score', $scoreBindings)
+            $scoreSql = $scoreExpression.' AS smart_match_score';
+            // This SQL is assembled from fixed application values only.
+            if ($range !== null) {
+                $query->addSelect('listings.*');
+            }
+            $query->selectRaw($scoreSql, $scoreBindings) // @phpstan-ignore argument.type
                 ->orderByDesc('smart_match_score');
 
             if ($range !== null) {
@@ -178,7 +183,8 @@ class PublicListingController extends Controller
             $parts[] = "CASE WHEN JSON_CONTAINS(application_data_json, JSON_QUOTE(?), '$.{$signal['path']}') THEN {$signal['weight']} ELSE 0 END";
             $bindings[] = $signal['value'];
             if (isset($signal['accepted'])) {
-                $parts[] = "CASE WHEN JSON_CONTAINS(application_data_json, JSON_QUOTE(?), '$.pet_requirements') THEN {$signal['accepted_weight']} ELSE 0 END";
+                $acceptedWeight = $signal['accepted_weight'] ?? 0;
+                $parts[] = "CASE WHEN JSON_CONTAINS(application_data_json, JSON_QUOTE(?), '$.pet_requirements') THEN {$acceptedWeight} ELSE 0 END";
                 $bindings[] = $signal['accepted'];
             }
         }
@@ -216,8 +222,8 @@ class PublicListingController extends Controller
             }
         }
 
-        $behavior = $pet->behavior_tags ?? [];
-        $support = $pet->care_support_tags ?? [];
+        $behavior = is_array($pet->behavior_tags) ? $pet->behavior_tags : [];
+        $support = is_array($pet->care_support_tags) ? $pet->care_support_tags : [];
 
         if (array_intersect($behavior, ['SHY', 'FEARS_STRANGERS', 'NEEDS_WARM_UP', 'NOT_SOCIAL_WITH_PETS', 'SEPARATION_ANXIETY']) !== []) {
             $signals[] = ['path' => 'care_skills', 'value' => 'SENIOR_OR_SHY', 'weight' => 4, 'accepted' => 'ACCEPTS_SENIOR_OR_SHY', 'accepted_weight' => 2, 'reason' => 'SHY_PET_CARE'];
@@ -241,29 +247,36 @@ class PublicListingController extends Controller
     }
 
     /** @param array<string, mixed> $filters @return list<string> */
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return list<string>
+     */
     private function smartMatchReasons(Listing $listing, Pet $pet, array $filters): array
     {
         $reasons = ['SPECIES_ACCEPTED', 'SIZE_ACCEPTED'];
-        $application = $listing->caregiverProfile?->application_data_json ?? [];
+        $application = $listing->caregiverProfile?->application_data_json;
+        $application = is_array($application) ? $application : [];
         $skills = $application['care_skills'] ?? [];
         $requirements = $application['pet_requirements'] ?? [];
         $amenities = $application['amenities'] ?? [];
+        $experience = $application['experience_species'] ?? [];
 
         foreach ($this->smartMatchSignals($pet) as $signal) {
             if ($signal['path'] === 'experience_species') {
-                if (in_array($signal['value'], $application['experience_species'] ?? [], true)) {
+                if (is_array($experience) && in_array($signal['value'], $experience, true)) {
                     $reasons[] = $signal['reason'];
                 }
 
                 continue;
             }
 
-            if (in_array($signal['value'], $skills, true) || in_array($signal['accepted'] ?? '', $requirements, true)) {
+            if ((is_array($skills) && in_array($signal['value'], $skills, true))
+                || (is_array($requirements) && in_array($signal['accepted'] ?? '', $requirements, true))) {
                 $reasons[] = $signal['reason'];
             }
         }
 
-        if ($this->petNeedsSpecialDiet($pet) && in_array('SEPARATE_FOOD_STORAGE', $amenities, true)) {
+        if ($this->petNeedsSpecialDiet($pet) && is_array($amenities) && in_array('SEPARATE_FOOD_STORAGE', $amenities, true)) {
             $reasons[] = 'SEPARATE_FOOD_STORAGE';
         }
         if (isset($filters['space_type'])) {
@@ -610,10 +623,6 @@ class PublicListingController extends Controller
             ->leftJoinSub($ratings, 'review_ratings', 'review_ratings.listing_id', '=', 'listings.id')
             ->with(['media', 'caregiverProfile.user'])
             ->where('listings.status', 'ACTIVE')
-            ->whereNotExists(fn (QueryBuilder $query) => $query->selectRaw('1')
-                ->from('listing_change_requests')
-                ->whereColumn('listing_change_requests.listing_id', 'listings.id')
-                ->where('listing_change_requests.status', 'PENDING_REVIEW'))
             ->whereRelation('caregiverProfile.user', 'status', 'ACTIVE')
             ->whereRelation('caregiverProfile.user.roles', 'role', 'CAREGIVER');
     }

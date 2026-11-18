@@ -2,10 +2,20 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property CarbonInterface|null $birth_date
+ * @property CarbonInterface|null $core_vaccines_date
+ * @property CarbonInterface|null $rabies_vaccine_date
+ * @property CarbonInterface|null $deworming_date
+ * @property list<string>|null $behavior_tags
+ * @property list<string>|null $care_support_tags
+ * @property list<string>|null $vaccination_statuses
+ */
 class Pet extends Model
 {
     use SoftDeletes;

@@ -19,10 +19,10 @@ class BookingQueryTest extends TestCase
             ->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $id)
             ->assertJsonPath('data.0.participant_role', 'OWNER');
         $this->getJson("/api/bookings/{$id}")->assertOk()->assertJsonPath('data.pet_name', 'Mochi');
-        $this->actingAs($fixture['caregiver'])->getJson("/api/bookings/{$id}")->assertOk()
+        $this->actingAs($fixture['caregiver'], 'web')->getJson("/api/bookings/{$id}")->assertOk()
             ->assertJsonPath('data.participant_role', 'CAREGIVER');
         $otherOwner = User::query()->findOrFail($fixture['foreign_pet']->user_id);
-        $this->actingAs($otherOwner)->getJson('/api/bookings')->assertOk()->assertJsonCount(0, 'data');
+        $this->actingAs($otherOwner, 'web')->getJson('/api/bookings')->assertOk()->assertJsonCount(0, 'data');
         $this->getJson("/api/bookings/{$id}")->assertNotFound();
     }
 

@@ -2,15 +2,16 @@
 
 use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\EnsureActiveAccount;
+use App\Http\Middleware\EnsureApiTokenHasAbilities;
+use App\Http\Middleware\EnsureApiTokenHasAnyAbility;
 use App\Http\Middleware\EnsureApiTokenHasRouteAbility;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\RecordPerformanceQueryMetrics;
+use App\Http\Middleware\ResetSanctumRequestGuard;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
-use Laravel\Sanctum\Http\Middleware\CheckAbilities;
-use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -33,16 +34,17 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->api(append: [
-            EnsureApiTokenHasRouteAbility::class,
             RecordPerformanceQueryMetrics::class,
             AssignRequestId::class,
+            ResetSanctumRequestGuard::class,
         ]);
 
         $middleware->alias([
             'account.active' => EnsureActiveAccount::class,
             'role' => EnsureUserHasRole::class,
-            'abilities' => CheckAbilities::class,
-            'ability' => CheckForAnyAbility::class,
+            'abilities' => EnsureApiTokenHasAbilities::class,
+            'ability' => EnsureApiTokenHasAnyAbility::class,
+            'token.route' => EnsureApiTokenHasRouteAbility::class,
         ]);
 
         //

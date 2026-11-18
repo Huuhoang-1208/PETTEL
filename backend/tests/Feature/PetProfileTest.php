@@ -58,7 +58,7 @@ class PetProfileTest extends TestCase
         $otherOwner = $this->userWithRole('OWNER');
         $pet = $otherOwner->pets()->create(['name' => 'Luna', 'species' => 'CAT']);
 
-        $this->actingAs($owner)->getJson("/api/pets/{$pet->id}")->assertNotFound();
+        $this->actingAs($owner, 'web')->getJson("/api/pets/{$pet->id}")->assertNotFound();
         $this->patchJson("/api/pets/{$pet->id}", ['name' => 'Stolen'])->assertNotFound();
         $this->deleteJson("/api/pets/{$pet->id}")->assertNotFound();
         $this->assertDatabaseHas('pets', ['id' => $pet->id, 'name' => 'Luna', 'deleted_at' => null]);

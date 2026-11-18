@@ -29,6 +29,7 @@ class BookingMessageSent implements ShouldBroadcast, ShouldDispatchAfterCommit, 
         return 'booking.message.sent';
     }
 
+    /** @return array<string, string> */
     public function broadcastWith(): array
     {
         return [

@@ -38,6 +38,7 @@ class BookingQueryController extends Controller
             ->header('Cache-Control', 'private, no-store');
     }
 
+    /** @return Builder<Booking> */
     private function accessible(Request $request): Builder
     {
         return Booking::query()->where(fn (Builder $query) => $query
@@ -45,6 +46,7 @@ class BookingQueryController extends Controller
             ->orWhere('caregiver_user_id', $request->user()->id));
     }
 
+    /** @return array<string, mixed> */
     private function resource(Request $request, Booking $booking): array
     {
         $redacted = $booking->privacy_redacted_at !== null;

@@ -10,6 +10,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable $start_at
  * @property CarbonImmutable $end_at
  * @property CarbonImmutable|null $payment_due_at
+ * @property array<string, mixed> $pet_snapshot_json
+ * @property array<string, mixed> $listing_snapshot_json
+ * @property array<string, mixed> $policy_snapshot_json
+ * @property CarbonImmutable|null $privacy_redacted_at
  */
 class Booking extends Model
 {

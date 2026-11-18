@@ -743,7 +743,7 @@ class AppServiceProvider extends ServiceProvider
                     }
 
                     $tokenOperation = $path->operations['post'] ?? null;
-                    foreach ($tokenOperation?->responses ?? [] as $response) {
+                    foreach ($tokenOperation->responses ?? [] as $response) {
                         if ($response instanceof Response && (string) $response->code === '201') {
                             $response->setContent('application/json', Schema::fromType($object([
                                 'token' => $string(),

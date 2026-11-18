@@ -192,10 +192,11 @@ class SitterCatalogSeeder extends Seeder
 
     private function seedDemoReviews(): void
     {
+        /** @var list<array{name: string, email: string, pets: array<string, string>, user_id: int, pet_ids: array<string, int>}> $reviewers */
         $reviewers = [
-            ['name' => 'Nguyễn Mai Phương', 'email' => 'reviewer-mai@example.test', 'pets' => ['DOG' => 'Mochi', 'CAT' => 'Mochi Mèo']],
-            ['name' => 'Trần Vũ Tuấn', 'email' => 'reviewer-tuan@example.test', 'pets' => ['DOG' => 'Bơ', 'CAT' => 'Bơ Mèo']],
-            ['name' => 'Lê Hương Giang', 'email' => 'reviewer-giang@example.test', 'pets' => ['DOG' => 'Simba', 'CAT' => 'Simba Mèo']],
+            ['name' => 'Nguyễn Mai Phương', 'email' => 'reviewer-mai@example.test', 'pets' => ['DOG' => 'Mochi', 'CAT' => 'Mochi Mèo'], 'user_id' => 0, 'pet_ids' => []],
+            ['name' => 'Trần Vũ Tuấn', 'email' => 'reviewer-tuan@example.test', 'pets' => ['DOG' => 'Bơ', 'CAT' => 'Bơ Mèo'], 'user_id' => 0, 'pet_ids' => []],
+            ['name' => 'Lê Hương Giang', 'email' => 'reviewer-giang@example.test', 'pets' => ['DOG' => 'Simba', 'CAT' => 'Simba Mèo'], 'user_id' => 0, 'pet_ids' => []],
         ];
 
         foreach ($reviewers as &$reviewer) {
@@ -227,6 +228,7 @@ class SitterCatalogSeeder extends Seeder
                     ->where('user_id', $user->id)
                     ->where('name', $petName)
                     ->value('id');
+                $reviewer['pet_ids'][$species] = (int) $reviewer['pet_ids'][$species];
             }
         }
         unset($reviewer);

@@ -46,11 +46,11 @@ Route::get('/listings/{id}/media/{mediaId}/content', [ListingMediaController::cl
 Route::post('/sandbox/payment-callback', SandboxPaymentCallbackController::class)
     ->name('sandbox.payment-callback');
 
-Route::middleware(['auth:sanctum', 'account.active', 'abilities:profile:read'])->get('/user', function (Request $request) {
+Route::middleware(['auth:sanctum', 'token.route', 'account.active', 'abilities:profile:read'])->get('/user', function (Request $request) {
     return $request->user()->load('roles');
 });
 
-Route::middleware(['auth:sanctum', 'account.active', 'throttle:5,1'])->group(function () {
+Route::middleware(['auth:sanctum', 'token.route', 'account.active', 'throttle:5,1'])->group(function () {
     Route::post('/tokens', [ApiTokenController::class, 'store'])->name('tokens.store');
     Route::delete('/tokens/{tokenId}', [ApiTokenController::class, 'destroy'])
         ->whereNumber('tokenId')
@@ -58,10 +58,10 @@ Route::middleware(['auth:sanctum', 'account.active', 'throttle:5,1'])->group(fun
 });
 
 Route::post('/user/roles/caregiver', EnableCaregiverRoleController::class)
-    ->middleware(['auth:sanctum', 'account.active', 'throttle:10,1'])
+    ->middleware(['auth:sanctum', 'token.route', 'account.active', 'throttle:10,1'])
     ->name('user.roles.caregiver');
 
-Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
+Route::middleware(['auth:sanctum', 'token.route', 'account.active'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
@@ -84,7 +84,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::get('/reports/mine', [ReportController::class, 'mine'])->name('reports.mine');
 });
 
-Route::middleware(['auth:sanctum', 'account.active', 'role:OWNER'])->group(function () {
+Route::middleware(['auth:sanctum', 'token.route', 'account.active', 'role:OWNER'])->group(function () {
     Route::post('/inquiries', [ServiceInquiryController::class, 'store'])->middleware('throttle:30,1');
     Route::post('/bookings/quote', [BookingController::class, 'quote'])->name('bookings.quote');
     Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
@@ -115,7 +115,7 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:OWNER'])->group(funct
         ->whereNumber('id')->name('bookings.reviews.store');
 });
 
-Route::middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
+Route::middleware(['auth:sanctum', 'token.route', 'account.active', 'role:CAREGIVER'])
     ->prefix('caregiver')
     ->group(function () {
         Route::post('/profile', [CaregiverProfileController::class, 'store']);
@@ -145,7 +145,7 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
         Route::get('/media/{mediaId}/content', [ListingMediaController::class, 'ownerContent'])->whereNumber('mediaId');
     });
 
-Route::middleware(['auth:sanctum', 'account.active'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'token.route', 'account.active'])->prefix('admin')->group(function () {
     Route::middleware('role:ADMIN,SUPPORT')->group(function () {
         Route::get('/reports', [AdminReportController::class, 'index'])->name('admin.reports.index');
         Route::get('/reports/{id}', [AdminReportController::class, 'show'])
@@ -189,36 +189,36 @@ Route::middleware(['auth:sanctum', 'account.active'])->prefix('admin')->group(fu
 });
 
 Route::post('/bookings/{id}/reject', RejectBookingController::class)
-    ->middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
+    ->middleware(['auth:sanctum', 'token.route', 'account.active', 'role:CAREGIVER'])
     ->whereNumber('id')
     ->name('bookings.reject');
 
 Route::post('/bookings/{id}/cancel', CancelBookingController::class)
-    ->middleware(['auth:sanctum', 'account.active'])
+    ->middleware(['auth:sanctum', 'token.route', 'account.active'])
     ->whereNumber('id')
     ->name('bookings.cancel');
 
 Route::post('/bookings/{id}/accept', AcceptBookingController::class)
-    ->middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
+    ->middleware(['auth:sanctum', 'token.route', 'account.active', 'role:CAREGIVER'])
     ->whereNumber('id')
     ->name('bookings.accept');
 
 Route::post('/bookings/{id}/reopen-expired-payment', ReopenExpiredBookingPaymentController::class)
-    ->middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
+    ->middleware(['auth:sanctum', 'token.route', 'account.active', 'role:CAREGIVER'])
     ->whereNumber('id')
     ->name('bookings.reopen-expired-payment');
 
 Route::post('/bookings/{id}/start', [BookingCareLifecycleController::class, 'start'])
-    ->middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
+    ->middleware(['auth:sanctum', 'token.route', 'account.active', 'role:CAREGIVER'])
     ->whereNumber('id')
     ->name('bookings.start');
 
 Route::post('/bookings/{id}/request-completion', [BookingCareLifecycleController::class, 'requestCompletion'])
-    ->middleware(['auth:sanctum', 'account.active', 'role:CAREGIVER'])
+    ->middleware(['auth:sanctum', 'token.route', 'account.active', 'role:CAREGIVER'])
     ->whereNumber('id')
     ->name('bookings.request-completion');
 
-Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
+Route::middleware(['auth:sanctum', 'token.route', 'account.active'])->group(function () {
     Route::get('/bookings/{id}/care-updates', [CareUpdateController::class, 'index'])
         ->whereNumber('id')->name('bookings.care-updates.index');
     Route::post('/bookings/{id}/care-updates', [CareUpdateController::class, 'store'])
@@ -227,7 +227,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         ->whereNumber(['id', 'careUpdateId'])->middleware('signed')->name('bookings.care-updates.image');
 });
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'token.route'])->group(function () {
     Route::get('/bookings/{id}/messages', [BookingMessageController::class, 'index'])
         ->whereNumber('id')->name('bookings.messages.index');
     Route::post('/bookings/{id}/messages', [BookingMessageController::class, 'store'])

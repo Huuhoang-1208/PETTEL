@@ -13,9 +13,10 @@ class CaregiverProfileResource extends JsonResource
     public function toArray(Request $request): array
     {
         $user = $this->user;
-        $application = $this->application_data_json ?? [];
-        $contactEmail = is_string($application['contact_email'] ?? null)
-            ? strtolower(trim($application['contact_email']))
+        $application = is_array($this->application_data_json) ? $this->application_data_json : [];
+        $rawContactEmail = $application['contact_email'] ?? null;
+        $contactEmail = is_string($rawContactEmail)
+            ? strtolower(trim($rawContactEmail))
             : '';
         $accountEmail = strtolower((string) $user?->email);
 
@@ -28,7 +29,7 @@ class CaregiverProfileResource extends JsonResource
             // This resource is only returned from the authenticated, owner-scoped caregiver API.
             'application_data_json' => $application,
             'contact_verification' => [
-                'email_verified' => $user?->email_verified_at !== null
+                'email_verified' => $user !== null && $user->email_verified_at !== null
                     && $contactEmail !== ''
                     && $contactEmail === $accountEmail,
                 'email_verification_available' => false,

@@ -37,7 +37,7 @@ class PublicReviewTest extends TestCase
             array_column($response->json('data'), 'id'),
         );
         $this->assertEqualsCanonicalizing(
-            ['id', 'rating', 'body', 'is_demo', 'created_at'],
+            ['id', 'rating', 'body', 'is_demo', 'reviewer_name', 'pet_species', 'created_at'],
             array_keys($response->json('data.0')),
         );
         $this->assertStringNotContainsString('Hidden review', $response->getContent());

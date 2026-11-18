@@ -199,6 +199,8 @@ class PublicListingAcceptanceTest extends TestCase
                 'media',
                 'rating_average',
                 'review_count',
+                'caregiver',
+                'smart_match',
                 'match_reasons',
             ], array_keys($item));
             $this->assertSame($expectedReasons, $item['match_reasons']);
@@ -224,6 +226,7 @@ class PublicListingAcceptanceTest extends TestCase
             'media',
             'rating_average',
             'review_count',
+            'caregiver',
         ], array_keys($detailItem));
 
         foreach ([$list, $datedList, $detail] as $response) {
