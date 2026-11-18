@@ -5,7 +5,10 @@ namespace Tests\Feature\Auth;
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Password;
+use RuntimeException;
 use Tests\TestCase;
 
 class PasswordResetTest extends TestCase
@@ -58,5 +61,26 @@ class PasswordResetTest extends TestCase
 
             return true;
         });
+    }
+
+    public function test_reset_link_request_logs_provider_failure_and_keeps_generic_response(): void
+    {
+        Log::shouldReceive('error')
+            ->once()
+            ->withArgs(fn (string $message, array $context): bool => $message === 'Password reset email delivery failed.'
+                && $context['provider'] === config('mail.default')
+                && $context['exception'] === RuntimeException::class
+                && isset($context['request_id']));
+
+        Password::shouldReceive('sendResetLink')
+            ->once()
+            ->andThrow(new RuntimeException('Provider unavailable'));
+
+        $this->post('/forgot-password', [
+            'email' => 'owner@example.com',
+        ])->assertStatus(202)
+            ->assertExactJson([
+                'status' => 'password-reset-link-requested',
+            ]);
     }
 }
