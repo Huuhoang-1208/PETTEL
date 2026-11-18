@@ -133,10 +133,6 @@ class StoreBookingRequest extends FormRequest
             $this->reject(409, 'INVALID_STATE', 'Listing is not active.');
         }
 
-        if (DB::table('listing_change_requests')->where('listing_id', $listing->id)->where('status', 'PENDING_REVIEW')->exists()) {
-            $this->reject(404, 'NOT_FOUND', 'Listing not found.');
-        }
-
         $roleQuery = DB::table('user_roles')
             ->where('user_id', $listing->caregiver_user_id)->where('role', 'CAREGIVER');
         $hasCaregiverRole = $lockForCreation

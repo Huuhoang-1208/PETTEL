@@ -5,7 +5,7 @@ import { Review } from "@/features/listings/types";
 import { useApi } from "@/hooks/use-api";
 import { type Listing, type Page } from "@/lib/api/types";
 import { dateTime } from "@/lib/format";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import styles from "./listing-reviews-card.module.css";
 
 type ReviewPage = Page<Review> & {
@@ -26,13 +26,10 @@ function initials(name: string): string {
 
 export function ListingReviewsCard({ listing }: { listing: Listing }) {
   const [page, setPage] = useState(1);
-  const [items, setItems] = useState<Review[]>([]);
+  const [previousItems, setPreviousItems] = useState<Review[]>([]);
   const reviews = useApi<ReviewPage>(`/api/listings/${listing.id}/reviews?page=${page}&per_page=3`);
 
-  useEffect(() => {
-    if (!reviews.data) return;
-    setItems((previous) => page === 1 ? reviews.data!.data : [...previous, ...reviews.data!.data]);
-  }, [page, reviews.data]);
+  const items = previousItems.concat(reviews.data?.data ?? []);
 
   const distribution = reviews.data?.rating_distribution ?? {};
   const distributionTotal = Object.values(distribution).reduce((sum, count) => sum + count, 0);
@@ -98,7 +95,10 @@ export function ListingReviewsCard({ listing }: { listing: Listing }) {
       </div>
 
       {hasMore && (
-        <button className={styles.more} type="button" disabled={reviews.loading} onClick={() => setPage((value) => value + 1)}>
+        <button className={styles.more} type="button" disabled={reviews.loading} onClick={() => {
+          setPreviousItems(items);
+          setPage(page + 1);
+        }}>
           {reviews.loading ? "Đang tải..." : `Xem thêm ${Math.max(0, total - items.length)} đánh giá khác`}
         </button>
       )}

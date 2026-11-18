@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Tests\Support\BookingFixture;
 use Tests\TestCase;
 
@@ -152,6 +153,36 @@ class ListingPublicBookingIntegrationTest extends TestCase
         $this->assertDatabaseHas('media_objects', ['id' => $media->id, 'state' => 'READY']);
         Storage::disk('local')->assertExists($key);
         Storage::disk('local')->assertExists('listings/'.$caregiver->id.'/retained-thumb.webp');
+    }
+
+    public function test_pending_price_change_keeps_approved_listing_bookable(): void
+    {
+        $fixture = BookingFixture::make();
+        $listingId = $fixture['active_listing_id'];
+        $payload = $fixture['payload'];
+
+        $this->actingAs($fixture['caregiver'])
+            ->postJson("/api/caregiver/listings/{$listingId}/change-requests", [
+                'base_listing_version' => 1,
+                'changes' => ['price_vnd' => 60000],
+            ])->assertCreated();
+
+        $this->actingAs($fixture['owner'])->getJson("/api/listings/{$listingId}")
+            ->assertOk()->assertJsonPath('data.price_vnd', 50000);
+        $this->postJson('/api/bookings/quote', $payload)
+            ->assertOk()->assertJsonPath('price_total_vnd', 150000);
+        $booking = $this->withHeader('Idempotency-Key', 'pending-price-booking')
+            ->postJson('/api/bookings', $payload)->assertCreated();
+
+        $this->assertDatabaseHas('bookings', [
+            'id' => $booking->json('id'),
+            'price_snapshot_vnd' => 150000,
+        ]);
+        $this->postJson('/api/inquiries', [
+            'listing_id' => $listingId,
+            'body' => 'Tôi muốn hỏi thêm về dịch vụ.',
+            'request_key' => (string) Str::uuid(),
+        ])->assertCreated();
     }
 
     private function admin(): User

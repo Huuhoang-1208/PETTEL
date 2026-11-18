@@ -87,7 +87,7 @@ export function ListingDetail({ listing }: { listing: Listing }) {
           <ListingPricingCard listing={listing} />
           <ListingAvailabilityCard listing={listing} />
 
-          <ListingReviewsCard listing={listing} />
+          <ListingReviewsCard key={listing.id} listing={listing} />
           <ListingLocationCard listing={listing} />
         </article>
 

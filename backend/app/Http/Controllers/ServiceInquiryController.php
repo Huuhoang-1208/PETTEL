@@ -43,11 +43,9 @@ class ServiceInquiryController extends Controller
             'body' => ['required', 'string', 'max:500', 'regex:/\S/u'],
             'request_key' => ['required', 'uuid'],
         ]);
-        $listing = Listing::query()->with('caregiverProfile.user')->where('status', 'ACTIVE')
-            ->whereNotExists(fn (Builder $query) => $query->selectRaw('1')
-                ->from('listing_change_requests')
-                ->whereColumn('listing_change_requests.listing_id', 'listings.id')
-                ->where('listing_change_requests.status', 'PENDING_REVIEW'))
+        $listing = Listing::query()
+            ->with('caregiverProfile.user')
+            ->where('status', 'ACTIVE')
             ->findOrFail((int) $data['listing_id']);
         $profile = $listing->caregiverProfile;
         abort_unless($profile && $profile->user?->status === 'ACTIVE' && $profile->user->hasRole('CAREGIVER'), 404);

@@ -54,9 +54,13 @@ export function PetManager() {
     delete payload["behavior_tags[]"];
     delete payload["care_support_tags[]"];
     const vaccinationStatuses = Object.fromEntries(
-      ["core_vaccines", "rabies_vaccine", "deworming"].map((key) => [key, form.get(`vaccination_statuses.${key}`) || "UNKNOWN"]),
+      ["core_vaccines", "rabies_vaccine", "deworming"].map((key) => [
+        key,
+        form.get(`vaccination_statuses.${key}`) || "UNKNOWN",
+      ]),
     );
-    for (const key of Object.keys(payload)) if (key.startsWith("vaccination_statuses.")) delete payload[key];
+    for (const key of Object.keys(payload))
+      if (key.startsWith("vaccination_statuses.")) delete payload[key];
     payload.vaccination_statuses = vaccinationStatuses;
     payload.behavior_tags = form.getAll("behavior_tags[]");
     payload.care_support_tags = form.getAll("care_support_tags[]");
@@ -70,7 +74,11 @@ export function PetManager() {
       if (photo instanceof File && photo.size > 0) {
         const photoData = new FormData();
         photoData.append("file", photo);
-        const uploaded = await write<{ data: { id: string } }>("post", "/api/pets/media", photoData);
+        const uploaded = await write<{ data: { id: string } }>(
+          "post",
+          "/api/pets/media",
+          photoData,
+        );
         payload.photo_media_id = uploaded.data.id;
       } else if (editing?.photo_media_id) {
         payload.photo_media_id = editing.photo_media_id;
@@ -78,12 +86,20 @@ export function PetManager() {
       if (vaccinationRecordPhoto instanceof File && vaccinationRecordPhoto.size > 0) {
         const photoData = new FormData();
         photoData.append("file", vaccinationRecordPhoto);
-        const uploaded = await write<{ data: { id: string } }>("post", "/api/pets/media", photoData);
+        const uploaded = await write<{ data: { id: string } }>(
+          "post",
+          "/api/pets/media",
+          photoData,
+        );
         payload.vaccination_record_media_id = uploaded.data.id;
       } else if (editing?.vaccination_record_media_id) {
         payload.vaccination_record_media_id = editing.vaccination_record_media_id;
       }
-      await write(editing ? "patch" : "post", editing ? `/api/pets/${editing.id}` : "/api/pets", payload);
+      await write(
+        editing ? "patch" : "post",
+        editing ? `/api/pets/${editing.id}` : "/api/pets",
+        payload,
+      );
       setEditing(undefined);
       resource.reload();
     } catch (failure) {
@@ -98,7 +114,10 @@ export function PetManager() {
     setBusy(true);
     setError(undefined);
     try {
-      await write(type === "delete" ? "delete" : "patch", `/api/pets/${pet.id}${type === "delete" ? "" : `/${type}`}`);
+      await write(
+        type === "delete" ? "delete" : "patch",
+        `/api/pets/${pet.id}${type === "delete" ? "" : `/${type}`}`,
+      );
       resource.reload();
     } catch (failure) {
       setError(failure);
@@ -108,14 +127,25 @@ export function PetManager() {
   }
 
   const activeCount = pets.filter((pet) => pet.status === "ACTIVE").length;
-  const vaccinationCount = pets.filter((pet) => pet.vaccination_statuses?.core_vaccines === "DONE" || Boolean(pet.health_flags?.core_vaccines) || Boolean(pet.vaccination_record_media_id)).length;
-  const matchCount = pets.filter((pet) => Boolean(pet.species && pet.size && (pet.temperament?.trim() || pet.behavior_tags?.length))).length;
+  const vaccinationCount = pets.filter(
+    (pet) =>
+      pet.vaccination_statuses?.core_vaccines === "DONE" ||
+      Boolean(pet.health_flags?.core_vaccines) ||
+      Boolean(pet.vaccination_record_media_id),
+  ).length;
+  const matchCount = pets.filter((pet) =>
+    Boolean(pet.species && pet.size && (pet.temperament?.trim() || pet.behavior_tags?.length)),
+  ).length;
 
   return (
     <>
       {dialog}
       <div className={styles.breadcrumb}>
-        <Link href="/">Trang chủ</Link><span>/</span><span>Tài khoản</span><span>/</span><strong>Hồ sơ thú cưng</strong>
+        <Link href="/">Trang chủ</Link>
+        <span>/</span>
+        <span>Tài khoản</span>
+        <span>/</span>
+        <strong>Hồ sơ thú cưng</strong>
       </div>
 
       <section className={styles.intro}>
@@ -124,9 +154,18 @@ export function PetManager() {
             <h1>Hồ sơ thú cưng của tôi</h1>
             <span className={styles.countBadge}>{pets.length} bé yêu</span>
           </div>
-          <p>Thông tin của bé được lưu an toàn để giúp bạn tìm Sitter phù hợp và đặt lịch nhanh hơn.</p>
+          <p>
+            Thông tin của bé được lưu an toàn để giúp bạn tìm Sitter phù hợp và đặt lịch nhanh hơn.
+          </p>
         </div>
-        <button className={styles.addButton} type="button" onClick={() => { setEditing(null); setError(undefined); }}>
+        <button
+          className={styles.addButton}
+          type="button"
+          onClick={() => {
+            setEditing(null);
+            setError(undefined);
+          }}
+        >
           <PettelIcon name="plus" /> Thêm hồ sơ thú cưng mới
         </button>
       </section>
@@ -135,26 +174,56 @@ export function PetManager() {
 
       <section className={styles.metrics} aria-label="Tổng quan hồ sơ thú cưng">
         <Metric icon="paw" label="Thú cưng trong hồ sơ" value={`${pets.length} bé`} tone="teal" />
-        <Metric icon="shield" label="Sổ tiêm chủng" value={`${vaccinationCount}/${pets.length} đã cập nhật`} tone="orange" />
-        <Metric icon="star" label="Hồ sơ Smart Match" value={`${matchCount}/${pets.length} đủ thông tin`} tone="purple" />
+        <Metric
+          icon="shield"
+          label="Sổ tiêm chủng"
+          value={`${vaccinationCount}/${pets.length} đã cập nhật`}
+          tone="orange"
+        />
+        <Metric
+          icon="star"
+          label="Hồ sơ Smart Match"
+          value={`${matchCount}/${pets.length} đủ thông tin`}
+          tone="purple"
+        />
         <Metric icon="heart" label="Đang hoạt động" value={`${activeCount} bé`} tone="blue" />
       </section>
 
-      {resource.loading && <p className={styles.loading} role="status">Đang tải hồ sơ thú cưng...</p>}
+      {resource.loading && (
+        <p className={styles.loading} role="status">
+          Đang tải hồ sơ thú cưng...
+        </p>
+      )}
       {!resource.loading && pets.length > 0 && (
         <section className={styles.petGrid} aria-label="Danh sách thú cưng">
           {pets.map((pet, index) => (
-            <PetCard key={pet.id} pet={pet} index={index} busy={busy} onEdit={setEditing} onAction={action} />
+            <PetCard
+              key={pet.id}
+              pet={pet}
+              index={index}
+              busy={busy}
+              onEdit={setEditing}
+              onAction={action}
+            />
           ))}
         </section>
       )}
 
       {!resource.loading && !resource.error && pets.length === 0 && (
         <section className={styles.emptyState}>
-          <span className={styles.emptyIcon}><PettelIcon name="paw" /></span>
+          <span className={styles.emptyIcon}>
+            <PettelIcon name="paw" />
+          </span>
           <h2>Bạn muốn đón thêm một thiên thần lông xù?</h2>
           <p>Tạo hồ sơ riêng để PETTEL gợi ý Sitter phù hợp và giúp bạn đặt lịch thuận tiện hơn.</p>
-          <button className={styles.secondaryButton} type="button" onClick={() => { setEditing(null); setError(undefined); }}>
+          <button
+            className={styles.secondaryButton}
+            type="button"
+            onClick={() => {
+              setEditing(null);
+              setError(undefined);
+            }}
+          >
             <PettelIcon name="plus" /> Thêm bé cưng ngay
           </button>
         </section>
@@ -162,36 +231,75 @@ export function PetManager() {
 
       <section className={styles.whySection}>
         <div className={styles.sectionHeading}>
-          <div><span>QUYỀN LỢI DÀNH CHO PETTEL</span><h2>Tại sao hồ sơ chi tiết lại quan trọng với bé?</h2></div>
-          <p>Thông tin về loài, kích thước và thói quen giúp người chăm chuẩn bị tốt hơn cho từng bé.</p>
+          <div>
+            <span>QUYỀN LỢI DÀNH CHO PETTEL</span>
+            <h2>Tại sao hồ sơ chi tiết lại quan trọng với bé?</h2>
+          </div>
+          <p>
+            Thông tin về loài, kích thước và thói quen giúp người chăm chuẩn bị tốt hơn cho từng bé.
+          </p>
         </div>
         <div className={styles.benefits}>
           {benefits.map((benefit) => (
             <article className={`${styles.benefit} ${styles[benefit.accent]}`} key={benefit.title}>
-              <span className={styles.benefitIcon}><PettelIcon name={benefit.icon} /></span>
+              <span className={styles.benefitIcon}>
+                <PettelIcon name={benefit.icon} />
+              </span>
               <h3>{benefit.title}</h3>
               <p>{benefit.text}</p>
-              <Link href="/services">Tìm hiểu dịch vụ <PettelIcon name="arrow" /></Link>
+              <Link href="/services">
+                Tìm hiểu dịch vụ <PettelIcon name="arrow" />
+              </Link>
             </article>
           ))}
         </div>
       </section>
 
       <aside className={styles.vetBar}>
-        <span className={styles.vetIcon}><PettelIcon name="plus" /></span>
-        <div><strong>Mạng lưới bác sĩ thú y đối tác tại Đà Nẵng</strong><p>Tham khảo hỗ trợ thú y và thông tin chăm sóc khi trao đổi với Sitter.</p></div>
+        <span className={styles.vetIcon}>
+          <PettelIcon name="plus" />
+        </span>
+        <div>
+          <strong>Mạng lưới bác sĩ thú y đối tác tại Đà Nẵng</strong>
+          <p>Tham khảo hỗ trợ thú y và thông tin chăm sóc khi trao đổi với Sitter.</p>
+        </div>
         <a href="tel:19006868">Hotline hỗ trợ · 1900 6868</a>
       </aside>
 
-      {editing !== undefined && <PetEditor editing={editing} error={error} busy={busy} submit={submit} onClose={() => setEditing(undefined)} />}
+      {editing !== undefined && (
+        <PetEditor
+          key={editing?.id ?? "new"}
+          editing={editing}
+          error={error}
+          busy={busy}
+          submit={submit}
+          onClose={() => setEditing(undefined)}
+        />
+      )}
     </>
   );
 }
 
-function Metric({ icon, label, value, tone }: { icon: "paw" | "shield" | "star" | "heart"; label: string; value: string; tone: string }) {
+function Metric({
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: "paw" | "shield" | "star" | "heart";
+  label: string;
+  value: string;
+  tone: string;
+}) {
   return (
     <article className={`${styles.metric} ${styles[tone]}`}>
-      <span><PettelIcon name={icon} /></span><div><small>{label}</small><strong>{value}</strong></div>
+      <span>
+        <PettelIcon name={icon} />
+      </span>
+      <div>
+        <small>{label}</small>
+        <strong>{value}</strong>
+      </div>
     </article>
   );
 }
