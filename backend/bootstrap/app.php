@@ -2,8 +2,12 @@
 
 use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\EnsureActiveAccount;
+use App\Http\Middleware\EnsureApiTokenHasAbilities;
+use App\Http\Middleware\EnsureApiTokenHasAnyAbility;
+use App\Http\Middleware\EnsureApiTokenHasRouteAbility;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\RecordPerformanceQueryMetrics;
+use App\Http\Middleware\ResetSanctumRequestGuard;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,6 +21,13 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    ->withBroadcasting(
+        __DIR__.'/../routes/channels.php',
+        [
+            'prefix' => 'api',
+            'middleware' => ['api', 'auth:sanctum'],
+        ],
+    )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->api(prepend: [
             EnsureFrontendRequestsAreStateful::class,
@@ -25,11 +36,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(append: [
             RecordPerformanceQueryMetrics::class,
             AssignRequestId::class,
+            ResetSanctumRequestGuard::class,
         ]);
 
         $middleware->alias([
             'account.active' => EnsureActiveAccount::class,
             'role' => EnsureUserHasRole::class,
+            'abilities' => EnsureApiTokenHasAbilities::class,
+            'ability' => EnsureApiTokenHasAnyAbility::class,
+            'token.route' => EnsureApiTokenHasRouteAbility::class,
         ]);
 
         //

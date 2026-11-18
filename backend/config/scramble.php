@@ -67,7 +67,7 @@ return [
         /*
          * Description rendered on the home page of the API documentation (`/docs/api`).
          */
-        'description' => 'JSON API for the PETTEL Vue SPA. Private routes use Sanctum session cookies; obtain the CSRF cookie from /sanctum/csrf-cookie and send the X-XSRF-TOKEN header on state-changing requests. This API does not issue bearer tokens.',
+        'description' => 'JSON API for the PETTEL Next.js/React frontend. First-party browser requests use Sanctum session cookies; obtain the CSRF cookie from /sanctum/csrf-cookie and send the X-XSRF-TOKEN header on state-changing requests. API clients may use Sanctum bearer tokens with limited abilities; the /user endpoint requires profile:read.',
     ],
 
     'ui' => [

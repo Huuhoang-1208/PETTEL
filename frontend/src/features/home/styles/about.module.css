@@ -1,0 +1,286 @@
+.about {
+  padding: 39px 24px 42px;
+  background: #faf8ff;
+  color: #102139;
+  scroll-margin-top: 25px;
+}
+
+.heading {
+  margin: 0 auto 24px;
+  text-align: center;
+}
+
+.eyebrow {
+  color: #007d91;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.heading h2 {
+  margin: 7px 0 4px;
+  font-size: clamp(21px, 2.2vw, 26px);
+  line-height: 1.3;
+  font-weight: 800;
+  letter-spacing: -0.65px;
+}
+
+.sectionIntro {
+  margin: 0 auto;
+  color: #52677f;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  max-width: 1440px;
+  margin: 0 auto 36px;
+}
+
+.step {
+  min-height: 151px;
+  padding: 18px 19px;
+  background: #fff;
+  box-shadow: 0 2px 4px #1c2a3b08;
+}
+
+.stepNumber {
+  display: grid;
+  place-items: center;
+  width: 37px;
+  height: 37px;
+  margin-bottom: 11px;
+  border-radius: 50%;
+  color: white;
+  font-size: 16px;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.cyan {
+  background: #00aeb8;
+}
+
+.orange {
+  background: #ff9d13;
+  color: #132238;
+}
+
+.purple {
+  background: #7430e8;
+}
+
+.teal {
+  background: #007782;
+}
+
+.step h3 {
+  margin: 0 0 5px;
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+.step p {
+  margin: 0;
+  color: #53677e;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.trustPanel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(270px, 0.9fr);
+  align-items: center;
+  gap: 44px;
+  max-width: 1440px;
+  min-height: 238px;
+  padding: 28px 38px;
+  margin: 0 auto;
+  border-radius: 34px;
+  background: linear-gradient(110deg, #006a72 0%, #00aeb5 100%);
+  color: white;
+  box-shadow: 0 12px 22px #006d771b;
+}
+
+.trustCopy {
+  min-width: 0;
+}
+
+.trustEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: #ffffff26;
+  color: white;
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.trustEyebrow svg {
+  width: 13px;
+  height: 13px;
+}
+
+.trustCopy h3 {
+  max-width: 650px;
+  margin: 12px 0 6px;
+  font-size: clamp(21px, 2.5vw, 28px);
+  line-height: 1.25;
+  letter-spacing: -0.6px;
+}
+
+.trustCopy > p {
+  max-width: 690px;
+  margin: 0;
+  color: #e7fbfc;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.trustChecks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin-top: 16px;
+}
+
+.trustChecks span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #f4ffff;
+  font-size: 9px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.trustChecks svg {
+  width: 14px;
+  height: 14px;
+}
+
+.guarantee {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 182px;
+  padding: 18px;
+  background: white;
+  color: #102139;
+  text-align: center;
+}
+
+.guaranteeIcon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 7px;
+  border-radius: 50%;
+  background: #ffe0bd;
+  color: #a66100;
+}
+
+.guaranteeIcon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.guarantee h4 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.guarantee p {
+  max-width: 280px;
+  margin: 0 0 12px;
+  color: #64738a;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.guarantee > strong {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #f1f1ff;
+  color: #007d91;
+  font-size: 16px;
+}
+
+@media (max-width: 900px) {
+  .steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .trustPanel {
+    gap: 24px;
+    padding: 27px;
+  }
+}
+
+@media (max-width: 640px) {
+  .about {
+    padding: 34px 16px;
+  }
+
+  .heading {
+    margin-bottom: 20px;
+  }
+
+  .steps {
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+
+  .step {
+    min-height: 0;
+    padding: 15px;
+  }
+
+  .step h3 {
+    font-size: 12px;
+  }
+
+  .step p {
+    font-size: 9px;
+  }
+
+  .trustPanel {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+    padding: 23px 18px;
+    border-radius: 26px;
+  }
+
+  .trustCopy h3 {
+    font-size: 22px;
+  }
+
+  .trustCopy > p {
+    font-size: 11px;
+  }
+
+  .trustChecks {
+    gap: 10px 14px;
+  }
+
+  .guarantee {
+    min-height: 165px;
+  }
+}
+
+@media (max-width: 390px) {
+  .steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

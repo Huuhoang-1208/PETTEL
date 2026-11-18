@@ -1,0 +1,52 @@
+/* ============================
+   RESPONSIVE - NEW FEATURES
+   ============================ */
+@media (max-width: 768px) {
+  .trust-verification-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .confidence-breakdown {
+    font-size: 12px;
+  }
+
+  .chat-message {
+    max-width: 85%;
+  }
+
+  .videocall-self-view {
+    width: 100px;
+    height: 130px;
+    bottom: 120px;
+    right: 16px;
+  }
+
+  .videocall-controls {
+    bottom: 24px;
+  }
+
+  .videocall-control-btn {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+
+  .videocall-end-btn {
+    width: 56px;
+    height: 56px;
+  }
+
+  .livecam-info {
+    bottom: 80px;
+    left: 16px;
+    right: 16px;
+  }
+
+  .pet-info-row {
+    grid-template-columns: 1fr;
+  }
+
+  .pet-profile-page {
+    padding: 24px 16px;
+  }
+}

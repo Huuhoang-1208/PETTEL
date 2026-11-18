@@ -4,7 +4,7 @@ PETTEL — Architecture & Technical Design \| Bản thảo 26/10/2026
 
 # Xác thực
 
-Laravel Breeze API stack cung cấp route auth; Vue SPA dùng Sanctum stateful session cookie, CSRF và reset password của Breeze. Chỉ bật email verification nếu luồng gửi mail demo đáng tin; không tự tuyên bố email đã xác minh nếu chưa xử lý. Admin không được tự chọn role ở form đăng ký. Throttle login và password reset; logout hủy session.
+Laravel Breeze API stack cung cấp route auth; Next.js/React frontend dùng Sanctum stateful session cookie, CSRF và reset password của Breeze. Chỉ bật email verification nếu luồng gửi mail demo đáng tin; không tự tuyên bố email đã xác minh nếu chưa xử lý. Admin không được tự chọn role ở form đăng ký. Throttle login và password reset; logout hủy session.
 
 # Phân quyền
 
@@ -14,7 +14,7 @@ Policy/Gate ở server cho từng tài nguyên: PetPolicy owner; ListingPolicy c
 
 # Sanctum và token
 
-P0 dùng Sanctum cho Vue SPA: gọi `/sanctum/csrf-cookie`, gửi cookie/CSRF trên login và request ghi, bảo vệ API riêng tư bằng `auth:sanctum`. Phục vụ frontend/API cùng origin khi demo; nếu tách subdomain, cấu hình stateful domains, session domain và CORS credentials. SPA không lưu personal access token; chỉ phát token có ability/thời hạn/thu hồi nếu có client bên ngoài thật. Xử lý 401/419 bằng điều hướng đăng nhập hoặc làm mới CSRF theo luồng phù hợp.
+Frontend Next.js/React dùng Sanctum stateful cookie và CSRF: gọi `/sanctum/csrf-cookie` trước login/request ghi; trình duyệt không lưu personal access token. Client API có thể yêu cầu token riêng qua endpoint được bảo vệ; token chỉ được cấp các ability trong allowlist, có hạn dùng 30 ngày và người dùng có thể thu hồi token của chính họ. Route dành cho token bắt buộc khai báo middleware `abilities:*`; bearer token không có scope không được dùng các route private khác. Nếu tách subdomain, cấu hình stateful domains, session domain và CORS credentials phù hợp. Xử lý 401/419 bằng điều hướng đăng nhập hoặc làm mới CSRF theo luồng phù hợp.
 
 # Bảo vệ dữ liệu
 

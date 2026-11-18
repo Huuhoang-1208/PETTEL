@@ -1,0 +1,133 @@
+export type User = {
+  id: number | string;
+  name: string;
+  email: string;
+  roles?: { role: string }[];
+};
+
+export type Pet = {
+  id: string;
+  name: string;
+  species: string;
+    species_detail?: string | null;
+  breed?: string | null;
+  sex: string | null;
+  size: string | null;
+  birth_date: string | null;
+  age_note: string | null;
+  diet_notes: string | null;
+    food_allergies?: string | null;
+    foods_to_avoid?: string | null;
+  vaccination_note: string | null;
+  temperament: string | null;
+  special_needs: string | null;
+  weight_kg?: number | string | null;
+  microchip_number?: string | null;
+  is_neutered?: boolean;
+  health_flags?: { core_vaccines?: boolean; rabies_vaccine?: boolean; deworming?: boolean } | null;
+    vaccination_statuses?: { core_vaccines?: "DONE" | "NOT_DONE" | "UNKNOWN"; rabies_vaccine?: "DONE" | "NOT_DONE" | "UNKNOWN"; deworming?: "DONE" | "NOT_DONE" | "UNKNOWN" };
+    core_vaccines_date?: string | null;
+    rabies_vaccine_date?: string | null;
+    deworming_date?: string | null;
+    vaccination_record_media_id?: string | null;
+    behavior_tags?: string[];
+    care_support_tags?: string[];
+  photo_media_id?: string | null;
+  status: string;
+};
+
+export type Listing = {
+  id: string;
+  title: string;
+  description: string;
+  service_type: string;
+  area_code: string;
+  price_vnd: number;
+  price_unit: string;
+  price_total_vnd: number | null;
+  capacity?: number;
+  rating_average: number | null;
+  review_count: number;
+  acceptance_rules_json: { species: string[]; sizes: string[] };
+  media?: { image_url: string; thumbnail_url: string }[];
+  caregiver?: {
+    display_name: string;
+    type: string;
+    area_code: string;
+    name: string | null;
+    bio?: string | null;
+    experience_years?: number | null;
+    care_principles?: { title: string; description: string }[];
+    pet_requirements?: string[];
+    demo: {
+      home_type: string | null;
+      photo_file: string | null;
+      status: string | null;
+      amenities: string[];
+      trust_level: string | null;
+      confidence_score: number | null;
+      verified_details: Record<string, boolean | number>;
+      rating_average: number | null;
+      review_count: number | null;
+      introduction?: string | null;
+      experience_years?: number | null;
+      care_principles?: { title: string; description: string }[];
+      space_amenities?: { title: string; description: string }[];
+      is_demo: boolean;
+    } | null;
+  } | null;
+  match_reasons?: string[];
+  smart_match?: { score: number; reasons: string[] } | null;
+  status?: string;
+};
+
+export type Booking = {
+  id: string;
+  status: string;
+  cancellation_reason_code?: string | null;
+  pet_id: string;
+  listing_id: string;
+  start_at: string;
+  end_at: string;
+  price_snapshot_vnd: number;
+  payment_due_at: string | null;
+  participant_role: "OWNER" | "CAREGIVER";
+  listing_title: string | null;
+  pet_name: string | null;
+};
+
+export type Message = {
+  id: string;
+  sender_id: string;
+  body: string | null;
+  created_at: string;
+  attachments: { id: string; url: string; mime_type: string }[];
+  context?: { pet_name: string | null; pet_breed: string | null; pet_weight_kg: string | number | null; service_type: string; start_at: string | null; end_at: string | null } | null;
+};
+
+export type Inquiry = { id: string; listing_id: string; listing_title: string; sitter_name: string };
+
+export type Page<T> = {
+  data: T[];
+  meta?: { current_page: number; last_page: number; total: number };
+  links?: { next: string | null };
+};
+
+export type NotificationItem = {
+  id: string;
+  type: string;
+  data: { type?: string; booking_id?: string; [key: string]: unknown };
+  read_at: string | null;
+  created_at: string;
+};
+
+export type NotificationPage = Page<NotificationItem> & { unread_count: number };
+
+export type CareUpdate = {
+  id: string;
+  body: string | null;
+  created_at: string;
+  sender: { name: string };
+  image_url: string | null;
+  redacted: boolean;
+};

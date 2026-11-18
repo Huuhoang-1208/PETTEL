@@ -38,11 +38,24 @@ RUN printf '%s\n' \
     'env[REDIS_PASSWORD] = $REDIS_PASSWORD' \
     'env[REDIS_QUEUE_RETRY_AFTER] = $REDIS_QUEUE_RETRY_AFTER' \
     'env[MAIL_MAILER] = $MAIL_MAILER' \
+    'env[RESEND_API_KEY] = $RESEND_API_KEY' \
     'env[FRONTEND_URL] = $FRONTEND_URL' \
     'env[SANCTUM_STATEFUL_DOMAINS] = $SANCTUM_STATEFUL_DOMAINS' \
     'env[SESSION_DOMAIN] = $SESSION_DOMAIN' \
     'env[SESSION_SECURE_COOKIE] = $SESSION_SECURE_COOKIE' \
     'env[BCRYPT_ROUNDS] = $BCRYPT_ROUNDS' \
+    'env[PETTEL_ADMIN_EMAIL] = $PETTEL_ADMIN_EMAIL' \
+    'env[PETTEL_ADMIN_PASSWORD] = $PETTEL_ADMIN_PASSWORD' \
+    'env[PETTEL_SUPPORT_EMAIL] = $PETTEL_SUPPORT_EMAIL' \
+    'env[PETTEL_SUPPORT_PASSWORD] = $PETTEL_SUPPORT_PASSWORD' \
+    'env[BROADCAST_CONNECTION] = $BROADCAST_CONNECTION' \
+    'env[REVERB_APP_ID] = $REVERB_APP_ID' \
+    'env[REVERB_APP_KEY] = $REVERB_APP_KEY' \
+    'env[REVERB_APP_SECRET] = $REVERB_APP_SECRET' \
+    'env[REVERB_HOST] = $REVERB_HOST' \
+    'env[REVERB_PORT] = $REVERB_PORT' \
+    'env[REVERB_SCHEME] = $REVERB_SCHEME' \
+    'env[TELESCOPE_ENABLED] = $TELESCOPE_ENABLED' \
     > /usr/local/etc/php-fpm.d/zz-pettel-env.conf
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -54,6 +67,11 @@ COPY backend/ ./
 RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && composer dump-autoload --optimize \
     && chown -R www-data:www-data storage bootstrap/cache
+
+FROM backend AS test
+
+RUN pecl install pcov \
+    && docker-php-ext-enable pcov
 
 FROM nginx:1-alpine AS frontend
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf

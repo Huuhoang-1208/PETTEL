@@ -1,0 +1,25 @@
+/* ============================
+   PETTEL Design System
+   Pet Care Service Platform
+   ============================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap");
+
+@import "../styles/header.css";
+@import "../styles/application.css";
+@import "../styles/base.css";
+@import "../styles/legacy/navigation.css";
+@import "../styles/legacy/discovery-filters.css";
+@import "../styles/legacy/discovery-results.css";
+@import "../styles/legacy/detail.css";
+@import "../styles/legacy/reviews-and-location.css";
+@import "../styles/legacy/responsive.css";
+@import "../styles/legacy/trust.css";
+@import "../styles/legacy/booking-modals.css";
+@import "../styles/legacy/smart-match.css";
+@import "../styles/legacy/chat.css";
+@import "../styles/legacy/video-call.css";
+@import "../styles/legacy/livecam.css";
+@import "../styles/legacy/pets.css";
+@import "../styles/legacy/responsive-features.css";
+@import "../styles/legacy/icon-colors.css";

@@ -28,6 +28,8 @@ class PublicListingTest extends TestCase
         $listItem = $list->json('data.0');
         $this->assertSame([], $listItem['match_reasons']);
         unset($listItem['match_reasons']);
+        $this->assertNull($listItem['smart_match']);
+        unset($listItem['smart_match']);
         $this->assertSame($listItem, $detail->json('data'));
         $this->assertEqualsCanonicalizing([
             'id',
@@ -42,6 +44,7 @@ class PublicListingTest extends TestCase
             'media',
             'rating_average',
             'review_count',
+            'caregiver',
         ], array_keys($detail->json('data')));
         $detail->assertJsonPath('data.price_vnd', 50000)
             ->assertJsonPath('data.price_total_vnd', null)

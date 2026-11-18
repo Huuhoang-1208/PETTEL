@@ -1,0 +1,15 @@
+.page {
+  --home-teal: #006d77;
+  --home-ink: #102139;
+  --home-muted: #45617a;
+  color: var(--home-ink);
+  background: #fff;
+  font-family: "Manrope", "Inter", sans-serif;
+}
+.page button:focus-visible,
+.page a:focus-visible,
+.page input:focus-visible,
+.page select:focus-visible {
+  outline: 3px solid #89ccd5;
+  outline-offset: 3px;
+}

@@ -50,7 +50,7 @@ class ListingManagementEndToEndTest extends TestCase
         ]);
 
         $invalidUpload = UploadedFile::fake()->createWithContent('invalid.png', 'not an image');
-        $this->postJson('/api/caregiver/media', ['file' => $invalidUpload])->assertUnprocessable()
+        $this->actingAs($caregiver, 'web')->postJson('/api/caregiver/media', ['file' => $invalidUpload])->assertUnprocessable()
             ->assertJsonPath('error.code', 'VALIDATION_ERROR');
         $this->assertDatabaseCount('media_objects', 0);
 
@@ -128,11 +128,11 @@ class ListingManagementEndToEndTest extends TestCase
         $this->getJson('/api/listings?'.http_build_query(['q' => 'E2E Listing Management Initial']))
             ->assertOk()->assertJsonCount(0, 'data');
 
-        $this->postJson('/api/admin/listings/'.$listingId.'/approve')->assertConflict()
+        $this->actingAs($admin, 'web')->postJson('/api/admin/listings/'.$listingId.'/approve')->assertConflict()
             ->assertJsonPath('error.code', 'INVALID_STATE');
         $this->assertDatabaseHas('listings', ['id' => $listingId, 'status' => 'ACTIVE']);
 
-        $this->postJson('/api/admin/listings/'.$listingId.'/suspend', [
+        $this->actingAs($admin, 'web')->postJson('/api/admin/listings/'.$listingId.'/suspend', [
             'reason' => 'E2E suspension visibility check.',
         ])->assertOk()->assertJsonPath('data.status', 'SUSPENDED');
         $this->getJson($updatedSearch)->assertOk()->assertJsonCount(0, 'data');

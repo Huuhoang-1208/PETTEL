@@ -8,7 +8,9 @@ use Illuminate\Support\Str;
 
 class CalculateBookingPrice
 {
-    /** @return array<string, int|string> */
+    /**
+     * @return array{price_total_vnd: int, unit_price_vnd: int, price_unit: string, quantity: int, pricing_version: int, cancellation_policy_version: int}
+     */
     public function calculate(
         string $serviceType,
         string $priceUnit,

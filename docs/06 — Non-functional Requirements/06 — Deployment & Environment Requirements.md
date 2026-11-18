@@ -8,11 +8,11 @@ Tối thiểu local/dev và demo/staging tách DB, Redis, storage, secret và d�
 
 # Thành phần
 
-Docker Compose điều phối frontend (Nginx phục vụ Vue build), backend (Laravel PHP-FPM), queue worker, scheduler, MySQL và Redis; storage private dùng volume hoặc dịch vụ object storage do nhóm chọn. Chỉ frontend mở cổng ra ngoài. Healthcheck DB/Redis/backend, volume bền vững cho DB và media; migration chạy có kiểm soát một lần khi deploy.
+Docker Compose điều phối frontend Next.js/React (service `web`), Nginx làm reverse proxy/API gateway (service `frontend`), backend Laravel PHP-FPM, queue worker, scheduler, MySQL và Redis; storage private dùng volume hoặc dịch vụ object storage do nhóm chọn. Chỉ các cổng web cần thiết được mở ra host. Healthcheck DB/Redis/backend, volume bền vững cho DB và media; migration chạy có kiểm soát một lần khi deploy.
 
 # Triển khai và quay lui
 
-Build image cố định tag/commit, chạy test và migration trên staging, seed demo có thể chạy lại an toàn, smoke test bốn workflow. Backup trước migration có rủi ro; rollback bằng image trước và kế hoạch migration tương thích, không mặc định xóa dữ liệu. Document biến môi trường, build Vue, cấu hình Sanctum stateful domain/cookie và lệnh khởi động trong repo.
+Build image cố định tag/commit, chạy test và migration trên staging, seed demo có thể chạy lại an toàn, smoke test bốn workflow. Backup trước migration có rủi ro; rollback bằng image trước và kế hoạch migration tương thích, không mặc định xóa dữ liệu. Document biến môi trường, build Next.js/React, cấu hình Sanctum stateful domain/cookie và lệnh khởi động trong repo.
 
 # Tiêu chí bàn giao
 

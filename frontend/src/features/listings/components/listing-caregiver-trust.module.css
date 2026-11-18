@@ -1,0 +1,319 @@
+.card {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  padding: 30px;
+  border: 1px solid #efedf6;
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 3px 12px #1e31500a;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 0 22px;
+  border-bottom: 1px solid #eeedf4;
+}
+
+.avatarWrap {
+  position: relative;
+  flex: 0 0 auto;
+  width: 82px;
+  height: 82px;
+  padding: 4px;
+  border: 3px solid #d8eef0;
+  border-radius: 50%;
+}
+
+.avatar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.avatarCheck {
+  position: absolute;
+  right: -2px;
+  bottom: 0;
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #007d86;
+  color: #fff;
+}
+
+.avatarCheck svg {
+  width: 14px;
+  height: 14px;
+}
+
+.profileInfo {
+  min-width: 0;
+  flex: 1;
+}
+
+.profileInfo h2 {
+  margin: 0 0 3px;
+  color: #14243b;
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+.profileInfo > p {
+  margin: 0;
+  color: #627188;
+  font-size: 13px;
+}
+
+.profileMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 7px;
+  color: #087f8c;
+  font-size: 12px;
+}
+
+.profileMeta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.profileMeta svg {
+  width: 15px;
+  height: 15px;
+}
+
+.profileMeta i {
+  color: #b9c0ce;
+  font-style: normal;
+}
+
+.proBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #fff0bf;
+  color: #745000;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.proBadge svg {
+  width: 16px;
+  height: 16px;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 22px 0;
+}
+
+.feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  min-width: 0;
+  min-height: 98px;
+  padding: 16px;
+  background: #f2f2ff;
+}
+
+.feature > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.featureIcon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 50%;
+  background: #c9f0f4;
+  color: #007f8e;
+}
+
+.featureIcon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.feature h3 {
+  margin: 0 0 4px;
+  color: #14243b;
+  font-size: 17px;
+  line-height: 1.25;
+}
+
+.feature p {
+  margin: 0;
+  color: #58677e;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.guarantee {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 16px 20px;
+  background: linear-gradient(100deg, #e7f5f2 0%, #e2f7fb 55%, #edeaff 100%);
+}
+
+.guaranteeIcon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 50%;
+  background: #00777b;
+  color: #fff;
+}
+
+.guaranteeIcon svg {
+  width: 25px;
+  height: 25px;
+}
+
+.guaranteeCopy {
+  min-width: 0;
+  flex: 1;
+}
+
+.guaranteeCopy h3 {
+  margin: 0 0 3px;
+  color: #14243b;
+  font-size: 17px;
+}
+
+.guaranteeCopy h3 small {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #ffb01f;
+  color: #603e00;
+  font-size: 10px;
+  vertical-align: 2px;
+}
+
+.guaranteeCopy p,
+.guaranteeDetails p {
+  margin: 0;
+  color: #52647c;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.guaranteeDetails {
+  flex: 0 0 auto;
+  color: #007f8e;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.guaranteeDetails summary {
+  cursor: pointer;
+  list-style: none;
+  white-space: nowrap;
+}
+
+.guaranteeDetails summary::-webkit-details-marker {
+  display: none;
+}
+
+.guaranteeDetails summary span {
+  margin-left: 4px;
+  font-size: 18px;
+  vertical-align: -1px;
+}
+
+.guaranteeDetails p {
+  max-width: 280px;
+  margin-top: 8px;
+  font-weight: 400;
+}
+
+@media (max-width: 760px) {
+  .card {
+    padding: 20px;
+    border-radius: 22px;
+  }
+
+  .features {
+    gap: 10px;
+  }
+
+  .feature {
+    padding: 13px;
+  }
+}
+
+@media (max-width: 560px) {
+  .card {
+    padding: 16px;
+  }
+
+  .profile {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .avatarWrap {
+    width: 68px;
+    height: 68px;
+  }
+
+  .profileInfo {
+    flex-basis: calc(100% - 84px);
+  }
+
+  .profileInfo h2 {
+    font-size: 17px;
+  }
+
+  .proBadge {
+    margin-left: 80px;
+  }
+
+  .features {
+    grid-template-columns: 1fr;
+    padding: 16px 0;
+  }
+
+  .feature {
+    min-height: 0;
+  }
+
+  .guarantee {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    padding: 14px;
+  }
+
+  .guaranteeCopy {
+    flex-basis: calc(100% - 64px);
+  }
+
+  .guaranteeDetails {
+    margin-left: 62px;
+  }
+}

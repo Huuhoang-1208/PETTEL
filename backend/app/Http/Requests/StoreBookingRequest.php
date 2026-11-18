@@ -15,9 +15,15 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Normalizer;
+use stdClass;
 
 class StoreBookingRequest extends FormRequest
 {
+    private const ADDON_PRICES_VND = [
+        'PET_TAXI' => 120000,
+        'BATH_BRUSH' => 150000,
+    ];
+
     protected function prepareForValidation(): void
     {
         // The header wins over a forged body field with the same name.
@@ -55,12 +61,24 @@ class StoreBookingRequest extends FormRequest
             'start_at' => $timestamp,
             'end_at' => $timestamp,
             'instructions' => ['nullable', 'string', 'max:2000'],
+            'addons' => ['sometimes', 'array', 'max:2'],
+            'addons.*' => ['required', 'string', 'distinct', 'in:PET_TAXI,BATH_BRUSH'],
             'Idempotency-Key' => ['required', 'string', 'regex:/\A[a-z0-9._:-]{1,128}\z/'],
         ];
     }
 
     // Call after replay handling and inside the create transaction in task 4/5.
-    /** @return array{pet: Pet, listing: \stdClass, start: CarbonImmutable, end: CarbonImmutable, pricing: array<string, int|string>} */
+    /** @return array{pet: Pet, listing: stdClass, start: CarbonImmutable, end: CarbonImmutable, pricing: array<string, int|string>} */
+    /**
+     * @return array{
+     *     pet: Pet,
+     *     listing: stdClass,
+     *     start: CarbonImmutable,
+     *     end: CarbonImmutable,
+     *     pricing: array{price_total_vnd: int, unit_price_vnd: int, price_unit: string, quantity: int, pricing_version: int, cancellation_policy_version: int, base_price_total_vnd: int, addons_total_vnd: int},
+     *     addons: list<string>
+     * }
+     */
     public function validateSources(bool $lockForCreation = false): array
     {
         $owner = $this->user();
@@ -158,6 +176,12 @@ class StoreBookingRequest extends FormRequest
             $start,
             $end,
         );
+        /** @var list<string> $selectedAddons */
+        $selectedAddons = array_values($data['addons'] ?? []);
+        $addonsTotal = array_sum(array_map(fn (string $addon): int => self::ADDON_PRICES_VND[$addon], $selectedAddons));
+        $pricing['base_price_total_vnd'] = $pricing['price_total_vnd'];
+        $pricing['addons_total_vnd'] = $addonsTotal;
+        $pricing['price_total_vnd'] = (int) $pricing['price_total_vnd'] + $addonsTotal;
         $available = app(ApplyListingAvailability::class)->apply(
             Listing::query()->whereKey($listing->id),
             $start,
@@ -174,6 +198,7 @@ class StoreBookingRequest extends FormRequest
             'start' => $start,
             'end' => $end,
             'pricing' => $pricing,
+            'addons' => $selectedAddons,
         ];
     }
 
@@ -186,6 +211,7 @@ class StoreBookingRequest extends FormRequest
             'start_at' => CarbonImmutable::parse($data['start_at'])->utc()->format('Y-m-d\TH:i:s.u\Z'),
             'end_at' => CarbonImmutable::parse($data['end_at'])->utc()->format('Y-m-d\TH:i:s.u\Z'),
             'instructions' => $data['instructions'] ?? null,
+            'addons' => array_values($data['addons'] ?? []),
         ];
 
         return hash('sha256', json_encode(

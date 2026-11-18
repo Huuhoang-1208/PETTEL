@@ -293,6 +293,8 @@ class BookingCreationTest extends TestCase
             'owner_id' => $fixture['caregiver']->id,
         ])->assertOk()->assertExactJson([
             'price_total_vnd' => 150000,
+            'base_price_total_vnd' => 150000,
+            'addons_total_vnd' => 0,
             'price_unit' => 'HOUR',
             'quantity' => 3,
             'pricing_version' => 1,
@@ -424,6 +426,9 @@ class BookingCreationTest extends TestCase
             'cancellation_policy_version' => 1,
             'cancellation_fee_vnd' => 0,
             'payment_mode' => 'SANDBOX',
+            'addons' => [],
+            'addons_total_vnd' => 0,
+            'base_price_total_vnd' => 150000,
         ], $booking->policy_snapshot_json);
         $this->assertSame('Café / feed at 09:00', $booking->instructions_snapshot);
         $this->assertNull($booking->current_payment_attempt_id);
@@ -434,6 +439,7 @@ class BookingCreationTest extends TestCase
             'start_at' => $start->format('Y-m-d\TH:i:s.u\Z'),
             'end_at' => $end->format('Y-m-d\TH:i:s.u\Z'),
             'instructions' => 'Café / feed at 09:00',
+            'addons' => [],
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)), $booking->request_payload_hash);
         $this->assertDatabaseCount('booking_status_events', 1);
         $this->assertDatabaseHas('booking_status_events', [
@@ -578,7 +584,8 @@ class BookingCreationTest extends TestCase
         $payload = array_replace($fixture['payload'], ['pet_id' => (string) $fixture['foreign_pet']->id]);
         $second = $this->actingAs($otherOwner)->postJson('/api/bookings', $payload)->assertCreated();
         $this->assertNotSame($first->json('id'), $second->json('id'));
-        $this->postJson('/api/bookings', $payload)->assertOk()->assertJsonPath('id', $second->json('id'));
+        $this->actingAs($otherOwner, 'web')->postJson('/api/bookings', $payload)
+            ->assertOk()->assertJsonPath('id', $second->json('id'));
         $this->assertDatabaseCount('bookings', 2);
         $this->assertDatabaseCount('booking_status_events', 2);
     }

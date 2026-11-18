@@ -1,0 +1,226 @@
+.card {
+  display: grid;
+  gap: 0;
+  padding: 26px 28px;
+  border: 1px solid #f0eef7;
+  border-radius: 26px;
+  background: #fff;
+  box-shadow: 0 5px 18px #17263c08;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(190px, .55fr);
+  align-items: center;
+  gap: 26px;
+  padding: 0 0 20px;
+  border-bottom: 1px solid #ececf4;
+}
+
+.overall h2 {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0;
+  color: #17263c;
+  font-size: 21px;
+}
+
+.overall h2 svg {
+  width: 20px;
+  height: 20px;
+  align-self: center;
+  color: #ff9f0a;
+  fill: #ff9f0a;
+}
+
+.overall h2 span {
+  color: #63718a;
+  font-size: 13px;
+  font-weight: 450;
+}
+
+.overall p {
+  margin: 5px 0 0;
+  color: #63718a;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.distribution {
+  display: grid;
+  gap: 7px;
+}
+
+.distributionRow {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 7px;
+  color: #314158;
+  font-size: 10px;
+}
+
+.distributionRow > span {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.distributionRow svg {
+  width: 11px;
+  height: 11px;
+  color: #ff9f0a;
+  fill: #ff9f0a;
+}
+
+.distributionRow small {
+  color: #63718a;
+  text-align: right;
+}
+
+.track {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e9ebf5;
+}
+
+.track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #00a5b1;
+}
+
+.reviewList {
+  display: grid;
+}
+
+.review {
+  padding: 18px 0;
+  border-bottom: 1px solid #ececf4;
+}
+
+.reviewHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  display: grid;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 50%;
+  background: #ffe2bd;
+  color: #835000;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.review:nth-child(3n + 2) .avatar {
+  background: #c9f3f5;
+  color: #007d87;
+}
+
+.review:nth-child(3n) .avatar {
+  background: #e9ddff;
+  color: #6632b4;
+}
+
+.author {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.author strong {
+  color: #17263c;
+  font-size: 13px;
+}
+
+.author span {
+  color: #63718a;
+  font-size: 10px;
+}
+
+.stars {
+  display: flex;
+  gap: 1px;
+  margin-left: auto;
+  color: #ff9f0a;
+  font-size: 17px;
+  letter-spacing: -2px;
+  white-space: nowrap;
+}
+
+.body {
+  margin: 10px 0 8px;
+  color: #33435b;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.date {
+  margin: 0;
+  color: #708099;
+  font-size: 10px;
+}
+
+.date span {
+  color: #007f91;
+}
+
+.empty {
+  margin: 0;
+  padding: 20px 0;
+  color: #63718a;
+  font-size: 13px;
+}
+
+.more {
+  min-height: 40px;
+  margin-top: 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #eceeff;
+  color: #17263c;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.more:disabled {
+  cursor: wait;
+  opacity: .7;
+}
+
+@media (max-width: 620px) {
+  .card {
+    padding: 20px 16px;
+    border-radius: 22px;
+  }
+
+  .summary {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding-bottom: 15px;
+  }
+
+  .distribution {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .review {
+    padding: 15px 0;
+  }
+
+  .stars {
+    font-size: 14px;
+  }
+}

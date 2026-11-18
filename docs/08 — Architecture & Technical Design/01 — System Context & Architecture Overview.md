@@ -8,11 +8,11 @@ Chủ nuôi, người chăm/cơ sở và admin dùng trình duyệt. PETTEL web 
 
 # Kiến trúc
 
-Một Laravel monolith có các module logic: Identity, Pet, Listing, Discovery, Booking, PaymentSandbox, Messaging/Update, Review, Report/Admin. Vue SPA gọi JSON API của Laravel; Filament phục vụ admin. Controller/FormRequest/Policy gọi application service; service dùng Eloquent trong transaction. Queue worker xử lý việc phụ sau commit; scheduler hết hạn booking chờ thanh toán. Không tách microservice để tránh giao dịch phân tán trong bản mẫu.
+Một Laravel monolith có các module logic: Identity, Pet, Listing, Discovery, Booking, PaymentSandbox, Messaging/Update, Review, Report/Admin. Frontend Next.js App Router dùng React gọi JSON API của Laravel; Filament phục vụ admin. Controller/FormRequest/Policy gọi application service; service dùng Eloquent trong transaction. Queue worker xử lý việc phụ sau commit; scheduler hết hạn booking chờ thanh toán. Không tách microservice để tránh giao dịch phân tán trong bản mẫu.
 
 # Đường dữ liệu quan trọng
 
-Tìm kiếm: Vue SPA → JSON API → cache/search query → MySQL listing ACTIVE → JSON kết quả. Booking: browser → authorization/validation → transaction khóa listing và kiểm tra overlap → MySQL booking → trả state. Payment: booking tạo attempt → sandbox callback được xác thực → transaction payment \+ booking → event/audit. Ảnh: upload qua app → private storage; người đọc có quyền mới nhận URL ngắn hạn.
+Tìm kiếm: Next.js/React → JSON API → cache/search query → MySQL listing ACTIVE → JSON kết quả. Booking: browser → authorization/validation → transaction khóa listing và kiểm tra overlap → MySQL booking → trả state. Payment: booking tạo attempt → sandbox callback được xác thực → transaction payment \+ booking → event/audit. Ảnh: upload qua app → private storage; người đọc có quyền mới nhận URL ngắn hạn.
 
 # Nguồn chuẩn và lỗi
 

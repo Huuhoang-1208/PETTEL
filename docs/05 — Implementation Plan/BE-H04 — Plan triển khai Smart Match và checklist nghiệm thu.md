@@ -6,7 +6,7 @@ Issue: [#19](https://github.com/Huuhoang-1208/PETTEL/issues/19). Owner: **Hoàng
 
 Mở rộng tìm kiếm public listing hiện có để owner có thể dùng pet của mình làm đầu vào Smart Match. Backend kiểm tra quyền pet, đối chiếu điều kiện nhận pet v1, lịch và tổng giá theo các contract đã có; trả giải thích dựa trên những điều kiện thực sự được kiểm tra. Người chưa chọn pet vẫn được lọc thủ công. Kết quả không tiết lộ hồ sơ pet hoặc ghi chú riêng.
 
-Tái sử dụng schema và API pet của BE-T02; route và query search, điều kiện public listing, lịch, giá và phân trang của BE-H03; `ApplyListingAvailability` và `CalculateBookingPrice` đã dùng cho search/booking. Không tạo migration nếu không phát hiện thiếu dữ liệu nền có căn cứ. Không triển khai UI: `frontend/` chưa được scaffold theo README hiện tại.
+Tái sử dụng schema và API pet của BE-T02; route và query search, điều kiện public listing, lịch, giá và phân trang của BE-H03; `ApplyListingAvailability` và `CalculateBookingPrice` đã dùng cho search/booking. Không tạo migration nếu không phát hiện thiếu dữ liệu nền có căn cứ. Issue #19 chỉ làm backend; giao diện hiện dùng Next.js App Router/React và nằm ngoài phạm vi issue này.
 
 Theo quyết định P0 ngày 02/11/2026, tự động đối chiếu chỉ gồm `species` và `size` theo `acceptance_rules_json` v1. Chưa lọc theo tuổi/nhu cầu đặc biệt và không tuyên bố đã kiểm tra khả năng hỗ trợ. Không tạo điểm tin cậy, khẳng định AI, hoặc badge xác minh. Pet notes vẫn thuộc snapshot booking và luồng caregiver có quyền; không thêm chúng vào kết quả tìm kiếm.
 
@@ -27,7 +27,7 @@ Chỉ đánh `[x]` khi mọi tiêu chí task đạt và có bằng chứng trong
 - `ApplyListingAvailability` kiểm tra slot mở bao trọn khoảng yêu cầu và booking đang khóa lịch. `CalculateBookingPrice` là công thức giá được booking dùng.
 - Pet routes yêu cầu owner đăng nhập, tài khoản active, role OWNER; truy vấn pet nằm trong phạm vi owner. Pet có trạng thái ACTIVE/ARCHIVED và soft delete. `StoreBookingRequest` đã kiểm tra quyền pet, trạng thái, điều kiện listing và cấm tự đặt.
 - Chưa có hợp đồng H04 cụ thể cho query `pet_id`, xung đột giữa pet với bộ lọc thủ công, pet thiếu size trong search, mã lỗi của nhánh H04, schema lý do phù hợp và thông điệp kết quả rỗng. Các mục này phải chốt ở Task 01.
-- README ghi Vue SPA chưa scaffold; issue #19 là backend. Không biến scope H04 thành công việc frontend.
+- Issue #19 chỉ bao gồm backend; không đưa công việc giao diện Next.js/React vào scope H04.
 
 ## 4. Thứ tự thực hiện
 
@@ -108,7 +108,7 @@ Chỉ đánh `[x]` khi mọi tiêu chí task đạt và có bằng chứng trong
 
   **Việc làm:** cập nhật API Contract, M04 và/hoặc P0 traceability nếu hành vi được chốt/thay đổi; ghi implementation, giới hạn, CI, commit/PR và kết quả reviewer. Đối chiếu các mô tả trạng thái cũ với code hiện tại, chỉ cập nhật phần liên quan H04 và không coi tài liệu cũ là bằng chứng runtime.
 
-  **Tiêu chí hoàn thành:** issue checklist, API contract, tài liệu module và code nhất quán; PR liên kết #19; CI thành công trên head SHA cuối; Hào review xác nhận quyền, lý do, riêng tư và tích hợp; mọi checkbox chỉ đánh hoàn thành khi kèm bằng chứng. Ghi rõ phần frontend không thuộc issue backend nếu UI chưa được scaffold.
+  **Tiêu chí hoàn thành:** issue checklist, API contract, tài liệu module và code nhất quán; PR liên kết #19; CI thành công trên head SHA cuối; Hào review xác nhận quyền, lý do, riêng tư và tích hợp; mọi checkbox chỉ đánh hoàn thành khi kèm bằng chứng. Ghi rõ phần frontend không thuộc issue backend.
 
   **Bằng chứng:** link PR/CI, SHA cuối, reviewer sign-off, decision log và bảng test trong báo cáo H04. **Phụ thuộc:** 01–07.
 

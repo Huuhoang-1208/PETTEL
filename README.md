@@ -1,10 +1,10 @@
 # PETTEL
 
-Nền tảng tìm và đặt dịch vụ chăm sóc thú cưng tại Đà Nẵng. Stack đích: Laravel 13/PHP 8.3 cho JSON API, Vue 3 SPA trong `frontend/`, Sanctum stateful cookie/CSRF, MySQL 8.4, Redis 7 và Docker Compose. Breeze API cung cấp scaffold xác thực; Filament dành cho admin, Scramble cho OpenAPI, Pulse cho quan sát. Chi tiết stack và các ràng buộc nằm trong [Technology & Tools](<docs/08 — Architecture & Technical Design/10 — Technology & Tools — Responsibilities & Constraints.md>).
+Nền tảng tìm và đặt dịch vụ chăm sóc thú cưng tại Đà Nẵng. Stack đích: Laravel 13/PHP 8.3 cho JSON API, Next.js App Router trong `frontend/`, Sanctum stateful cookie/CSRF, MySQL 8.4, Redis 7 và Docker Compose. Breeze API cung cấp scaffold xác thực; Filament dành cho admin, Scramble cho OpenAPI, Pulse cho quan sát. Chi tiết stack và các ràng buộc nằm trong [Technology & Tools](<docs/08 — Architecture & Technical Design/10 — Technology & Tools — Responsibilities & Constraints.md>).
 
 ## Trạng thái hiện tại
 
-Backend có xác thực Breeze/Sanctum, vai trò OWNER/CAREGIVER/ADMIN, các workflow nghiệp vụ P0, Filament cho quản trị, Scramble cho OpenAPI và Pulse cho quan sát. Docker có MySQL, Redis, worker và scheduler; môi trường test dùng MySQL riêng. Có tài khoản, pet và caregiver profile minh họa. Vue SPA trong `frontend/` chưa được scaffold; các giao diện người dùng vẫn thuộc giai đoạn frontend sau Gate BE.
+Backend có xác thực Breeze/Sanctum, vai trò OWNER/CAREGIVER/ADMIN, các workflow nghiệp vụ P0, Filament cho quản trị, Scramble cho OpenAPI và Pulse cho quan sát. Docker có MySQL, Redis, worker và scheduler; môi trường test dùng MySQL riêng. Có tài khoản, pet và caregiver profile minh họa. Frontend Next.js trong `frontend/` đã kết nối các luồng tài khoản, tìm dịch vụ, thú cưng, đặt lịch, thanh toán sandbox, chat, chăm sóc và duyệt dịch vụ. Xem [hướng dẫn frontend](frontend/README.md) và [danh mục tích hợp](docs/frontend-backend-integration.md).
 
 ## Chạy dịch vụ nền
 
@@ -27,7 +27,7 @@ Compose đọc `.env` gốc để thay biến trong `compose.yaml`, sau đó tru
 ### 2. Khởi động, migrate và seed
 
 ```powershell
-docker compose up -d db redis backend frontend
+docker compose up -d db redis backend frontend web
 docker compose exec -T backend php artisan migrate --force
 docker compose exec -T backend php artisan db:seed --force
 docker compose up -d worker scheduler
@@ -44,7 +44,11 @@ Invoke-WebRequest -Uri http://localhost:8080/up -UseBasicParsing | Select-Object
 docker compose exec -T redis redis-cli ping
 ```
 
-Kết quả mong đợi: `/` trả JSON trạng thái API, `/up` trả HTTP 200, Redis trả `PONG`; `frontend`, `db` và `redis` có trạng thái `healthy`. Worker/scheduler phải ở trạng thái chạy. Vue SPA chưa được scaffold nên các trang người dùng chưa khả dụng.
+Kết quả mong đợi: `/` trên cổng 8080 trả JSON trạng thái API, `/up` trả HTTP 200, Redis trả `PONG`; `web`, `frontend`, `db` và `redis` có trạng thái `healthy`. Worker/scheduler phải ở trạng thái chạy. Next.js được build sẵn trong service `web` tại http://localhost:3000; service `frontend` là Nginx/API Laravel ở cổng 8080.
+
+Sau khi thiết lập lần đầu, chạy `docker compose up -d` hoặc Start các container của project PETTEL trong Docker Desktop để mở toàn bộ ứng dụng. Không cần chạy `npm run dev` riêng. Các service dùng `restart: unless-stopped`, nên Docker tự khởi động lại container khi engine khởi động nếu container chưa bị Stop thủ công.
+
+Sau khi sửa frontend, chạy `docker compose up -d --build web` để cập nhật bản chạy trong Docker. Các biến `NEXT_PUBLIC_*` được đưa vào bundle lúc build; Compose lấy API URL và địa chỉ socket từ `.env` gốc, public Reverb key từ `REVERB_APP_KEY`. Không đưa Reverb secret vào frontend. Dừng Next.js chạy bằng `npm run dev` trên Windows trước khi bật `web` để tránh trùng cổng 3000.
 
 Nếu thay `APP_PORT`, cập nhật đồng bộ `APP_URL`, `FRONTEND_URL`, `SANCTUM_STATEFUL_DOMAINS` trong `.env` và dùng cổng mới trong các lệnh kiểm tra.
 
@@ -56,9 +60,17 @@ Nếu thay `APP_PORT`, cập nhật đồng bộ `APP_URL`, `FRONTEND_URL`, `SAN
 | `caregiver@example.test` | OWNER, CAREGIVER | `DemoOnly123!` |
 | `admin@example.test` | ADMIN | `DemoOnly123!` |
 
-Seed còn tạo pet `Demo Mochi` thuộc owner và caregiver profile `Demo Pet Care` ở vùng `DN_CENTER`. Đây là dữ liệu minh họa, không chứa thông tin cá nhân thật; bộ seed hiện chưa tạo listing hoặc booking.
+Seed còn tạo pet `Demo Mochi`, `Demo Mèo Nấm`, `Demo Corgi Bắp` thuộc owner; 52 tài khoản sitter `sitter-001@example.test` đến `sitter-052@example.test`; 52 hồ sơ và listing đang hoạt động cùng lịch nhận đặt trong 6 tháng. Ảnh hồ sơ lấy từ `Pet sister/` của giao diện cũ, lưu thành media của listing và có thumbnail WebP. Dữ liệu điểm tin cậy, tiện ích, đánh giá hiển thị đều được đánh dấu là demo; seed không tạo booking hoặc đánh giá giao dịch.
 
-Có thể chạy lại `db:seed`: trên bộ demo chưa chỉnh sửa, seed không tạo trùng tài khoản, role, pet hoặc profile. Seed không đặt lại mật khẩu tài khoản đã tồn tại. Pet được nhận diện bằng owner và tên; nếu đổi tên pet demo, lần seed sau có thể tạo lại `Demo Mochi`. Thông tin đăng nhập mẫu chỉ dành cho local/test, không dùng cho môi trường public.
+Mật khẩu khởi tạo cho tài khoản sitter và tài khoản demo hiện có là `DemoOnly123!`. Tài khoản owner có thể đăng nhập để thử bộ lọc theo hồ sơ thú cưng; tài khoản sitter để thử các chức năng caregiver. Có thể chạy lại `db:seed`: seeder giữ nguyên mật khẩu tài khoản đã tồn tại, cập nhật dữ liệu catalog và không nhân bản listing/media/lịch demo. Thông tin đăng nhập chỉ dành cho local/test, không dùng cho môi trường public.
+
+Khi cập nhật code hoặc fixture seed, áp dụng migration và nạp dữ liệu bằng:
+
+```powershell
+docker compose exec -T backend php artisan migrate --force
+docker compose exec -T backend php artisan db:seed --force
+docker compose up -d --build backend web
+```
 
 ## Worker và scheduler
 
@@ -150,12 +162,12 @@ backend/                    # Laravel JSON API
 ├── tests/                  # Backend tests được bổ sung cùng tính năng
 ├── composer.json
 └── Dockerfile
-frontend/                   # Vue 3 SPA (sẽ scaffold theo Implementation Plan)
+frontend/                   # Next.js App Router + React UI
 docs/                       # Yêu cầu, thiết kế và kế hoạch PETTEL
 compose.yaml                # Docker Compose
 ```
 
-`backend/public/index.php` là entry point của Laravel và vẫn cần cho API. Giao diện Vue thuộc `frontend/`; không đặt component giao diện Vue trong `backend/resources`.
+`backend/public/index.php` là entry point của Laravel và vẫn cần cho API. Giao diện Next.js/React thuộc `frontend/`; không đặt component giao diện này trong `backend/resources`. Filament vẫn dùng Blade/Livewire nội bộ cho trang quản trị Laravel.
 
 ## Tài liệu
 

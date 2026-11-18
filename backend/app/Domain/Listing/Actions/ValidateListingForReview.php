@@ -80,6 +80,7 @@ class ValidateListingForReview
                 ->where('state', 'READY')->where('owner_user_id', $caregiver->id)
                 ->whereNotIn('id', MediaObject::messageAttachmentIds())->count();
             $privateReferences = DB::table('pets')->whereIn('photo_media_id', $ids)->exists()
+                || DB::table('users')->whereIn('owner_profile_json->avatar_media_id', $ids)->exists()
                 || DB::table('care_updates')->whereIn('media_object_id', $ids)->exists();
             if ($readyOwnedCount !== count($ids) || $privateReferences) {
                 $this->fail($failureStatus, ['media' => ['Images must be ready, owned by this caregiver, and unused by private content.']]);

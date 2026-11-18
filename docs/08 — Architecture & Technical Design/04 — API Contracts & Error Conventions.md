@@ -1,10 +1,10 @@
 # API Contracts & Error Conventions
 
-PETTEL — Architecture & Technical Design \| Hợp đồng JSON cho Vue SPA; Filament dùng cùng service/quy tắc nghiệp vụ.
+PETTEL — Architecture & Technical Design \| Hợp đồng JSON cho Next.js/React frontend; Filament dùng cùng service/quy tắc nghiệp vụ.
 
 # Endpoint P0
 
-Breeze API scaffold cung cấp route đăng ký/đăng nhập/đăng xuất/khôi phục mật khẩu; Vue lấy `/sanctum/csrf-cookie` trước thao tác auth. Route riêng tư dùng `auth:sanctum`; không phát hành bearer token cho SPA.
+Breeze API scaffold cung cấp route đăng ký/đăng nhập/đăng xuất/khôi phục mật khẩu; Next.js/React lấy `/sanctum/csrf-cookie` trước thao tác auth. Route riêng tư dùng `auth:sanctum`; không phát hành bearer token cho SPA.
 
 GET /api/listings — bộ lọc công khai theo contract M04 bên dưới; `pet_id` thuộc phần mở rộng Smart Match BE-H04. GET /api/listings/{id} — chỉ listing được phép công khai, không có ngoại lệ owner/admin trên route công khai. POST /api/bookings — pet_id, listing_id, start_at, end_at, instructions; `Idempotency-Key` nằm ở header. POST /api/bookings/{id}/accept — caregiver; POST /api/bookings/{id}/cancel — actor được phép; POST /api/bookings/{id}/sandbox-payments — owner. Callback sandbox hiện hành là `POST /api/sandbox/payment-callback`, ký bằng `X-Payment-Signature` theo [BE-HA05](<../05 — Implementation Plan/BE-HA05 — Contract payment sandbox và callback.md>). Report API và completion confirmation đã được triển khai; xem các mục M09 và M05 bên dưới. Care updates hiện dùng `/api/bookings/{id}/care-updates`.
 
@@ -222,7 +222,7 @@ docker compose exec -T backend php artisan tinker --execute="dump(DB::select('SH
 
 ### API quản lý riêng của caregiver
 
-Tất cả route dùng `auth:sanctum`, `account.active`, `role:CAREGIVER`; Vue sử dụng cookie/CSRF theo BE-H01. Nhóm `/api/caregiver` dành cho quản lý của chính caregiver, tách với API tìm kiếm công khai `/api/listings`. Role ADMIN không tự thay thế quyền sở hữu trong nhóm route này; moderation thuộc workflow riêng.
+Tất cả route dùng `auth:sanctum`, `account.active`, `role:CAREGIVER`; Next.js/React sử dụng cookie/CSRF theo BE-H01. Nhóm `/api/caregiver` dành cho quản lý của chính caregiver, tách với API tìm kiếm công khai `/api/listings`. Role ADMIN không tự thay thế quyền sở hữu trong nhóm route này; moderation thuộc workflow riêng.
 
 | Method / route                        | Mục đích                                                                         | Response thành công                      |
 | ------------------------------------- | -------------------------------------------------------------------------------- | ---------------------------------------- |
@@ -528,7 +528,7 @@ Các test bắt buộc gồm hai accept đồng thời cùng listing chỉ một
 
 # Tài liệu API
 
-Dùng Scramble sinh OpenAPI từ routes/FormRequest/Resource phục vụ Vue; review thủ công ví dụ lỗi, quyền, state và idempotency. Giới hạn truy cập tài liệu API ở demo nếu có endpoint nội bộ.
+Dùng Scramble sinh OpenAPI từ routes/FormRequest/Resource phục vụ Next.js/React; review thủ công ví dụ lỗi, quyền, state và idempotency. Giới hạn truy cập tài liệu API ở demo nếu có endpoint nội bộ.
 
 # Contract P0 bổ sung
 

@@ -79,6 +79,12 @@ class CreateBooking
                         'cancellation_policy_version' => $pricing['cancellation_policy_version'],
                         'cancellation_fee_vnd' => 0,
                         'payment_mode' => 'SANDBOX',
+                        'addons' => array_map(fn (string $addon): array => [
+                            'code' => $addon,
+                            'price_vnd' => $addon === 'PET_TAXI' ? 120000 : 150000,
+                        ], $context['addons']),
+                        'addons_total_vnd' => $pricing['addons_total_vnd'],
+                        'base_price_total_vnd' => $pricing['base_price_total_vnd'],
                     ],
                     'instructions_snapshot' => $data['instructions'] ?? null,
                     'payment_due_at' => null,

@@ -9,7 +9,10 @@ use App\Domain\Listing\AcceptanceRules;
 use App\Http\Requests\SearchListingRequest;
 use App\Http\Resources\PublicListingResource;
 use App\Http\Resources\SearchListingResource;
+use App\Models\AvailabilitySlot;
+use App\Models\Booking;
 use App\Models\Listing;
+use App\Models\Pet;
 use App\Support\PublicReviewCache;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -46,6 +49,11 @@ class PublicListingController extends Controller
 
         if ($pet !== null) {
             $query->whereRelation('caregiverProfile', 'user_id', '!=', $pet->user_id);
+        }
+
+        if ($pet !== null && isset($filters['space_type'])) {
+            $query->whereRelation('caregiverProfile', fn (Builder $profile) => $profile->whereJsonContains('application_data_json->space_type', $filters['space_type'])
+            );
         }
 
         $keyword = $filters['q'] ?? null;
@@ -90,10 +98,27 @@ class PublicListingController extends Controller
                 $query->where('listings.price_total_vnd', '<=', (int) $filters['max_price_vnd']);
             }
 
-            $query->orderBy('listings.price_total_vnd');
+            if ($pet === null) {
+                $query->orderBy('listings.price_total_vnd');
+            }
 
             $filters['start_at'] = $range['start']->format('Y-m-d\TH:i:s.u\Z');
             $filters['end_at'] = $range['end']->format('Y-m-d\TH:i:s.u\Z');
+        }
+
+        if ($pet !== null) {
+            [$scoreExpression, $scoreBindings] = $this->smartMatchScoreExpression($pet);
+            $scoreSql = $scoreExpression.' AS smart_match_score';
+            // This SQL is assembled from fixed application values only.
+            if ($range !== null) {
+                $query->addSelect('listings.*');
+            }
+            $query->selectRaw($scoreSql, $scoreBindings) // @phpstan-ignore argument.type
+                ->orderByDesc('smart_match_score');
+
+            if ($range !== null) {
+                $query->orderBy('listings.price_total_vnd');
+            }
         }
 
         $query->orderBy('listings.id');
@@ -121,9 +146,16 @@ class PublicListingController extends Controller
             $reasons[] = 'WITHIN_REQUESTED_BUDGET';
         }
 
-        $results->getCollection()->each(
-            fn (Listing $listing) => $listing->setAttribute('search_match_reasons', $reasons),
-        );
+        $results->getCollection()->each(function (Listing $listing) use ($reasons, $pet, $filters): void {
+            $listing->setAttribute('search_match_reasons', $reasons);
+
+            if ($pet !== null) {
+                $listing->setAttribute(
+                    'smart_match_reasons',
+                    $this->smartMatchReasons($listing, $pet, $filters),
+                );
+            }
+        });
 
         $response = SearchListingResource::collection($results);
 
@@ -140,9 +172,240 @@ class PublicListingController extends Controller
         return $response;
     }
 
+    /** @return array{string, list<string>} */
+    private function smartMatchScoreExpression(Pet $pet): array
+    {
+        $signals = $this->smartMatchSignals($pet);
+        $parts = [];
+        $bindings = [];
+
+        foreach ($signals as $signal) {
+            $parts[] = "CASE WHEN JSON_CONTAINS(application_data_json, JSON_QUOTE(?), '$.{$signal['path']}') THEN {$signal['weight']} ELSE 0 END";
+            $bindings[] = $signal['value'];
+            if (isset($signal['accepted'])) {
+                $acceptedWeight = $signal['accepted_weight'] ?? 0;
+                $parts[] = "CASE WHEN JSON_CONTAINS(application_data_json, JSON_QUOTE(?), '$.pet_requirements') THEN {$acceptedWeight} ELSE 0 END";
+                $bindings[] = $signal['accepted'];
+            }
+        }
+
+        if ($this->petNeedsSpecialDiet($pet)) {
+            $parts[] = "CASE WHEN JSON_CONTAINS(application_data_json, JSON_QUOTE(?), '$.amenities') THEN 1 ELSE 0 END";
+            $bindings[] = 'SEPARATE_FOOD_STORAGE';
+        }
+
+        $score = $parts === [] ? '0' : implode(' + ', $parts);
+
+        return [
+            '(SELECT '.$score.' FROM caregiver_profiles WHERE caregiver_profiles.id = listings.caregiver_profile_id)',
+            $bindings,
+        ];
+    }
+
+    /** @return list<array{path: string, value: string, weight: int, accepted?: string, accepted_weight?: int, reason: string}> */
+    private function smartMatchSignals(Pet $pet): array
+    {
+        $signals = [];
+        $species = (string) $pet->species;
+        $size = (string) $pet->size;
+
+        if ($species === 'DOG' && in_array($size, ['SMALL', 'MEDIUM', 'LARGE'], true)) {
+            $signals[] = ['path' => 'experience_species', 'value' => 'DOG_'.$size, 'weight' => 3, 'reason' => 'DOG_SIZE_EXPERIENCE'];
+        } elseif ($species === 'OTHER') {
+            $signals[] = ['path' => 'experience_species', 'value' => 'SMALL_PETS', 'weight' => 3, 'reason' => 'SMALL_PET_EXPERIENCE'];
+        } elseif ($species === 'CAT' && is_string($pet->breed) && $pet->breed !== '') {
+            $breed = mb_strtolower($pet->breed);
+            if (str_contains($breed, 'dài') || str_contains($breed, 'long') || str_contains($breed, 'persian') || str_contains($breed, 'maine coon') || str_contains($breed, 'ragdoll') || str_contains($breed, 'angora')) {
+                $signals[] = ['path' => 'experience_species', 'value' => 'CAT_LONG_HAIR', 'weight' => 3, 'reason' => 'CAT_BREED_EXPERIENCE'];
+            } elseif (str_contains($breed, 'ngắn') || str_contains($breed, 'short') || str_contains($breed, 'siamese') || str_contains($breed, 'sphynx')) {
+                $signals[] = ['path' => 'experience_species', 'value' => 'CAT_SHORT_HAIR', 'weight' => 3, 'reason' => 'CAT_BREED_EXPERIENCE'];
+            }
+        }
+
+        $behavior = is_array($pet->behavior_tags) ? $pet->behavior_tags : [];
+        $support = is_array($pet->care_support_tags) ? $pet->care_support_tags : [];
+
+        if (array_intersect($behavior, ['SHY', 'FEARS_STRANGERS', 'NEEDS_WARM_UP', 'NOT_SOCIAL_WITH_PETS', 'SEPARATION_ANXIETY']) !== []) {
+            $signals[] = ['path' => 'care_skills', 'value' => 'SENIOR_OR_SHY', 'weight' => 4, 'accepted' => 'ACCEPTS_SENIOR_OR_SHY', 'accepted_weight' => 2, 'reason' => 'SHY_PET_CARE'];
+        }
+        if (in_array('ORAL_MEDICATION', $support, true) || in_array('EYE_DROPS', $support, true)) {
+            $signals[] = ['path' => 'care_skills', 'value' => 'MEDICATION', 'weight' => 4, 'accepted' => 'ACCEPTS_MEDICATION', 'accepted_weight' => 2, 'reason' => 'MEDICATION_CARE'];
+        }
+        if (in_array('SPECIAL_DIET', $support, true) || $this->petNeedsSpecialDiet($pet)) {
+            $signals[] = ['path' => 'care_skills', 'value' => 'SPECIAL_DIET', 'weight' => 4, 'accepted' => 'ACCEPTS_SPECIAL_DIET', 'accepted_weight' => 2, 'reason' => 'SPECIAL_DIET_CARE'];
+        }
+        if (in_array('POST_SURGERY', $support, true)) {
+            $signals[] = ['path' => 'care_skills', 'value' => 'POST_SURGERY', 'weight' => 4, 'accepted' => 'ACCEPTS_POST_SURGERY', 'accepted_weight' => 2, 'reason' => 'POST_SURGERY_CARE'];
+        }
+
+        return $signals;
+    }
+
+    private function petNeedsSpecialDiet(Pet $pet): bool
+    {
+        return filled($pet->food_allergies) || filled($pet->foods_to_avoid);
+    }
+
+    /** @param array<string, mixed> $filters @return list<string> */
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return list<string>
+     */
+    private function smartMatchReasons(Listing $listing, Pet $pet, array $filters): array
+    {
+        $reasons = ['SPECIES_ACCEPTED', 'SIZE_ACCEPTED'];
+        $application = $listing->caregiverProfile?->application_data_json;
+        $application = is_array($application) ? $application : [];
+        $skills = $application['care_skills'] ?? [];
+        $requirements = $application['pet_requirements'] ?? [];
+        $amenities = $application['amenities'] ?? [];
+        $experience = $application['experience_species'] ?? [];
+
+        foreach ($this->smartMatchSignals($pet) as $signal) {
+            if ($signal['path'] === 'experience_species') {
+                if (is_array($experience) && in_array($signal['value'], $experience, true)) {
+                    $reasons[] = $signal['reason'];
+                }
+
+                continue;
+            }
+
+            if ((is_array($skills) && in_array($signal['value'], $skills, true))
+                || (is_array($requirements) && in_array($signal['accepted'] ?? '', $requirements, true))) {
+                $reasons[] = $signal['reason'];
+            }
+        }
+
+        if ($this->petNeedsSpecialDiet($pet) && is_array($amenities) && in_array('SEPARATE_FOOD_STORAGE', $amenities, true)) {
+            $reasons[] = 'SEPARATE_FOOD_STORAGE';
+        }
+        if (isset($filters['space_type'])) {
+            $reasons[] = $filters['space_type'] === 'INDOOR' ? 'INDOOR_SPACE' : 'INDOOR_YARD_SPACE';
+        }
+
+        return array_values(array_unique($reasons));
+    }
+
     public function show(string $id): PublicListingResource
     {
         return PublicListingResource::make($this->findPublicListing($id));
+    }
+
+    public function services(string $id): AnonymousResourceCollection
+    {
+        $listing = $this->findPublicListing($id);
+        $services = $this->publicListings()
+            ->where('listings.caregiver_profile_id', $listing->caregiver_profile_id)
+            ->orderBy('listings.service_type')
+            ->orderBy('listings.id')
+            ->get();
+
+        return PublicListingResource::collection($services);
+    }
+
+    public function availability(Request $request, string $id): mixed
+    {
+        $filters = validator($request->query(), [
+            'month' => ['sometimes', 'required', 'date_format:Y-m'],
+        ])->validate();
+        $listing = $this->findPublicListing($id);
+        $timezone = 'Asia/Ho_Chi_Minh';
+        $month = CarbonImmutable::parse(($filters['month'] ?? now($timezone)->format('Y-m')).'-01', $timezone)
+            ->startOfMonth();
+        $today = CarbonImmutable::now($timezone)->startOfDay();
+        $now = CarbonImmutable::now($timezone);
+        $monthEnd = $month->addMonth()->startOfMonth();
+        $monthStartUtc = $month->utc();
+        $monthEndUtc = $monthEnd->utc();
+        $openSlots = AvailabilitySlot::query()
+            ->where('listing_id', $listing->id)
+            ->where('start_at', '<', $monthEndUtc)
+            ->where('end_at', '>', $monthStartUtc)
+            ->orderBy('start_at')
+            ->get(['start_at', 'end_at']);
+        $heldBookings = Booking::query()
+            ->where('listing_id', $listing->id)
+            ->whereIn('status', ['AWAITING_PAYMENT', 'CONFIRMED', 'IN_PROGRESS', 'AWAITING_CONFIRMATION'])
+            ->where('start_at', '<', $monthEndUtc)
+            ->where('end_at', '>', $monthStartUtc)
+            ->orderBy('start_at')
+            ->get(['start_at', 'end_at']);
+        $minimumDuration = $listing->service_type === 'DAYCARE' ? 3600 : 43200;
+        $days = [];
+
+        for ($day = 1; $day <= $month->daysInMonth; $day++) {
+            $date = $month->day($day);
+            $dateKey = $date->format('Y-m-d');
+            if ($date->lessThan($today)) {
+                $days[] = ['date' => $dateKey, 'status' => 'FULL', 'time_slots' => []];
+
+                continue;
+            }
+
+            $timeSlots = $this->availableWindowsForDay($date, $now, $openSlots, $heldBookings, $minimumDuration);
+            $days[] = ['date' => $dateKey, 'status' => $timeSlots === [] ? 'FULL' : 'AVAILABLE', 'time_slots' => $timeSlots];
+        }
+
+        return response()->json(['data' => $days, 'month' => $month->format('Y-m')]);
+    }
+
+    /**
+     * @param  iterable<AvailabilitySlot>  $openSlots
+     * @param  iterable<Booking>  $heldBookings
+     * @return list<array{start_at: string, end_at: string}>
+     */
+    private function availableWindowsForDay(
+        CarbonImmutable $date,
+        CarbonImmutable $now,
+        iterable $openSlots,
+        iterable $heldBookings,
+        int $minimumDuration,
+    ): array {
+        $timezone = 'Asia/Ho_Chi_Minh';
+        $dayStart = $date->startOfDay()->utc()->getTimestamp();
+        $dayEnd = $date->addDay()->startOfDay()->utc()->getTimestamp();
+        $earliestStart = $date->isSameDay($now->setTimezone($timezone))
+            ? max($dayStart, $now->addHour()->utc()->getTimestamp())
+            : $dayStart;
+        $windows = [];
+
+        foreach ($openSlots as $slot) {
+            $cursor = max($slot->start_at->utc()->getTimestamp(), $earliestStart);
+            $slotEnd = $slot->end_at->utc()->getTimestamp();
+            if ($cursor >= $slotEnd || $cursor >= $dayEnd || $slotEnd <= $dayStart) {
+                continue;
+            }
+
+            foreach ($heldBookings as $booking) {
+                $blockedStart = $booking->start_at->utc()->getTimestamp();
+                $blockedEnd = $booking->end_at->utc()->getTimestamp();
+                if ($blockedEnd <= $cursor || $blockedStart >= $slotEnd) {
+                    continue;
+                }
+                if ($blockedStart > $cursor && $blockedStart - $cursor >= $minimumDuration) {
+                    $windows[] = $this->availabilityWindow($cursor, $blockedStart);
+                }
+                $cursor = max($cursor, $blockedEnd);
+                if ($cursor >= $slotEnd) {
+                    break;
+                }
+            }
+
+            if ($slotEnd - $cursor >= $minimumDuration) {
+                $windows[] = $this->availabilityWindow($cursor, $slotEnd);
+            }
+        }
+
+        return $windows;
+    }
+
+    /** @return array{start_at: string, end_at: string} */
+    private function availabilityWindow(int $start, int $end): array
+    {
+        return [
+            'start_at' => CarbonImmutable::createFromTimestampUTC($start)->format('Y-m-d\\TH:i:s\\Z'),
+            'end_at' => CarbonImmutable::createFromTimestampUTC($end)->format('Y-m-d\\TH:i:s\\Z'),
+        ];
     }
 
     /**
@@ -192,15 +455,20 @@ class PublicListingController extends Controller
         $cached = PublicReviewCache::remember((string) $listing->id, $page, $perPage, function () use ($listing, $page, $perPage): array {
             $reviews = $this->visibleReviews()
                 ->where('reviews.listing_id', $listing->id)
-                ->select(['reviews.id', 'reviews.rating', 'reviews.body', 'reviews.is_demo', 'reviews.created_at'])
+                ->join('users as review_owners', 'review_owners.id', '=', 'reviews.owner_id')
                 ->orderByDesc('reviews.created_at')
                 ->orderByDesc('reviews.id')
-                ->paginate($perPage, ['*'], 'page', $page)
-                ->through(static fn (stdClass $review): array => [
+                ->paginate($perPage, [
+                    'reviews.id', 'reviews.rating', 'reviews.body', 'reviews.is_demo', 'reviews.created_at',
+                    'review_owners.name as owner_name', 'bookings.pet_snapshot_json',
+                ], 'page', $page)
+                ->through(fn (stdClass $review): array => [
                     'id' => (string) $review->id,
                     'rating' => (int) $review->rating,
                     'body' => $review->body,
                     'is_demo' => (bool) $review->is_demo,
+                    'reviewer_name' => $this->publicReviewerName((string) $review->owner_name),
+                    'pet_species' => $this->petSpeciesFromSnapshot($review->pet_snapshot_json),
                     'created_at' => CarbonImmutable::parse($review->created_at, 'UTC')->format('Y-m-d\\TH:i:s.u\\Z'),
                 ]);
 
@@ -216,11 +484,50 @@ class PublicListingController extends Controller
 
         $attributes = $listing->getAttributes();
         $average = $attributes['rating_average'] ?? null;
+        $ratingDistribution = array_fill_keys([1, 2, 3, 4, 5], 0);
+        foreach ($this->visibleReviews()
+            ->where('reviews.listing_id', $listing->id)
+            ->select('reviews.rating', DB::raw('COUNT(*) AS count'))
+            ->groupBy('reviews.rating')
+            ->get() as $rating) {
+            $ratingDistribution[(int) $rating->rating] = (int) $rating->count;
+        }
 
         return JsonResource::collection($reviews)->additional([
             'rating_average' => $average === null ? null : round((float) $average, 2),
             'review_count' => (int) ($attributes['review_count'] ?? 0),
+            'rating_distribution' => $ratingDistribution,
         ]);
+    }
+
+    private function publicReviewerName(string $name): string
+    {
+        $parts = preg_split('/\\s+/u', trim($name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        if (count($parts) < 2) {
+            return 'Khách hàng';
+        }
+
+        $givenName = array_pop($parts);
+        $initial = mb_substr($parts[0], 0, 1, 'UTF-8');
+
+        return $givenName.' '.$initial.'.';
+    }
+
+    private function petSpeciesFromSnapshot(mixed $snapshot): ?string
+    {
+        if (! is_string($snapshot)) {
+            return null;
+        }
+
+        $pet = json_decode($snapshot, true);
+        $species = is_array($pet) ? ($pet['species'] ?? null) : null;
+
+        return match ($species) {
+            'DOG' => 'DOG',
+            'CAT' => 'CAT',
+            'OTHER' => 'OTHER',
+            default => null,
+        };
     }
 
     private function findPublicListing(string $id): Listing
@@ -298,7 +605,7 @@ class PublicListingController extends Controller
 
         return Listing::query()
             ->fromSub($priced, 'listings')
-            ->with('media')
+            ->with(['media', 'caregiverProfile.user'])
             ->whereNotNull('listings.price_total_vnd');
     }
 
@@ -314,7 +621,7 @@ class PublicListingController extends Controller
         return Listing::query()
             ->select('listings.*', 'review_ratings.rating_average', 'review_ratings.review_count')
             ->leftJoinSub($ratings, 'review_ratings', 'review_ratings.listing_id', '=', 'listings.id')
-            ->with('media')
+            ->with(['media', 'caregiverProfile.user'])
             ->where('listings.status', 'ACTIVE')
             ->whereRelation('caregiverProfile.user', 'status', 'ACTIVE')
             ->whereRelation('caregiverProfile.user.roles', 'role', 'CAREGIVER');

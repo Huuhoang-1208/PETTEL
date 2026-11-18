@@ -1,0 +1,242 @@
+.card {
+  display: grid;
+  gap: 16px;
+  padding: 28px 30px;
+  border: 1px solid #f0eef7;
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 5px 18px #17263c08;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.header h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  color: #14243b;
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+.header h2 svg {
+  width: 22px;
+  height: 22px;
+  color: #008b98;
+}
+
+.header p {
+  margin: 4px 0 0;
+  color: #63718a;
+  font-size: 12px;
+}
+
+.standard {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #eff0ff;
+  color: #007f91;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.offers {
+  display: grid;
+  gap: 12px;
+}
+
+.offer {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px 18px;
+  background: #f1f2ff;
+}
+
+.offer.current {
+  background: #edf1ff;
+}
+
+.icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 50%;
+  background: #dce9f1;
+  color: #007f91;
+}
+
+.icon.daycare {
+  background: #ffead0;
+  color: #e98a00;
+}
+
+.icon.walking {
+  background: #e9ddff;
+  color: #7833df;
+}
+
+.icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.details {
+  min-width: 0;
+}
+
+.details h3 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 4px;
+  color: #17263c;
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.details p {
+  margin: 0;
+  color: #5f6e86;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.popular {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #007d87;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.reference {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #fff2d7;
+  color: #996400;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.price {
+  display: grid;
+  justify-items: end;
+  white-space: nowrap;
+}
+
+.price strong {
+  color: #007987;
+  font-size: 20px;
+}
+
+.price span {
+  color: #63718a;
+  font-size: 11px;
+}
+
+.addons {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #eceeff;
+  color: #17263c;
+  font-size: 12px;
+}
+
+.addons > strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.addons > strong svg {
+  width: 17px;
+  height: 17px;
+  color: #008b98;
+}
+
+.addonList {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.addonList span {
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #fff;
+  color: #45546c;
+  font-size: 11px;
+}
+
+@media (max-width: 620px) {
+  .card {
+    gap: 13px;
+    padding: 20px 16px;
+    border-radius: 22px;
+  }
+
+  .header {
+    align-items: flex-start;
+  }
+
+  .header h2 {
+    font-size: 17px;
+  }
+
+  .standard {
+    display: none;
+  }
+
+  .offer {
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 10px;
+    padding: 13px;
+  }
+
+  .icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .details h3 {
+    font-size: 14px;
+  }
+
+  .price {
+    grid-column: 2;
+    display: flex;
+    align-items: baseline;
+    justify-items: start;
+    gap: 5px;
+  }
+
+  .price strong {
+    font-size: 18px;
+  }
+
+  .addons {
+    align-items: flex-start;
+  }
+
+  .addonList {
+    flex-basis: 100%;
+    padding-left: 24px;
+  }
+}

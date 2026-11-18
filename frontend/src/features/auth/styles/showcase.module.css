@@ -1,0 +1,224 @@
+.showcase {
+  display: flex;
+  flex-direction: column;
+  padding: 30px;
+  background:
+    radial-gradient(ellipse at top right, #dbfcff, transparent 70%),
+    radial-gradient(ellipse at bottom right, #f2dfcd, transparent 48%),
+    linear-gradient(145deg, #b4edf1, #eeecff 70%);
+}
+.communityBadge {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: #d8e8ffb5;
+  color: #438e9c;
+  font-size: 9px;
+  font-weight: 800;
+}
+.communityBadge svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+.showcase h1 {
+  font-size: clamp(25px, 2.3vw, 33px);
+  font-weight: 800;
+  letter-spacing: -1.1px;
+  line-height: 1.18;
+  margin: 18px 0 14px;
+}
+.showcase h1 em {
+  font-style: normal;
+  color: #007b89;
+}
+.showcaseIntro {
+  margin: 0 0 26px;
+  color: #426078;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.photo {
+  position: relative;
+  aspect-ratio: 1.12;
+  margin-bottom: 28px;
+  overflow: hidden;
+  box-shadow: 0 6px 12px #2c3a4924;
+}
+.photo > img {
+  object-fit: cover;
+  object-position: 51% center;
+}
+.photoBadge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  padding: 5px 8px;
+  border-radius: 20px;
+  background: #ffffffed;
+  color: #446172;
+  font-size: 8px;
+  font-weight: 650;
+}
+.photoBadge > span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 4px;
+  border-radius: 50%;
+  background: #00b4c3;
+}
+.photoCaption {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  left: 12px;
+  right: 12px;
+  bottom: 14px;
+  padding: 12px 10px;
+  background: #ffffffed;
+}
+.captionIcon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  color: white;
+  background: #009aa6;
+  border-radius: 50%;
+}
+.captionIcon svg {
+  width: 20px;
+  height: 20px;
+}
+.photoCaption > div {
+  display: grid;
+  gap: 4px;
+}
+.photoCaption strong {
+  font-size: 10px;
+}
+.photoCaption div > span {
+  color: #617282;
+  font-size: 9px;
+}
+.photoCaption > svg {
+  width: 18px;
+  height: 18px;
+  color: #009aa6;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.benefits {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: auto;
+}
+.benefits > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 8px;
+  background: #ffffffd6;
+}
+.benefits > div > span {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: #008e9f;
+  background: #d4f5f8;
+  width: 27px;
+  height: 27px;
+}
+.benefits > div:nth-child(2) > span {
+  color: #b78338;
+  background: #fff0d7;
+}
+.benefits svg {
+  width: 15px;
+  height: 15px;
+}
+.benefits p {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+}
+.benefits strong {
+  font-size: 9px;
+}
+.benefits small {
+  font-size: 8px;
+  color: #78838e;
+}
+.showcaseBottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 20px;
+}
+.petMarks {
+  display: flex;
+  padding-left: 4px;
+}
+.petMarks span {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-left: -4px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  color: #007885;
+  background: #caeef0;
+}
+.petMarks span:nth-child(2) {
+  color: #ac7864;
+  background: #fbe5d7;
+}
+.petMarks span:last-child {
+  color: white;
+  background: #00a4b3;
+}
+.petMarks svg {
+  width: 14px;
+  height: 14px;
+}
+.showcaseBottom p {
+  margin: 0;
+  color: #567083;
+  font-size: 11px;
+  text-align: right;
+  line-height: 1.6;
+}
+.showcaseBottom strong {
+  color: #11243a;
+}
+@media (max-width: 1050px) {
+  .showcase {
+    padding: 26px;
+  }
+}
+@media (max-width: 760px) {
+  .showcase {
+    padding: 25px;
+  }
+  .showcase h1 {
+    font-size: 28px;
+  }
+  .photo,
+  .benefits,
+  .showcaseBottom {
+    display: none;
+  }
+  .showcaseIntro {
+    margin-bottom: 0;
+  }
+}

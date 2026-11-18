@@ -1,0 +1,184 @@
+/* ============================
+   LIVE CAM UI
+   ============================ */
+.livecam-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #000;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.livecam-container {
+  max-width: 100%;
+  max-height: 100%;
+  position: relative;
+  background: #1a1a1a;
+}
+
+.livecam-live-badge {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  background: rgba(244, 67, 54, 0.9);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(4px);
+  z-index: 10;
+}
+
+.live-dot {
+  width: 10px;
+  height: 10px;
+  background: white;
+  border-radius: 50%;
+  animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.livecam-feed {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.livecam-feed-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.livecam-feed-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.livecam-info {
+  position: absolute;
+  bottom: 100px;
+  left: 24px;
+  right: 24px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 16px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.livecam-location {
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.livecam-timestamp {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+}
+
+.livecam-controls {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 16px;
+}
+
+.livecam-control-btn {
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 24px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.livecam-control-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  transform: translateY(-2px);
+}
+
+.livecam-close-btn {
+  padding: 12px 24px;
+  background: rgba(244, 67, 54, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(244, 67, 54, 0.9);
+  border-radius: 24px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+}
+
+.livecam-close-btn:hover {
+  background: rgba(244, 67, 54, 1);
+  border-color: rgba(244, 67, 54, 1);
+  box-shadow: 0 6px 16px rgba(244, 67, 54, 0.4);
+  transform: translateY(-2px);
+}
+
+.livecam-control-btn i,
+.livecam-close-btn i {
+  font-size: 16px;
+}
+
+.livecam-toast {
+  position: fixed;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 16px 32px;
+  border-radius: 24px;
+  font-size: 15px;
+  font-weight: 500;
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 10001;
+}
+
+.livecam-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

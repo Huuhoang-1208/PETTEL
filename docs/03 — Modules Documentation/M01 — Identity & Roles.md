@@ -8,7 +8,7 @@ PETTEL — Modules Documentation \| Bản thảo 26/10/2026
 
 # Quy tắc
 
-Breeze API scaffold cho auth; Vue SPA dùng Sanctum stateful session cookie an toàn và CSRF trên thao tác ghi. Policy kiểm tra role \+ owner ID \+ trạng thái ở server, không dựa vào nút ẩn trên giao diện. Throttle đăng nhập, đặt lại mật khẩu và API nhạy cảm. Không tiết lộ tài khoản tồn tại qua thông báo quên mật khẩu.
+Breeze API scaffold cho auth; Next.js/React frontend dùng Sanctum stateful session cookie an toàn và CSRF trên thao tác ghi. Policy kiểm tra role \+ owner ID \+ trạng thái ở server, không dựa vào nút ẩn trên giao diện. Throttle đăng nhập, đặt lại mật khẩu và API nhạy cảm. Không tiết lộ tài khoản tồn tại qua thông báo quên mật khẩu.
 
 # Dữ liệu và phụ thuộc
 
@@ -16,7 +16,7 @@ Bảng users và user_roles (một user có thể có cả OWNER/CAREGIVER), ema
 
 # Tiêu chí chấp nhận
 
-Người chưa đăng nhập chỉ xem listing ACTIVE. Owner không sửa pet khác. Caregiver không sửa listing khác. Admin không đăng nhập bằng role tự khai. Thao tác bị từ chối trả 403; API chưa đăng nhập trả 401 để Vue chuyển về login, CSRF hết hạn trả 419.
+Người chưa đăng nhập chỉ xem listing ACTIVE. Owner không sửa pet khác. Caregiver không sửa listing khác. Admin không đăng nhập bằng role tự khai. Thao tác bị từ chối trả 403; API chưa đăng nhập trả 401 để Next.js/React chuyển về login, CSRF hết hạn trả 419.
 
 # Quyết định P0
 

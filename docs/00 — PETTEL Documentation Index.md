@@ -23,7 +23,7 @@ Thí điểm Đà Nẵng; VND dạng số nguyên; lưu UTC, hiển thị Asia/H
 
 # Còn cần kiểm tra khi triển khai
 
-Kiểm tra tương thích Laravel 13/Breeze/Vue/Sanctum và các package đã chọn, cùng hosting/storage/email demo. Chính sách giá, hủy sandbox, hoàn tất, badge, công suất và retention đã chốt cho P0 ở tài liệu dưới. Tiền thật, xác minh thật và pháp lý thuộc phạm vi sau P0.
+Kiểm tra tương thích Laravel 13/Breeze/Next.js/React/Sanctum và các package đã chọn, cùng hosting/storage/email demo. Chính sách giá, hủy sandbox, hoàn tất, badge, công suất và retention đã chốt cho P0 ở tài liệu dưới. Tiền thật, xác minh thật và pháp lý thuộc phạm vi sau P0.
 
 ## Quyết định P0 đã chốt
 

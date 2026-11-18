@@ -18,6 +18,8 @@ use Dedoc\Scramble\Support\Generator\Path;
 use Dedoc\Scramble\Support\Generator\RequestBodyObject;
 use Dedoc\Scramble\Support\Generator\Response;
 use Dedoc\Scramble\Support\Generator\Schema;
+use Dedoc\Scramble\Support\Generator\SecurityRequirement;
+use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Dedoc\Scramble\Support\Generator\Types\ArrayType;
 use Dedoc\Scramble\Support\Generator\Types\BooleanType;
 use Dedoc\Scramble\Support\Generator\Types\IntegerType;
@@ -32,6 +34,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Laravel\Telescope\TelescopeServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -42,6 +45,14 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(PaymentCancellationGateway::class, SandboxPaymentCancellationGateway::class);
         $this->app->bind(PaymentReleaseGateway::class, SandboxPaymentReleaseGateway::class);
+
+        if (
+            $this->app->environment('local')
+            && class_exists(TelescopeServiceProvider::class)
+        ) {
+            $this->app->register(TelescopeServiceProvider::class);
+            $this->app->register(\App\Providers\TelescopeServiceProvider::class);
+        }
     }
 
     /**
@@ -49,8 +60,59 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        ResetPassword::createUrlUsing(function (CanResetPassword $user, string $token): string {
+            $query = http_build_query([
+                'token' => $token,
+                'email' => $user->getEmailForPasswordReset(),
+            ]);
+
+            return rtrim(config('app.frontend_url'), '/')
+                .'/reset-password?'
+                .$query;
+        });
+
         $this->app->booted(function (): void {
             Scramble::afterOpenApiGenerated(function (OpenApi $openApi): void {
+                $openApi->components->addSecurityScheme(
+                    'bearerAuth',
+                    SecurityScheme::http('bearer')
+                        ->as('bearerAuth')
+                        ->setDescription('Sanctum personal access token. The /user endpoint requires the profile:read ability.'),
+                );
+
+                $bearerAbilities = [
+                    'user' => ['get' => 'profile:read'],
+                    'owner-profile' => ['get' => 'profile:read'],
+                    'owner-profile/bookings' => ['get' => 'bookings:read'],
+                    'bookings' => ['get' => 'bookings:read'],
+                    'bookings/{id}' => ['get' => 'bookings:read'],
+                    'pets' => ['get' => 'pets:read'],
+                    'pets/{pet}' => ['get' => 'pets:read'],
+                ];
+
+                foreach ($openApi->paths as $path) {
+                    $pathName = ltrim($path->path, '/');
+                    if (str_starts_with($pathName, 'api/')) {
+                        $pathName = substr($pathName, 4);
+                    }
+
+                    foreach ($path->operations as $method => $operation) {
+                        $ability = $bearerAbilities[$pathName][strtolower($method)] ?? null;
+                        if ($ability === null) {
+                            continue;
+                        }
+
+                        $operation->security = [
+                            new SecurityRequirement(['sanctumSession' => []]),
+                            new SecurityRequirement(['bearerAuth' => []]),
+                        ];
+                        $operation->description = trim(
+                            $operation->description
+                            ."\n\nA Sanctum bearer token must include the `{$ability}` ability. First-party frontend sessions may also authenticate with the Sanctum session cookie and CSRF protection."
+                        );
+                    }
+                }
+
                 $excludedRequestProperties = [
                     'App\\Http\\Requests\\StoreBookingRequest' => ['Idempotency-Key'],
                     'App\\Http\\Requests\\CancelBookingRequest' => ['Idempotency-Key'],
@@ -271,11 +333,13 @@ class AppServiceProvider extends ServiceProvider
                 // derived from the controller/resource code instead of accepting UnknownType.
                 $quote = $object([
                     'price_total_vnd' => new IntegerType,
+                    'base_price_total_vnd' => new IntegerType,
+                    'addons_total_vnd' => new IntegerType,
                     'price_unit' => $string(),
                     'quantity' => new IntegerType,
                     'pricing_version' => new IntegerType,
                     'cancellation_policy_version' => new IntegerType,
-                ], ['price_total_vnd', 'price_unit', 'quantity', 'pricing_version', 'cancellation_policy_version']);
+                ], ['price_total_vnd', 'base_price_total_vnd', 'addons_total_vnd', 'price_unit', 'quantity', 'pricing_version', 'cancellation_policy_version']);
                 if ($schema = $schemaFor('bookings/quote', 'post')) {
                     $schema->type = $quote;
                 }
@@ -583,6 +647,15 @@ class AppServiceProvider extends ServiceProvider
                     'sandbox/payment-callback' => ['M06 Payment Sandbox', 'Public callback endpoint. A valid `X-Payment-Signature` is required; callback replay is processed idempotently against the payment attempt and event.'],
                 ];
                 $operationNotes = [
+                    'user|get' => 'Bearer tokens must include the `profile:read` ability. First-party frontend sessions may use the Sanctum session cookie and CSRF protection.',
+                    'owner-profile|get' => 'Bearer tokens must include the `profile:read` ability; first-party frontend sessions may use the Sanctum session cookie.',
+                    'owner-profile/bookings|get' => 'Bearer tokens must include the `bookings:read` ability; first-party frontend sessions may use the Sanctum session cookie.',
+                    'bookings|get' => 'Bearer tokens must include the `bookings:read` ability; first-party frontend sessions may use the Sanctum session cookie.',
+                    'bookings/{id}|get' => 'Bearer tokens must include the `bookings:read` ability; first-party frontend sessions may use the Sanctum session cookie.',
+                    'pets|get' => 'Bearer tokens must include the `pets:read` ability; first-party frontend sessions may use the Sanctum session cookie.',
+                    'pets/{pet}|get' => 'Bearer tokens must include the `pets:read` ability; first-party frontend sessions may use the Sanctum session cookie.',
+                    'tokens|post' => 'Requires an authenticated first-party session. The plaintext bearer token is shown only in this response; store it securely. Tokens expire after 30 days and accept only the documented read abilities.',
+                    'tokens/{tokenId}|delete' => 'Requires an authenticated first-party session and revokes only a token owned by the caller.',
                     'reports|post' => 'Creates a report for exactly one target. Booking and message targets are available only to a booking participant; the response does not expose private evidence.',
                     'reports/mine|get' => 'Returns only reports filed by the authenticated caller.',
                     'admin/reports|get' => 'Returns the paginated administrative report queue; status filtering is supported.',
@@ -595,6 +668,7 @@ class AppServiceProvider extends ServiceProvider
                     'bookings|post' => 'Creates a REQUESTED booking from server-owned price and caller identity. A matching idempotency key replays the prior result; a key reused with changed business data conflicts.',
                     'bookings/quote|post' => 'Calculates the current quote without creating a booking or requiring an idempotency key.',
                     'bookings/{id}/accept|post' => 'Transitions an eligible REQUESTED booking to AWAITING_PAYMENT and creates one calendar hold; invalid state, expiry, or unavailable calendar is rejected.',
+                    'bookings/{id}/reopen-expired-payment|post' => 'Only the assigned caregiver can reopen a system-cancelled PAYMENT_EXPIRED booking. The listing and time slot must still be available; a new 15-minute payment window is created.',
                     'bookings/{id}/start|post' => 'Only the assigned caregiver can transition a CONFIRMED booking to IN_PROGRESS; the booking and its status event are committed together.',
                     'bookings/{id}/request-completion|post' => 'Only the assigned caregiver can report completion from IN_PROGRESS, transitioning the booking to AWAITING_CONFIRMATION; this does not complete or release payment.',
                     'bookings/{id}/cancel|post' => 'Cancellation behavior depends on booking/payment state. Payment void/refund processing can be queued; the response may be accepted for asynchronous processing.',
@@ -662,6 +736,24 @@ class AppServiceProvider extends ServiceProvider
                 ], ['error']));
                 $errorSchema->description = 'Standard API error envelope. `details` is omitted when there is no field or domain detail.';
                 $openApi->components->schemas['ApiErrorEnvelope'] = $errorSchema;
+
+                foreach ($openApi->paths as $path) {
+                    if (trim($path->path, '/') !== 'tokens') {
+                        continue;
+                    }
+
+                    $tokenOperation = $path->operations['post'] ?? null;
+                    foreach ($tokenOperation->responses ?? [] as $response) {
+                        if ($response instanceof Response && (string) $response->code === '201') {
+                            $response->setContent('application/json', Schema::fromType($object([
+                                'token' => $string(),
+                                'token_type' => $string('', ['Bearer']),
+                                'abilities' => $array($string()),
+                                'expires_at' => $string('date-time', [], true),
+                            ], ['token', 'token_type', 'abilities', 'expires_at'])));
+                        }
+                    }
+                }
 
                 foreach ($openApi->paths as $path) {
                     $route = trim($path->path, '/');
@@ -758,6 +850,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Gate::define('viewApiDocs', fn (User $user): bool => $user->status === 'ACTIVE' && $user->hasRole('ADMIN'));
+        Gate::define('viewTelescope', fn (User $user): bool => $user->status === 'ACTIVE' && $user->hasRole('ADMIN'));
         Gate::define(
             'viewPulse',
             static fn (User $user): bool => $user->status === 'ACTIVE'
