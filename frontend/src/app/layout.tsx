@@ -1,6 +1,7 @@
 import { SessionProvider } from "@/providers/session-provider";
 import { SiteFooter } from "@/components/layout/site-footer";
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
   description: "PETTEL - Nền tảng tìm kiếm dịch vụ chăm sóc thú cưng hàng đầu Việt Nam",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="vi" data-scroll-behavior="smooth">
       <head>
