@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Carbon\CarbonImmutable;
+use Database\Factories\AvailabilitySlotFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -13,6 +15,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class AvailabilitySlot extends Model
 {
+    /** @use HasFactory<AvailabilitySlotFactory> */
+    use HasFactory;
+
     use SoftDeletes;
 
     protected $fillable = [

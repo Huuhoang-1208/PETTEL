@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\CaregiverProfile;
+use App\Models\Pet;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -59,41 +61,28 @@ class DemoSeeder extends Seeder
                 ->where('email', 'caregiver@example.test')
                 ->firstOrFail();
 
-            $timestamp = now();
-
-            if (
-                ! DB::table('pets')
-                    ->where('user_id', $owner->id)
-                    ->where('name', 'Demo Mochi')
-                    ->exists()
-            ) {
-                DB::table('pets')->insert([
-                    'user_id' => $owner->id,
-                    'name' => 'Demo Mochi',
-                    'species' => 'DOG',
-                    'size' => 'SMALL',
-                    'sex' => 'UNKNOWN',
-                    'age_note' => 'Du lieu minh hoa',
-                    'status' => 'ACTIVE',
-                    'created_at' => $timestamp,
-                    'updated_at' => $timestamp,
-                ]);
+            if (! $owner->pets()->withTrashed()->where('name', 'Demo Mochi')->exists()) {
+                Pet::factory()
+                    ->for($owner, 'owner')
+                    ->create([
+                        'name' => 'Demo Mochi',
+                        'species' => 'DOG',
+                        'size' => 'SMALL',
+                        'sex' => 'UNKNOWN',
+                        'age_note' => 'Du lieu minh hoa',
+                        'status' => 'ACTIVE',
+                    ]);
             }
 
-            if (
-                ! DB::table('caregiver_profiles')
-                    ->where('user_id', $caregiver->id)
-                    ->exists()
-            ) {
-                DB::table('caregiver_profiles')->insert([
-                    'user_id' => $caregiver->id,
-                    'type' => 'INDIVIDUAL',
-                    'display_name' => 'Demo Pet Care',
-                    'bio' => 'Ho so minh hoa, khong phai ca nhan that.',
-                    'area_code' => 'DN_CENTER',
-                    'created_at' => $timestamp,
-                    'updated_at' => $timestamp,
-                ]);
+            if (! $caregiver->caregiverProfile()->withTrashed()->exists()) {
+                CaregiverProfile::factory()
+                    ->for($caregiver, 'user')
+                    ->create([
+                        'type' => 'INDIVIDUAL',
+                        'display_name' => 'Demo Pet Care',
+                        'bio' => 'Ho so minh hoa, khong phai ca nhan that.',
+                        'area_code' => 'DN_CENTER',
+                    ]);
             }
         });
     }
