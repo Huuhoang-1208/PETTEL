@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Database\Factories\CaregiverProfileFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,6 +15,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class CaregiverProfile extends Model
 {
+    /** @use HasFactory<CaregiverProfileFactory> */
+    use HasFactory;
+
     use SoftDeletes;
 
     protected $fillable = [

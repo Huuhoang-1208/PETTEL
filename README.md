@@ -169,6 +169,148 @@ compose.yaml                # Docker Compose
 
 `backend/public/index.php` là entry point của Laravel và vẫn cần cho API. Giao diện Next.js/React thuộc `frontend/`; không đặt component giao diện này trong `backend/resources`. Filament vẫn dùng Blade/Livewire nội bộ cho trang quản trị Laravel.
 
+## ERD cơ sở dữ liệu
+
+Sơ đồ dưới đây tóm tắt các bảng nghiệp vụ chính và quan hệ khóa ngoại trong migrations. Các bảng hạ tầng của Laravel, Pulse, Telescope và các bảng nhật ký phụ trợ được lược bớt để sơ đồ dễ đọc.
+
+```mermaid
+erDiagram
+    USERS {
+        bigint id PK
+    }
+    USER_ROLES {
+        bigint user_id PK, FK
+        string role PK
+        bigint assigned_by_user_id FK
+    }
+    PETS {
+        bigint id PK
+        bigint user_id FK
+        bigint photo_media_id FK
+    }
+    CAREGIVER_PROFILES {
+        bigint id PK
+        bigint user_id FK
+    }
+    LISTINGS {
+        bigint id PK
+        bigint caregiver_profile_id FK
+    }
+    AVAILABILITY_SLOTS {
+        bigint id PK
+        bigint listing_id FK
+        bigint created_by_user_id FK
+    }
+    LISTING_CHANGE_REQUESTS {
+        bigint id PK
+        bigint listing_id FK
+        bigint requested_by_user_id FK
+        bigint reviewed_by_user_id FK
+    }
+    MEDIA_OBJECTS {
+        bigint id PK
+        bigint owner_user_id FK
+    }
+    LISTING_MEDIA {
+        bigint listing_id PK, FK
+        bigint media_object_id PK, FK
+    }
+    BOOKINGS {
+        bigint id PK
+        bigint owner_id FK
+        bigint pet_id FK
+        bigint listing_id FK
+        bigint caregiver_user_id FK
+    }
+    BOOKING_STATUS_EVENTS {
+        bigint id PK
+        bigint booking_id FK
+        bigint actor_user_id FK
+    }
+    PAYMENT_ATTEMPTS {
+        bigint id PK
+        bigint booking_id FK
+    }
+    PAYMENT_EVENTS {
+        bigint id PK
+        bigint payment_attempt_id FK
+    }
+    MESSAGES {
+        bigint id PK
+        bigint booking_id FK
+        bigint sender_id FK
+    }
+    MESSAGE_ATTACHMENTS {
+        bigint id PK
+        bigint message_id FK
+        bigint media_object_id FK
+    }
+    CARE_UPDATES {
+        bigint id PK
+        bigint booking_id FK
+        bigint sender_id FK
+        bigint media_object_id FK
+    }
+    REVIEWS {
+        bigint id PK
+        bigint booking_id FK
+        bigint owner_id FK
+        bigint listing_id FK
+    }
+    REPORTS {
+        bigint id PK
+        bigint reporter_user_id FK
+        bigint booking_id FK
+        bigint listing_id FK
+        bigint review_id FK
+        bigint message_id FK
+    }
+    MODERATION_ACTIONS {
+        bigint id PK
+        bigint report_id FK
+        bigint admin_user_id FK
+    }
+
+    USERS ||--o{ USER_ROLES : has
+    USERS o|--o{ USER_ROLES : assigns
+    USERS ||--o{ PETS : owns
+    USERS ||--o| CAREGIVER_PROFILES : has
+    USERS ||--o{ MEDIA_OBJECTS : owns
+    USERS ||--o{ AVAILABILITY_SLOTS : creates
+    USERS ||--o{ LISTING_CHANGE_REQUESTS : requests
+    USERS o|--o{ LISTING_CHANGE_REQUESTS : reviews
+    USERS ||--o{ BOOKINGS : requests_as_owner
+    USERS ||--o{ BOOKINGS : serves_as_caregiver
+    USERS o|--o{ BOOKING_STATUS_EVENTS : acts_on
+    USERS ||--o{ MESSAGES : sends
+    USERS ||--o{ CARE_UPDATES : sends
+    USERS ||--o{ REVIEWS : writes
+    USERS ||--o{ REPORTS : files
+    USERS ||--o{ MODERATION_ACTIONS : performs
+
+    MEDIA_OBJECTS o|--o{ PETS : photo
+    CAREGIVER_PROFILES ||--o{ LISTINGS : publishes
+    LISTINGS ||--o{ AVAILABILITY_SLOTS : offers
+    LISTINGS ||--o{ LISTING_CHANGE_REQUESTS : receives
+    LISTINGS ||--o{ LISTING_MEDIA : has
+    MEDIA_OBJECTS ||--o{ LISTING_MEDIA : attached_to
+    BOOKINGS ||--o{ BOOKING_STATUS_EVENTS : records
+    BOOKINGS ||--o{ PAYMENT_ATTEMPTS : has
+    PAYMENT_ATTEMPTS o|--o{ PAYMENT_EVENTS : records
+    BOOKINGS ||--o{ MESSAGES : contains
+    MESSAGES ||--o{ MESSAGE_ATTACHMENTS : has
+    MEDIA_OBJECTS ||--o{ MESSAGE_ATTACHMENTS : attached_to
+    BOOKINGS ||--o{ CARE_UPDATES : has
+    MEDIA_OBJECTS o|--o{ CARE_UPDATES : illustrates
+    BOOKINGS ||--o| REVIEWS : may_receive
+    LISTINGS ||--o{ REVIEWS : receives
+    BOOKINGS o|--o{ REPORTS : referenced_by
+    LISTINGS o|--o{ REPORTS : referenced_by
+    REVIEWS o|--o{ REPORTS : referenced_by
+    MESSAGES o|--o{ REPORTS : referenced_by
+    REPORTS ||--o{ MODERATION_ACTIONS : has
+```
+
 ## Tài liệu
 
 - [Mục lục](<docs/00 — PETTEL Documentation Index.md>)
