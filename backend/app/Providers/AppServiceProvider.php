@@ -8,6 +8,7 @@ use App\Domain\Booking\Payment\SandboxPaymentCancellationGateway;
 use App\Domain\Booking\Payment\SandboxPaymentReleaseGateway;
 use App\Models\User;
 use App\Support\PerformanceQueryRecorder;
+use App\Support\SlowQueryAlert;
 use Carbon\CarbonImmutable;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\Combined\AnyOf;
@@ -856,6 +857,10 @@ class AppServiceProvider extends ServiceProvider
             static fn (User $user): bool => $user->status === 'ACTIVE'
                 && $user->hasRole('ADMIN')
         );
+
+        if (config('performance.slow_query_alerts.enabled')) {
+            DB::listen(SlowQueryAlert::record(...));
+        }
 
         if (config('performance.enabled') && app()->environment('performance')) {
             DB::listen(PerformanceQueryRecorder::record(...));
