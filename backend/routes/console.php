@@ -63,6 +63,10 @@ Schedule::call(fn () => $runScheduledCommand(
     ['--batch' => 100],
 ))->name('bookings:process-completion-followups')->everyMinute();
 
+Schedule::command('monitoring:check-server-resources')
+    ->everyMinute()
+    ->withoutOverlapping();
+
 if (app()->environment('local')) {
     Schedule::job(new InfrastructureHeartbeat)
         ->everyMinute()
