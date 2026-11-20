@@ -18,6 +18,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -52,7 +53,9 @@ class PublicListingController extends Controller
         }
 
         if ($pet !== null && isset($filters['space_type'])) {
-            $query->whereRelation('caregiverProfile', fn (Builder $profile) => $profile->whereJsonContains('application_data_json->space_type', $filters['space_type'])
+            $query->whereRelation(
+                'caregiverProfile',
+                fn (Builder $profile) => $profile->whereJsonContains('application_data_json->space_type', $filters['space_type'])
             );
         }
 
@@ -270,8 +273,10 @@ class PublicListingController extends Controller
                 continue;
             }
 
-            if ((is_array($skills) && in_array($signal['value'], $skills, true))
-                || (is_array($requirements) && in_array($signal['accepted'] ?? '', $requirements, true))) {
+            if (
+                (is_array($skills) && in_array($signal['value'], $skills, true))
+                || (is_array($requirements) && in_array($signal['accepted'] ?? '', $requirements, true))
+            ) {
                 $reasons[] = $signal['reason'];
             }
         }
@@ -411,7 +416,7 @@ class PublicListingController extends Controller
     /**
      * @response array{data: list<array{id: string, rating: int, body: ?string, is_demo: bool, created_at: string}>, links: array{first: string, last: string, prev: ?string, next: ?string}, meta: array{current_page: int, last_page: int, per_page: int, total: int}, rating_average: ?float, review_count: int}
      */
-    public function reviews(Request $request, string $id): AnonymousResourceCollection
+    public function reviews(Request $request, string $id): JsonResponse
     {
         $listing = $this->findPublicListing($id);
         $query = $request->query();
@@ -459,8 +464,13 @@ class PublicListingController extends Controller
                 ->orderByDesc('reviews.created_at')
                 ->orderByDesc('reviews.id')
                 ->paginate($perPage, [
-                    'reviews.id', 'reviews.rating', 'reviews.body', 'reviews.is_demo', 'reviews.created_at',
-                    'review_owners.name as owner_name', 'bookings.pet_snapshot_json',
+                    'reviews.id',
+                    'reviews.rating',
+                    'reviews.body',
+                    'reviews.is_demo',
+                    'reviews.created_at',
+                    'review_owners.name as owner_name',
+                    'bookings.pet_snapshot_json',
                 ], 'page', $page)
                 ->through(fn (stdClass $review): array => [
                     'id' => (string) $review->id,
@@ -493,11 +503,17 @@ class PublicListingController extends Controller
             $ratingDistribution[(int) $rating->rating] = (int) $rating->count;
         }
 
-        return JsonResource::collection($reviews)->additional([
-            'rating_average' => $average === null ? null : round((float) $average, 2),
-            'review_count' => (int) ($attributes['review_count'] ?? 0),
-            'rating_distribution' => $ratingDistribution,
-        ]);
+        return JsonResource::collection($reviews)
+            ->additional([
+                'rating_average' => $average === null ? null : round((float) $average, 2),
+                'review_count' => (int) ($attributes['review_count'] ?? 0),
+                'rating_distribution' => $ratingDistribution,
+            ])
+            ->response()
+            ->header(
+                'Cache-Control',
+                'public, max-age=60, s-maxage=60, stale-while-revalidate=120',
+            );
     }
 
     private function publicReviewerName(string $name): string
