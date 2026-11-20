@@ -35,13 +35,19 @@ return [
         ],
     ],
 
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
+    ],
+
     'payment_sandbox' => [
         'provider' => 'pettel_sandbox',
         'secret' => env(
             'PAYMENT_SANDBOX_SECRET',
             in_array(env('APP_ENV', 'production'), ['local', 'testing'], true)
-                ? 'pettel-local-sandbox-secret'
-                : null,
+            ? 'pettel-local-sandbox-secret'
+            : null,
         ),
         'simulation_enabled' => env(
             'PAYMENT_SANDBOX_SIMULATION_ENABLED',

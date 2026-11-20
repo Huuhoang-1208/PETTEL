@@ -1,11 +1,11 @@
 "use client";
-import Link from "next/link";
-import { PettelIcon } from "@/components/ui/pettel-icon";
 import { ApiError } from "@/components/ui/api-error";
+import { PettelIcon } from "@/components/ui/pettel-icon";
+import Link from "next/link";
 import type { AuthFormState } from "../hooks/use-auth-form";
+import styles from "../styles/form.module.css";
 import { AuthRoleSelector } from "./auth-role-selector";
 import { PasswordField } from "./password-field";
-import styles from "../styles/form.module.css";
 export function AuthForm({ auth }: { auth: AuthFormState }) {
   const { mode, role, setRole, error, busy, sent, changeMode, submit } = auth;
   const registering = mode === "register";
@@ -46,8 +46,16 @@ export function AuthForm({ auth }: { auth: AuthFormState }) {
           <>
             <AuthRoleSelector role={role} onChange={setRole} disabled={busy} />
             <div className={styles.socialOptions}>
-              <button type="button" disabled>
-                <span className={styles.googleMark}>G</span>Tiếp tục bằng tài khoản Google
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  const backendUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080").replace(/\/$/, "");
+                  window.location.href = `${backendUrl}/auth/google/redirect`;
+                }}
+              >
+                <span className={styles.googleMark}>G</span>
+                Tiếp tục bằng tài khoản Google
               </button>
               <div>
                 <button type="button" disabled>
@@ -59,7 +67,7 @@ export function AuthForm({ auth }: { auth: AuthFormState }) {
                   OTP không mật khẩu
                 </button>
               </div>
-              <small>Google, Apple và OTP sẽ sớm có mặt.</small>
+              <small>Apple ID và OTP sẽ sớm có mặt.</small>
             </div>
             <div className={styles.divider}>
               <span>hoặc qua thông tin cá nhân</span>

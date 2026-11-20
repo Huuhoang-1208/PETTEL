@@ -19,7 +19,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property array<string, mixed>|null $owner_profile_json
  * @property CarbonImmutable|null $email_verified_at
  */
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'google_id'])]
 #[Hidden(['password', 'remember_token', 'owner_profile_json'])]
 class User extends Authenticatable implements FilamentUser
 {
