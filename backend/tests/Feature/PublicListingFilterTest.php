@@ -42,7 +42,7 @@ class PublicListingFilterTest extends TestCase
     public function test_filters_return_only_matching_public_listings(array $filters, array $expected): void
     {
         $listings = $this->makeListings();
-        $response = $this->getJson('/api/listings?'.http_build_query($filters))->assertOk();
+        $response = $this->getJson('/api/v1/listings?'.http_build_query($filters))->assertOk();
 
         $this->assertSame(
             array_map(fn (string $key): string => (string) $listings[$key]->id, $expected),
@@ -56,7 +56,7 @@ class PublicListingFilterTest extends TestCase
 
         foreach (['%', '_', '!', '\\', "'", '0'] as $keyword) {
             $listings['dog']->forceFill(['title' => 'Care '.$keyword, 'description' => 'Plain'])->save();
-            $this->getJson('/api/listings?'.http_build_query(['q' => $keyword]))
+            $this->getJson('/api/v1/listings?'.http_build_query(['q' => $keyword]))
                 ->assertOk()->assertJsonCount(1, 'data')
                 ->assertJsonPath('data.0.id', (string) $listings['dog']->id);
         }
@@ -67,7 +67,7 @@ class PublicListingFilterTest extends TestCase
         $listings = $this->makeListings();
         $listings['cat']->forceFill(['description' => 'Garden'])->save();
 
-        $this->getJson('/api/listings?q=garden&service_type=BOARDING&area_code=DN_EAST')
+        $this->getJson('/api/v1/listings?q=garden&service_type=BOARDING&area_code=DN_EAST')
             ->assertOk()->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', (string) $listings['cat']->id);
     }
@@ -101,7 +101,7 @@ class PublicListingFilterTest extends TestCase
     #[DataProvider('invalidFilters')]
     public function test_invalid_filters_return_field_errors(array $filters, string $field): void
     {
-        $response = $this->getJson('/api/listings?'.http_build_query($filters))
+        $response = $this->getJson('/api/v1/listings?'.http_build_query($filters))
             ->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
 
         $this->assertArrayHasKey($field, $response->json('error.details'));
@@ -126,7 +126,7 @@ class PublicListingFilterTest extends TestCase
                 ], $invalid),
             ])->save();
 
-            $this->getJson('/api/listings?species=DOG&size=SMALL')
+            $this->getJson('/api/v1/listings?species=DOG&size=SMALL')
                 ->assertOk()->assertJsonCount(0, 'data');
         }
     }
@@ -134,7 +134,7 @@ class PublicListingFilterTest extends TestCase
     public function test_pagination_links_keep_normalized_filters(): void
     {
         $this->makeListings();
-        $response = $this->getJson('/api/listings?q=%20garden%20&species=DOG')->assertOk();
+        $response = $this->getJson('/api/v1/listings?q=%20garden%20&species=DOG')->assertOk();
         parse_str(parse_url($response->json('links.first'), PHP_URL_QUERY), $query);
 
         $this->assertSame('garden', $query['q']);

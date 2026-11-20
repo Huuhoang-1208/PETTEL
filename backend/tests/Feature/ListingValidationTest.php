@@ -25,13 +25,13 @@ class ListingValidationTest extends TestCase
         $invalid = array_replace($this->payload(), $changes);
 
         $this->assertValidationError(
-            $this->postJson('/api/caregiver/listings', $invalid),
+            $this->postJson('/api/v1/caregiver/listings', $invalid),
             $field,
         );
         $this->assertDatabaseCount('listings', 1);
 
         $this->assertValidationError(
-            $this->patchJson("/api/caregiver/listings/{$listing->id}", $changes),
+            $this->patchJson("/api/v1/caregiver/listings/{$listing->id}", $changes),
             $field,
         );
         $this->assertSame($before, $listing->fresh()->getRawOriginal());
@@ -97,7 +97,7 @@ class ListingValidationTest extends TestCase
             unset($payload[$field]);
 
             $this->assertValidationError(
-                $this->postJson('/api/caregiver/listings', $payload),
+                $this->postJson('/api/v1/caregiver/listings', $payload),
                 $field,
             );
         }
@@ -118,7 +118,7 @@ class ListingValidationTest extends TestCase
             'sizes' => ['SMALL', 'MEDIUM', 'LARGE'],
         ];
 
-        $this->postJson('/api/caregiver/listings', $payload)
+        $this->postJson('/api/v1/caregiver/listings', $payload)
             ->assertCreated()->assertJsonPath('data.title', str_repeat('é', 120))
             ->assertJsonPath('data.description', str_repeat('đ', 2000))
             ->assertJsonPath('data.capacity', 1);
@@ -129,7 +129,7 @@ class ListingValidationTest extends TestCase
 
         foreach (['DN_CENTER', 'DN_NORTH', 'DN_SOUTH', 'DN_WEST', 'DN_EAST'] as $area) {
             $payload['area_code'] = $area;
-            $this->postJson('/api/caregiver/listings', $payload)
+            $this->postJson('/api/v1/caregiver/listings', $payload)
                 ->assertCreated()->assertJsonPath('data.area_code', $area)
                 ->assertJsonPath('data.price_vnd', PHP_INT_MAX);
         }
@@ -145,11 +145,11 @@ class ListingValidationTest extends TestCase
 
         foreach ([1, 2, 0, null] as $capacity) {
             $this->assertValidationError(
-                $this->postJson('/api/caregiver/listings', $this->payload() + ['capacity' => $capacity]),
+                $this->postJson('/api/v1/caregiver/listings', $this->payload() + ['capacity' => $capacity]),
                 'capacity',
             );
             $this->assertValidationError(
-                $this->patchJson("/api/caregiver/listings/{$listing->id}", ['capacity' => $capacity]),
+                $this->patchJson("/api/v1/caregiver/listings/{$listing->id}", ['capacity' => $capacity]),
                 'capacity',
             );
         }
@@ -164,7 +164,7 @@ class ListingValidationTest extends TestCase
         $this->actingAs($user);
         $listing = $this->draft($user);
         $rules = ['schema_version' => 1, 'species' => ['DOG'], 'sizes' => ['LARGE']];
-        $url = "/api/caregiver/listings/{$listing->id}";
+        $url = "/api/v1/caregiver/listings/{$listing->id}";
 
         $this->patchJson($url, ['acceptance_rules_json' => $rules])
             ->assertOk()->assertJsonPath('data.acceptance_rules_json.schema_version', 1)

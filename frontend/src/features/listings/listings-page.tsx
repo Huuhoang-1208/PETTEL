@@ -16,10 +16,10 @@ export function ListingsPage() {
   const router = useRouter();
   const query = useSearchParams();
   const { user } = useSession();
-  const pets = useApi<Page<Pet>>(user ? "/api/pets" : null);
+  const pets = useApi<Page<Pet>>(user ? "/api/v1/pets" : null);
   const apiQuery = new URLSearchParams(query.toString());
   apiQuery.set("per_page", "5");
-  const resource = useApi<Page<Listing>>(`/api/listings?${apiQuery.toString()}`);
+  const resource = useApi<Page<Listing>>(`/api/v1/listings?${apiQuery.toString()}`);
   const [formError, setFormError] = useState<unknown>();
   function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

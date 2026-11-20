@@ -15,7 +15,7 @@ class PetProfileTest extends TestCase
     {
         $owner = $this->userWithRole('OWNER');
 
-        $created = $this->actingAs($owner)->postJson('/api/pets', [
+        $created = $this->actingAs($owner)->postJson('/api/v1/pets', [
             'name' => 'Milo',
             'species' => 'DOG',
         ]);
@@ -27,29 +27,29 @@ class PetProfileTest extends TestCase
 
         $petId = $created->json('data.id');
 
-        $this->getJson('/api/pets')->assertOk()->assertJsonCount(1, 'data');
-        $this->patchJson("/api/pets/{$petId}", ['name' => 'Milo Jr.'])
+        $this->getJson('/api/v1/pets')->assertOk()->assertJsonCount(1, 'data');
+        $this->patchJson("/api/v1/pets/{$petId}", ['name' => 'Milo Jr.'])
             ->assertOk()
             ->assertJsonPath('data.name', 'Milo Jr.');
-        $this->patchJson("/api/pets/{$petId}/archive", [])
+        $this->patchJson("/api/v1/pets/{$petId}/archive", [])
             ->assertOk()
             ->assertJsonPath('data.status', 'ARCHIVED');
-        $this->patchJson("/api/pets/{$petId}/activate", [])
+        $this->patchJson("/api/v1/pets/{$petId}/activate", [])
             ->assertOk()
             ->assertJsonPath('data.status', 'ACTIVE');
-        $this->deleteJson("/api/pets/{$petId}")->assertNoContent();
+        $this->deleteJson("/api/v1/pets/{$petId}")->assertNoContent();
 
         $this->assertSoftDeleted('pets', ['id' => $petId]);
         $this->assertDatabaseHas('pets', ['id' => $petId, 'name' => 'Milo Jr.']);
-        $this->getJson('/api/pets')->assertOk()->assertJsonCount(0, 'data');
+        $this->getJson('/api/v1/pets')->assertOk()->assertJsonCount(0, 'data');
     }
 
     public function test_pet_routes_require_an_active_owner_and_hide_other_owners_pets(): void
     {
-        $this->getJson('/api/pets')->assertUnauthorized();
+        $this->getJson('/api/v1/pets')->assertUnauthorized();
 
         $caregiver = $this->userWithRole('CAREGIVER');
-        $this->actingAs($caregiver)->postJson('/api/pets', [
+        $this->actingAs($caregiver)->postJson('/api/v1/pets', [
             'name' => 'Milo',
             'species' => 'DOG',
         ])->assertForbidden();
@@ -58,26 +58,26 @@ class PetProfileTest extends TestCase
         $otherOwner = $this->userWithRole('OWNER');
         $pet = $otherOwner->pets()->create(['name' => 'Luna', 'species' => 'CAT']);
 
-        $this->actingAs($owner, 'web')->getJson("/api/pets/{$pet->id}")->assertNotFound();
-        $this->patchJson("/api/pets/{$pet->id}", ['name' => 'Stolen'])->assertNotFound();
-        $this->deleteJson("/api/pets/{$pet->id}")->assertNotFound();
+        $this->actingAs($owner, 'web')->getJson("/api/v1/pets/{$pet->id}")->assertNotFound();
+        $this->patchJson("/api/v1/pets/{$pet->id}", ['name' => 'Stolen'])->assertNotFound();
+        $this->deleteJson("/api/v1/pets/{$pet->id}")->assertNotFound();
         $this->assertDatabaseHas('pets', ['id' => $pet->id, 'name' => 'Luna', 'deleted_at' => null]);
 
         $inactiveOwner = $this->userWithRole('OWNER', ['status' => 'DELETION_PENDING']);
-        $this->actingAs($inactiveOwner)->getJson('/api/pets')->assertForbidden();
+        $this->actingAs($inactiveOwner)->getJson('/api/v1/pets')->assertForbidden();
     }
 
     public function test_pet_input_is_normalized_and_validated(): void
     {
         $owner = $this->userWithRole('OWNER');
 
-        $this->actingAs($owner)->postJson('/api/pets', [
+        $this->actingAs($owner)->postJson('/api/v1/pets', [
             'name' => "  Cafe\u{0301}  ",
             'species' => 'DOG',
             'birth_date' => now()->subYear()->toDateString(),
         ])->assertCreated()->assertJsonPath('data.name', 'Café');
 
-        $this->postJson('/api/pets', [
+        $this->postJson('/api/v1/pets', [
             'name' => 'Future pet',
             'species' => 'BIRD',
             'birth_date' => now()->addDay()->toDateString(),
@@ -95,20 +95,20 @@ class PetProfileTest extends TestCase
         $ownedMedia = $this->mediaFor($owner);
         $foreignMedia = $this->mediaFor($otherOwner);
 
-        $this->actingAs($owner)->postJson('/api/pets', [
+        $this->actingAs($owner)->postJson('/api/v1/pets', [
             'name' => 'Milo',
             'species' => 'DOG',
             'photo_media_id' => $ownedMedia,
         ])->assertCreated()->assertJsonPath('data.photo_media_id', (string) $ownedMedia);
 
-        $this->postJson('/api/pets', [
+        $this->postJson('/api/v1/pets', [
             'name' => 'Luna',
             'species' => 'CAT',
             'photo_media_id' => $foreignMedia,
         ])->assertUnprocessable()->assertJsonValidationErrors('photo_media_id');
 
         $pendingMedia = $this->mediaFor($owner, 'PENDING_DELETE');
-        $this->postJson('/api/pets', [
+        $this->postJson('/api/v1/pets', [
             'name' => 'Pending photo',
             'species' => 'DOG',
             'photo_media_id' => $pendingMedia,
@@ -134,7 +134,7 @@ class PetProfileTest extends TestCase
         $this->assertArrayNotHasKey('user_id', $snapshot);
         $this->assertArrayNotHasKey('photo_media_id', $snapshot);
 
-        $this->actingAs($owner)->patchJson("/api/pets/{$pet->id}", [
+        $this->actingAs($owner)->patchJson("/api/v1/pets/{$pet->id}", [
             'diet_notes' => 'No fish',
         ])->assertOk();
 

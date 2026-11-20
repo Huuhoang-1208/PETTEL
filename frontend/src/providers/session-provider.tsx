@@ -13,7 +13,7 @@ export const Session = createContext<{
 }>({ user: null, loading: true, error: null, refresh: () => {} });
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const resource = useApi<User>("/api/user");
+  const resource = useApi<User>("/api/v1/user");
   return (
     <Session.Provider
       value={{

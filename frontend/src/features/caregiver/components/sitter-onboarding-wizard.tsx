@@ -71,7 +71,7 @@ export function SitterOnboardingWizard({ userName, userEmail, onComplete }: Prop
   async function uploadPrivateImage(file: File): Promise<number> {
     const body = new FormData();
     body.set("file", file);
-    const uploaded = await write<{ data: { id: string } }>("post", "/api/caregiver/media", body);
+    const uploaded = await write<{ data: { id: string } }>("post", "/api/v1/caregiver/media", body);
     return Number(uploaded.data.id);
   }
 
@@ -112,8 +112,8 @@ export function SitterOnboardingWizard({ userName, userEmail, onComplete }: Prop
           care_commitment: form.get("care_commitment") === "on",
         },
       };
-      await write("post", "/api/user/roles/caregiver");
-      await write("post", "/api/caregiver/profile", {
+      await write("post", "/api/v1/user/roles/caregiver");
+      await write("post", "/api/v1/caregiver/profile", {
         display_name: displayName.trim(),
         type,
         area_code: area,
@@ -143,8 +143,8 @@ export function SitterOnboardingWizard({ userName, userEmail, onComplete }: Prop
       ];
 
       for (const listing of listingPayloads) {
-        const created = await write<{ data: { id: number } }>("post", "/api/caregiver/listings", listing);
-        await write("post", `/api/caregiver/listings/${created.data.id}/submit`, {});
+        const created = await write<{ data: { id: number } }>("post", "/api/v1/caregiver/listings", listing);
+        await write("post", `/api/v1/caregiver/listings/${created.data.id}/submit`, {});
       }
       onComplete();
     } catch (failure) {

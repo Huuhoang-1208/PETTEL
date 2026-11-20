@@ -115,7 +115,7 @@ class PublicListingAvailabilityTest extends TestCase
         $this->search($fixture)->assertOk()
             ->assertJsonCount($blocked ? 0 : 1, 'data');
 
-        $this->postJson('/api/bookings/quote', $fixture['payload'])
+        $this->postJson('/api/v1/bookings/quote', $fixture['payload'])
             ->assertStatus($blocked ? 409 : 200);
     }
 
@@ -130,7 +130,7 @@ class PublicListingAvailabilityTest extends TestCase
 
         $this->search($fixture)->assertOk()->assertJsonCount(0, 'data');
 
-        $this->postJson('/api/bookings/quote', $fixture['payload'])
+        $this->postJson('/api/v1/bookings/quote', $fixture['payload'])
             ->assertConflict()
             ->assertJsonPath('error.code', 'AVAILABILITY_CONFLICT');
 
@@ -143,7 +143,7 @@ class PublicListingAvailabilityTest extends TestCase
         $fixture['booking']->forceFill(['status' => 'CANCELLED'])->save();
 
         $this->search($fixture)->assertOk()->assertJsonCount(1, 'data');
-        $this->postJson('/api/bookings/quote', $fixture['payload'])->assertOk();
+        $this->postJson('/api/v1/bookings/quote', $fixture['payload'])->assertOk();
     }
 
     /** @return array<string, array{string, bool}> */
@@ -195,7 +195,7 @@ class PublicListingAvailabilityTest extends TestCase
             [[...$base, 'start_at' => now()->subDay()->toIso8601String()], 'start_at'],
             [[...$base, 'end_at' => 'invalid'], 'end_at'],
         ] as [$query, $field]) {
-            $response = $this->getJson('/api/listings?'.http_build_query($query))
+            $response = $this->getJson('/api/v1/listings?'.http_build_query($query))
                 ->assertUnprocessable()
                 ->assertJsonPath('error.code', 'VALIDATION_ERROR');
 
@@ -209,8 +209,8 @@ class PublicListingAvailabilityTest extends TestCase
         $fixture['booking']->forceFill(['status' => 'CONFIRMED'])->save();
 
         $this->search($fixture)->assertOk()->assertJsonCount(0, 'data');
-        $this->getJson('/api/listings')->assertOk()->assertJsonCount(1, 'data');
-        $this->getJson("/api/listings/{$fixture['active_listing_id']}")->assertOk();
+        $this->getJson('/api/v1/listings')->assertOk()->assertJsonCount(1, 'data');
+        $this->getJson("/api/v1/listings/{$fixture['active_listing_id']}")->assertOk();
     }
 
     public function test_daycare_cannot_accept_a_two_day_search(): void
@@ -232,6 +232,6 @@ class PublicListingAvailabilityTest extends TestCase
             'service_type' => 'DAYCARE',
         ], $overrides);
 
-        return $this->getJson('/api/listings?'.http_build_query($query));
+        return $this->getJson('/api/v1/listings?'.http_build_query($query));
     }
 }

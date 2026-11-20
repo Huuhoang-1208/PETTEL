@@ -28,12 +28,12 @@ const tabs: { id: string; label: string; icon: PettelIconName }[] = [
 
 export function OwnerDashboard() {
   const { user, refresh } = useSession();
-  const profileResource = useApi<{ data: OwnerProfile }>("/api/owner-profile");
+  const profileResource = useApi<{ data: OwnerProfile }>("/api/v1/owner-profile");
   const [petPage, setPetPage] = useState(1);
   const [bookingPage, setBookingPage] = useState(1);
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
-  const petsResource = useApi<Page<Pet>>(`/api/pets?page=${petPage}`);
-  const bookingsResource = useApi<Page<Booking>>(`/api/owner-profile/bookings?page=${bookingPage}`);
+  const petsResource = useApi<Page<Pet>>(`/api/v1/pets?page=${petPage}`);
+  const bookingsResource = useApi<Page<Booking>>(`/api/v1/owner-profile/bookings?page=${bookingPage}`);
   const profile = profileResource.data?.data;
   const pets = (petsResource.data?.data ?? []).filter((pet) => pet.status === "ACTIVE");
   const bookings = bookingsResource.data?.data ?? [];
@@ -106,12 +106,12 @@ export function OwnerDashboard() {
         upload.append("file", photo);
         const media = await write<{ data: { id: string } }>(
           "post",
-          "/api/owner-profile/media",
+          "/api/v1/owner-profile/media",
           upload,
         );
         payload.avatar_media_id = media.data.id;
       }
-      await write("patch", "/api/owner-profile", payload);
+      await write("patch", "/api/v1/owner-profile", payload);
       profileResource.reload();
       refresh();
       setEditingProfile(false);
@@ -154,7 +154,7 @@ export function OwnerDashboard() {
       if (photo instanceof File && photo.size > 0) {
         const upload = new FormData();
         upload.append("file", photo);
-        const media = await write<{ data: { id: string } }>("post", "/api/pets/media", upload);
+        const media = await write<{ data: { id: string } }>("post", "/api/v1/pets/media", upload);
         payload.photo_media_id = media.data.id;
       } else if (editingPet?.photo_media_id) payload.photo_media_id = editingPet.photo_media_id;
       if (vaccinationRecordPhoto instanceof File && vaccinationRecordPhoto.size > 0) {
@@ -165,13 +165,13 @@ export function OwnerDashboard() {
           throw new Error("Chọn ảnh sổ tiêm JPG, PNG hoặc WebP tối đa 5 MB.");
         const upload = new FormData();
         upload.append("file", vaccinationRecordPhoto);
-        const media = await write<{ data: { id: string } }>("post", "/api/pets/media", upload);
+        const media = await write<{ data: { id: string } }>("post", "/api/v1/pets/media", upload);
         payload.vaccination_record_media_id = media.data.id;
       } else if (editingPet?.vaccination_record_media_id)
         payload.vaccination_record_media_id = editingPet.vaccination_record_media_id;
       await write(
         editingPet ? "patch" : "post",
-        editingPet ? `/api/pets/${editingPet.id}` : "/api/pets",
+        editingPet ? `/api/v1/pets/${editingPet.id}` : "/api/v1/pets",
         payload,
       );
       petsResource.reload();

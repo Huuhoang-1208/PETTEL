@@ -12,7 +12,7 @@ import { useState } from "react";
 
 export function BookingList() {
   const [page, setPage] = useState(1);
-  const bookings = useApi<Page<Booking>>(`/api/bookings?page=${page}`, 15000);
+  const bookings = useApi<Page<Booking>>(`/api/v1/bookings?page=${page}`, 15000);
   const query = useSearchParams();
   const [selected, setSelected] = useState<string | null>(null);
   const id = selected ?? query.get("open");

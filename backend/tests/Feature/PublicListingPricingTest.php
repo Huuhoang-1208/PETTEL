@@ -32,7 +32,7 @@ class PublicListingPricingTest extends TestCase
 
         foreach ($response->json('data') as $item) {
             $quote = $this->actingAs($fixture['owner'])
-                ->postJson('/api/bookings/quote', [
+                ->postJson('/api/v1/bookings/quote', [
                     ...$fixture['payload'],
                     'listing_id' => $item['id'],
                 ])->assertOk();
@@ -107,7 +107,7 @@ class PublicListingPricingTest extends TestCase
     {
         [, $listings] = $this->makeListings();
 
-        $response = $this->getJson('/api/listings?per_page=50')->assertOk();
+        $response = $this->getJson('/api/v1/listings?per_page=50')->assertOk();
 
         $this->assertSame(
             $this->ids($listings, ['base', 'cheap', 'tie', 'costly']),
@@ -177,7 +177,7 @@ class PublicListingPricingTest extends TestCase
 
         $boarding = $this->copyListing($daycare, 150000, 'BOARDING');
 
-        $response = $this->getJson('/api/listings?'.http_build_query([
+        $response = $this->getJson('/api/v1/listings?'.http_build_query([
             'start_at' => $start->format('Y-m-d\TH:i:s.u\Z'),
             'end_at' => $end->format('Y-m-d\TH:i:s.u\Z'),
         ]))->assertOk();
@@ -286,7 +286,7 @@ class PublicListingPricingTest extends TestCase
 
     private function url(array $fixture, array $filters = []): string
     {
-        return '/api/listings?'.http_build_query(array_replace([
+        return '/api/v1/listings?'.http_build_query(array_replace([
             'start_at' => $fixture['payload']['start_at'],
             'end_at' => $fixture['payload']['end_at'],
         ], $filters));

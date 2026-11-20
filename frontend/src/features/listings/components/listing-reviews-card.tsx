@@ -27,7 +27,7 @@ function initials(name: string): string {
 export function ListingReviewsCard({ listing }: { listing: Listing }) {
   const [page, setPage] = useState(1);
   const [previousItems, setPreviousItems] = useState<Review[]>([]);
-  const reviews = useApi<ReviewPage>(`/api/listings/${listing.id}/reviews?page=${page}&per_page=3`);
+  const reviews = useApi<ReviewPage>(`/api/v1/listings/${listing.id}/reviews?page=${page}&per_page=3`);
 
   const items = previousItems.concat(reviews.data?.data ?? []);
 

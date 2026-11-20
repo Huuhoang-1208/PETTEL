@@ -25,44 +25,44 @@ class ListingChangeRequestContractTest extends TestCase
         $id = $fixture['active_listing_id'];
         $version = 1;
 
-        $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$id}/change-requests", [
+        $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$id}/change-requests", [
             'base_listing_version' => $version,
             'changes' => ['title' => 'Test daycare'],
         ])->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
-        $this->postJson("/api/caregiver/listings/{$id}/change-requests", [
+        $this->postJson("/api/v1/caregiver/listings/{$id}/change-requests", [
             'base_listing_version' => $version,
             'changes' => ['internal_field' => 'not allowed'],
         ])->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
-        $this->postJson("/api/caregiver/listings/{$id}/change-requests", [
+        $this->postJson("/api/v1/caregiver/listings/{$id}/change-requests", [
             'base_listing_version' => 99,
             'changes' => ['title' => 'Stale proposal'],
         ])->assertConflict()->assertJsonPath('error.code', 'VERSION_CONFLICT');
-        $this->postJson("/api/caregiver/listings/{$id}/change-requests", [
+        $this->postJson("/api/v1/caregiver/listings/{$id}/change-requests", [
             'base_listing_version' => $version,
             'changes' => ['media' => [[
                 'media_object_id' => '1', 'sort_order' => 1, 'object_key' => 'forged/key',
             ]]],
         ])->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
 
-        $created = $this->postJson("/api/caregiver/listings/{$id}/change-requests", [
+        $created = $this->postJson("/api/v1/caregiver/listings/{$id}/change-requests", [
             'base_listing_version' => $version,
             'changes' => ['title' => 'Proposed title'],
         ])->assertCreated()->assertJsonPath('data.status', 'PENDING_REVIEW');
         $requestId = $created->json('data.id');
         $this->assertDatabaseHas('listings', ['id' => $id, 'title' => 'Test daycare', 'version' => 1]);
-        $this->getJson("/api/listings/{$id}")->assertOk()->assertJsonPath('data.title', 'Test daycare');
-        $this->postJson("/api/caregiver/listings/{$id}/change-requests", [
+        $this->getJson("/api/v1/listings/{$id}")->assertOk()->assertJsonPath('data.title', 'Test daycare');
+        $this->postJson("/api/v1/caregiver/listings/{$id}/change-requests", [
             'base_listing_version' => $version,
             'changes' => ['description' => 'Second pending proposal'],
         ])->assertConflict()->assertJsonPath('error.code', 'INVALID_STATE');
 
-        $this->getJson("/api/caregiver/listings/{$id}/change-requests")->assertOk();
-        $this->getJson("/api/caregiver/listings/{$id}/change-requests/{$requestId}")
+        $this->getJson("/api/v1/caregiver/listings/{$id}/change-requests")->assertOk();
+        $this->getJson("/api/v1/caregiver/listings/{$id}/change-requests/{$requestId}")
             ->assertOk()->assertJsonPath('data.status', 'PENDING_REVIEW');
         $this->actingAs($fixture['other_caregiver'])
-            ->getJson("/api/caregiver/listings/{$id}/change-requests/{$requestId}")->assertNotFound();
+            ->getJson("/api/v1/caregiver/listings/{$id}/change-requests/{$requestId}")->assertNotFound();
         $this->actingAs($caregiver)
-            ->getJson("/api/caregiver/listings/{$fixture['draft_listing_id']}/change-requests/{$requestId}")->assertNotFound();
+            ->getJson("/api/v1/caregiver/listings/{$fixture['draft_listing_id']}/change-requests/{$requestId}")->assertNotFound();
     }
 
     public function test_owner_can_withdraw_pending_request_without_changing_listing_or_deleting_proposed_media(): void
@@ -74,7 +74,7 @@ class ListingChangeRequestContractTest extends TestCase
         $media = $this->media($caregiver);
         Storage::disk('local')->put($media->object_key, 'image-bytes');
         Storage::disk('local')->put($this->thumbnailKey($media->object_key), 'thumbnail-bytes');
-        $created = $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$id}/change-requests", [
+        $created = $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$id}/change-requests", [
             'base_listing_version' => 1,
             'changes' => [
                 'title' => 'Proposed title',
@@ -84,9 +84,9 @@ class ListingChangeRequestContractTest extends TestCase
         $requestId = $created->json('data.id');
 
         $this->actingAs($fixture['other_caregiver'])
-            ->postJson("/api/caregiver/listings/{$id}/change-requests/{$requestId}/withdraw")->assertNotFound();
+            ->postJson("/api/v1/caregiver/listings/{$id}/change-requests/{$requestId}/withdraw")->assertNotFound();
         $this->actingAs($caregiver)
-            ->postJson("/api/caregiver/listings/{$id}/change-requests/{$requestId}/withdraw")
+            ->postJson("/api/v1/caregiver/listings/{$id}/change-requests/{$requestId}/withdraw")
             ->assertOk()->assertJsonPath('data.status', 'WITHDRAWN');
         $this->assertDatabaseHas('listing_change_requests', [
             'id' => $requestId, 'status' => 'WITHDRAWN', 'reviewed_by_user_id' => null,
@@ -100,8 +100,8 @@ class ListingChangeRequestContractTest extends TestCase
         $this->assertDatabaseHas('media_objects', ['id' => $media->id, 'state' => 'READY', 'visibility' => 'PRIVATE']);
         Storage::disk('local')->assertExists($media->object_key);
         Storage::disk('local')->assertExists($this->thumbnailKey($media->object_key));
-        $this->getJson("/api/listings/{$id}")->assertOk()->assertJsonPath('data.title', 'Test daycare')->assertJsonPath('data.media', []);
-        $this->postJson("/api/caregiver/listings/{$id}/change-requests/{$requestId}/withdraw")->assertConflict();
+        $this->getJson("/api/v1/listings/{$id}")->assertOk()->assertJsonPath('data.title', 'Test daycare')->assertJsonPath('data.media', []);
+        $this->postJson("/api/v1/caregiver/listings/{$id}/change-requests/{$requestId}/withdraw")->assertConflict();
     }
 
     public function test_approved_request_applies_content_and_media_once_without_changing_booking_snapshots(): void
@@ -114,7 +114,7 @@ class ListingChangeRequestContractTest extends TestCase
         $media = $this->media($caregiver);
         $bookingBefore = DB::table('bookings')->where('id', $fixture['booking']->id)->first();
         $eventsBefore = DB::table('booking_status_events')->where('booking_id', $fixture['booking']->id)->get()->toArray();
-        $created = $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$id}/change-requests", [
+        $created = $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$id}/change-requests", [
             'base_listing_version' => 1,
             'changes' => [
                 'title' => 'Approved title',
@@ -123,9 +123,9 @@ class ListingChangeRequestContractTest extends TestCase
             ],
         ])->assertCreated();
         $requestId = $created->json('data.id');
-        $this->getJson("/api/listings/{$id}")->assertOk()->assertJsonPath('data.title', 'Test daycare');
+        $this->getJson("/api/v1/listings/{$id}")->assertOk()->assertJsonPath('data.title', 'Test daycare');
 
-        $this->actingAs($admin)->postJson("/api/admin/listings/{$id}/change-requests/{$requestId}/approve")
+        $this->actingAs($admin)->postJson("/api/v1/admin/listings/{$id}/change-requests/{$requestId}/approve")
             ->assertOk()->assertJsonPath('data.status', 'APPROVED')->assertJsonPath('data.listing_version', 2);
         $this->assertDatabaseHas('listings', ['id' => $id, 'title' => 'Approved title', 'price_vnd' => 60000, 'version' => 2]);
         $this->assertDatabaseHas('listing_media', ['listing_id' => $id, 'media_object_id' => $media->id, 'sort_order' => 1]);
@@ -134,7 +134,7 @@ class ListingChangeRequestContractTest extends TestCase
         $this->assertEquals($eventsBefore, DB::table('booking_status_events')->where('booking_id', $fixture['booking']->id)->get()->toArray());
         $this->assertSame(1, DB::table('audit_logs')->where('action', 'LISTING_CHANGE_APPROVED')->where('resource_id', $id)->count());
 
-        $this->actingAs($admin, 'web')->postJson("/api/admin/listings/{$id}/change-requests/{$requestId}/approve")->assertConflict();
+        $this->actingAs($admin, 'web')->postJson("/api/v1/admin/listings/{$id}/change-requests/{$requestId}/approve")->assertConflict();
         $this->assertDatabaseHas('listings', ['id' => $id, 'title' => 'Approved title', 'version' => 2]);
         $this->assertSame(1, DB::table('audit_logs')->where('action', 'LISTING_CHANGE_APPROVED')->where('resource_id', $id)->count());
     }
@@ -146,7 +146,7 @@ class ListingChangeRequestContractTest extends TestCase
         $admin = $this->admin();
         $id = $fixture['active_listing_id'];
         $media = $this->media($caregiver);
-        $created = $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$id}/change-requests", [
+        $created = $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$id}/change-requests", [
             'base_listing_version' => 1,
             'changes' => [
                 'title' => 'Rejected title',
@@ -155,18 +155,18 @@ class ListingChangeRequestContractTest extends TestCase
         ])->assertCreated();
         $requestId = $created->json('data.id');
 
-        $this->actingAs($admin)->postJson("/api/admin/listings/{$id}/change-requests/{$requestId}/reject")
+        $this->actingAs($admin)->postJson("/api/v1/admin/listings/{$id}/change-requests/{$requestId}/reject")
             ->assertUnprocessable();
-        $this->actingAs($admin, 'web')->postJson("/api/admin/listings/{$id}/change-requests/{$requestId}/reject", ['reason' => 'Please retain the current approved content.'])
+        $this->actingAs($admin, 'web')->postJson("/api/v1/admin/listings/{$id}/change-requests/{$requestId}/reject", ['reason' => 'Please retain the current approved content.'])
             ->assertOk()->assertJsonPath('data.status', 'REJECTED');
-        $this->getJson("/api/listings/{$id}")->assertOk()->assertJsonPath('data.title', 'Test daycare')->assertJsonPath('data.media', []);
+        $this->getJson("/api/v1/listings/{$id}")->assertOk()->assertJsonPath('data.title', 'Test daycare')->assertJsonPath('data.media', []);
         $this->assertDatabaseHas('listings', ['id' => $id, 'title' => 'Test daycare', 'version' => 1]);
         $this->assertDatabaseHas('media_objects', ['id' => $media->id, 'visibility' => 'PRIVATE', 'state' => 'READY']);
         $this->assertDatabaseHas('audit_logs', [
             'action' => 'LISTING_CHANGE_REJECTED', 'resource_id' => $id,
             'reason' => 'Please retain the current approved content.',
         ]);
-        $this->postJson("/api/admin/listings/{$id}/change-requests/{$requestId}/reject", ['reason' => 'Replay'])->assertConflict();
+        $this->postJson("/api/v1/admin/listings/{$id}/change-requests/{$requestId}/reject", ['reason' => 'Replay'])->assertConflict();
     }
 
     public function test_suspended_listing_change_approval_does_not_restore_it_and_ineligible_caregiver_cannot_be_approved(): void
@@ -176,13 +176,13 @@ class ListingChangeRequestContractTest extends TestCase
         $admin = $this->admin();
         $id = $fixture['active_listing_id'];
         DB::table('listings')->where('id', $id)->update(['status' => 'SUSPENDED', 'suspension_source' => 'CAREGIVER']);
-        $created = $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$id}/change-requests", [
+        $created = $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$id}/change-requests", [
             'base_listing_version' => 1,
             'changes' => ['title' => 'Approved while suspended'],
         ])->assertCreated();
         $requestId = $created->json('data.id');
 
-        $this->actingAs($admin)->postJson("/api/admin/listings/{$id}/change-requests/{$requestId}/approve")
+        $this->actingAs($admin)->postJson("/api/v1/admin/listings/{$id}/change-requests/{$requestId}/approve")
             ->assertOk()->assertJsonPath('data.status', 'APPROVED');
         $this->assertDatabaseHas('listings', [
             'id' => $id, 'status' => 'SUSPENDED', 'suspension_source' => 'CAREGIVER',
@@ -191,12 +191,12 @@ class ListingChangeRequestContractTest extends TestCase
 
         $other = ListingFixture::make();
         $otherId = $other['active_listing_id'];
-        $pending = $this->actingAs($other['caregiver'])->postJson("/api/caregiver/listings/{$otherId}/change-requests", [
+        $pending = $this->actingAs($other['caregiver'])->postJson("/api/v1/caregiver/listings/{$otherId}/change-requests", [
             'base_listing_version' => 1, 'changes' => ['title' => 'Must not be approved'],
         ])->assertCreated();
         $other['caregiver']->status = 'DEACTIVATED';
         $other['caregiver']->save();
-        $this->actingAs($admin)->postJson("/api/admin/listings/{$otherId}/change-requests/{$pending->json('data.id')}/approve")
+        $this->actingAs($admin)->postJson("/api/v1/admin/listings/{$otherId}/change-requests/{$pending->json('data.id')}/approve")
             ->assertConflict()->assertJsonPath('error.code', 'INVALID_STATE');
         $this->assertDatabaseHas('listing_change_requests', ['id' => $pending->json('data.id'), 'status' => 'PENDING_REVIEW']);
         $this->assertDatabaseHas('listings', ['id' => $otherId, 'title' => 'Test daycare', 'version' => 1]);
@@ -208,12 +208,12 @@ class ListingChangeRequestContractTest extends TestCase
         $caregiver = $fixture['caregiver'];
         $admin = $this->admin();
         $id = $fixture['active_listing_id'];
-        $created = $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$id}/change-requests", [
+        $created = $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$id}/change-requests", [
             'base_listing_version' => 1, 'changes' => ['title' => 'Stale title'],
         ])->assertCreated();
         DB::table('listings')->where('id', $id)->update(['version' => 2]);
 
-        $this->actingAs($admin)->postJson("/api/admin/listings/{$id}/change-requests/{$created->json('data.id')}/approve")
+        $this->actingAs($admin)->postJson("/api/v1/admin/listings/{$id}/change-requests/{$created->json('data.id')}/approve")
             ->assertConflict()->assertJsonPath('error.code', 'VERSION_CONFLICT');
         $this->assertDatabaseHas('listing_change_requests', ['id' => $created->json('data.id'), 'status' => 'PENDING_REVIEW']);
         $this->assertDatabaseHas('listings', ['id' => $id, 'title' => 'Test daycare', 'version' => 2]);
@@ -225,13 +225,13 @@ class ListingChangeRequestContractTest extends TestCase
         $caregiver = $fixture['caregiver'];
         DB::table('user_roles')->insert(['user_id' => $caregiver->id, 'role' => 'ADMIN', 'assigned_at' => now()]);
         $id = $fixture['active_listing_id'];
-        $created = $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$id}/change-requests", [
+        $created = $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$id}/change-requests", [
             'base_listing_version' => 1, 'changes' => ['title' => 'Self approved'],
         ])->assertCreated();
         $requestId = $created->json('data.id');
 
-        $this->postJson("/api/admin/listings/{$id}/change-requests/{$requestId}/approve")->assertForbidden();
-        $this->postJson("/api/admin/listings/{$id}/change-requests/{$requestId}/reject", ['reason' => 'Self reject'])->assertForbidden();
+        $this->postJson("/api/v1/admin/listings/{$id}/change-requests/{$requestId}/approve")->assertForbidden();
+        $this->postJson("/api/v1/admin/listings/{$id}/change-requests/{$requestId}/reject", ['reason' => 'Self reject'])->assertForbidden();
         $this->assertDatabaseHas('listing_change_requests', ['id' => $requestId, 'status' => 'PENDING_REVIEW']);
         $this->assertDatabaseHas('listings', ['id' => $id, 'title' => 'Test daycare', 'version' => 1]);
     }
@@ -247,7 +247,7 @@ class ListingChangeRequestContractTest extends TestCase
             $oldMedia = $this->media($caregiver, 'PUBLIC_ELIGIBLE');
             $newMedia = $this->media($caregiver);
             DB::table('listing_media')->insert(['listing_id' => $id, 'media_object_id' => $oldMedia->id, 'sort_order' => 1]);
-            $created = $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$id}/change-requests", [
+            $created = $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$id}/change-requests", [
                 'base_listing_version' => 1,
                 'changes' => [
                     'title' => 'Must roll back',
@@ -267,7 +267,7 @@ class ListingChangeRequestContractTest extends TestCase
             }
             $this->app->instance(ListingWorkflow::class, $workflow);
 
-            $this->actingAs($admin)->postJson("/api/admin/listings/{$id}/change-requests/{$requestId}/approve")
+            $this->actingAs($admin)->postJson("/api/v1/admin/listings/{$id}/change-requests/{$requestId}/approve")
                 ->assertInternalServerError();
             $this->assertDatabaseHas('listings', ['id' => $id, 'title' => 'Test daycare', 'version' => 1]);
             $this->assertDatabaseHas('listing_media', ['listing_id' => $id, 'media_object_id' => $oldMedia->id, 'sort_order' => 1]);
@@ -285,38 +285,38 @@ class ListingChangeRequestContractTest extends TestCase
         $admin = $this->admin();
         $id = $fixture['active_listing_id'];
 
-        $this->actingAs($caregiver)->getJson('/api/caregiver/listings')
+        $this->actingAs($caregiver)->getJson('/api/v1/caregiver/listings')
             ->assertOk()->assertJsonPath('meta.total', 1)
             ->assertJsonPath('data.0.id', (string) $fixture['draft_listing_id'])
             ->assertJsonPath('data.0.status', 'DRAFT');
-        $this->getJson('/api/caregiver/listings?status=ALL&per_page=1')
+        $this->getJson('/api/v1/caregiver/listings?status=ALL&per_page=1')
             ->assertOk()->assertJsonStructure(['data', 'links', 'meta'])
             ->assertJsonPath('meta.total', 2)->assertJsonPath('meta.per_page', 1);
-        $this->getJson('/api/caregiver/listings?status=ALL&per_page=1&page=2')
+        $this->getJson('/api/v1/caregiver/listings?status=ALL&per_page=1&page=2')
             ->assertOk()->assertJsonPath('data.0.id', (string) $id)
             ->assertJsonPath('data.0.status', 'ACTIVE');
-        $this->getJson('/api/caregiver/listings?status=INVALID')
+        $this->getJson('/api/v1/caregiver/listings?status=INVALID')
             ->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
 
-        $this->actingAs($admin)->getJson('/api/admin/listings')
+        $this->actingAs($admin)->getJson('/api/v1/admin/listings')
             ->assertOk()->assertJsonPath('meta.total', 0);
-        $this->actingAs($admin, 'web')->getJson('/api/admin/listings?status=ALL&per_page=1')
+        $this->actingAs($admin, 'web')->getJson('/api/v1/admin/listings?status=ALL&per_page=1')
             ->assertOk()->assertJsonStructure(['data', 'links', 'meta'])
             ->assertJsonPath('meta.total', 3)->assertJsonPath('meta.per_page', 1);
-        $this->getJson('/api/admin/listings?status=INVALID')
+        $this->getJson('/api/v1/admin/listings?status=INVALID')
             ->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
 
-        $created = $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$id}/change-requests", [
+        $created = $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$id}/change-requests", [
             'base_listing_version' => 1,
             'changes' => ['title' => 'Contract title'],
         ])->assertCreated();
         $requestId = $created->json('data.id');
         $this->assertSame($this->latestChangeId($id), $requestId);
 
-        $this->actingAs($caregiver, 'web')->getJson("/api/caregiver/listings/{$id}")->assertOk()
+        $this->actingAs($caregiver, 'web')->getJson("/api/v1/caregiver/listings/{$id}")->assertOk()
             ->assertJsonPath('data.pending_change_request_id', (string) $requestId)
             ->assertJsonPath('data.latest_decision', null);
-        $history = $this->getJson("/api/caregiver/listings/{$id}/change-requests?per_page=1")
+        $history = $this->getJson("/api/v1/caregiver/listings/{$id}/change-requests?per_page=1")
             ->assertOk()->assertJsonStructure(['data', 'links', 'meta'])
             ->assertJsonPath('meta.per_page', 1)
             ->assertJsonPath('data.0.id', (string) $requestId)
@@ -324,27 +324,27 @@ class ListingChangeRequestContractTest extends TestCase
             ->assertJsonPath('data.0.reviewed_by_user_id', null)
             ->assertJsonPath('data.0.reviewed_at', null);
         $this->assertMatchesRegularExpression('/Z$/', $history->json('data.0.requested_at'));
-        $this->getJson("/api/caregiver/listings/{$id}/change-requests?unexpected=1")
+        $this->getJson("/api/v1/caregiver/listings/{$id}/change-requests?unexpected=1")
             ->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
-        $this->getJson("/api/caregiver/listings/{$id}?unexpected=1")
+        $this->getJson("/api/v1/caregiver/listings/{$id}?unexpected=1")
             ->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
 
-        $this->actingAs($admin)->getJson("/api/admin/listings/{$id}")->assertOk()
+        $this->actingAs($admin)->getJson("/api/v1/admin/listings/{$id}")->assertOk()
             ->assertJsonPath('data.pending_change_request_id', (string) $requestId)
             ->assertJsonPath('data.latest_decision', null);
-        $this->actingAs($admin, 'web')->postJson("/api/admin/listings/{$id}/change-requests/{$requestId}/approve")
+        $this->actingAs($admin, 'web')->postJson("/api/v1/admin/listings/{$id}/change-requests/{$requestId}/approve")
             ->assertOk()->assertJsonPath('data.id', (string) $requestId)
             ->assertJsonPath('data.reviewed_by_user_id', (string) $admin->id);
 
-        $detail = $this->actingAs($caregiver, 'web')->getJson("/api/caregiver/listings/{$id}")->assertOk()
+        $detail = $this->actingAs($caregiver, 'web')->getJson("/api/v1/caregiver/listings/{$id}")->assertOk()
             ->assertJsonPath('data.pending_change_request_id', null)
             ->assertJsonPath('data.latest_decision.action', 'LISTING_CHANGE_APPROVED');
         $this->assertMatchesRegularExpression('/Z$/', $detail->json('data.latest_decision.decided_at'));
-        $this->actingAs($admin, 'web')->getJson('/api/admin/listing-change-requests?status=ALL&per_page=1')
+        $this->actingAs($admin, 'web')->getJson('/api/v1/admin/listing-change-requests?status=ALL&per_page=1')
             ->assertOk()->assertJsonStructure(['data', 'links', 'meta'])
             ->assertJsonPath('meta.per_page', 1)
             ->assertJsonPath('data.0.id', (string) $requestId);
-        $this->getJson('/api/admin/listing-change-requests?sort=latest')
+        $this->getJson('/api/v1/admin/listing-change-requests?sort=latest')
             ->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
     }
 

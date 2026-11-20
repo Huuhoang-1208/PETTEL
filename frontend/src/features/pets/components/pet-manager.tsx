@@ -37,7 +37,7 @@ const benefits = [
 export function PetManager() {
   const { user } = useSession();
   const { ask, dialog } = useConfirmation();
-  const resource = useApi<Page<Pet>>(user ? "/api/pets" : null);
+  const resource = useApi<Page<Pet>>(user ? "/api/v1/pets" : null);
   const pets = resource.data?.data ?? [];
   const [editing, setEditing] = useState<Pet | null | undefined>();
   const [error, setError] = useState<unknown>();
@@ -76,7 +76,7 @@ export function PetManager() {
         photoData.append("file", photo);
         const uploaded = await write<{ data: { id: string } }>(
           "post",
-          "/api/pets/media",
+          "/api/v1/pets/media",
           photoData,
         );
         payload.photo_media_id = uploaded.data.id;
@@ -88,7 +88,7 @@ export function PetManager() {
         photoData.append("file", vaccinationRecordPhoto);
         const uploaded = await write<{ data: { id: string } }>(
           "post",
-          "/api/pets/media",
+          "/api/v1/pets/media",
           photoData,
         );
         payload.vaccination_record_media_id = uploaded.data.id;
@@ -97,7 +97,7 @@ export function PetManager() {
       }
       await write(
         editing ? "patch" : "post",
-        editing ? `/api/pets/${editing.id}` : "/api/pets",
+        editing ? `/api/v1/pets/${editing.id}` : "/api/v1/pets",
         payload,
       );
       setEditing(undefined);
@@ -116,7 +116,7 @@ export function PetManager() {
     try {
       await write(
         type === "delete" ? "delete" : "patch",
-        `/api/pets/${pet.id}${type === "delete" ? "" : `/${type}`}`,
+        `/api/v1/pets/${pet.id}${type === "delete" ? "" : `/${type}`}`,
       );
       resource.reload();
     } catch (failure) {

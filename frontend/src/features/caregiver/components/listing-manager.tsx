@@ -30,7 +30,7 @@ function isActive(item: ManagedListing) {
 export function ListingManager({ includeAvailability = true }: { includeAvailability?: boolean }) {
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<Filter>("ALL");
-  const listings = useApi<Page<ManagedListing>>(`/api/caregiver/listings?status=ALL&page=${page}&per_page=50`, 15000);
+  const listings = useApi<Page<ManagedListing>>(`/api/v1/caregiver/listings?status=ALL&page=${page}&per_page=50`, 15000);
   const [editing, setEditing] = useState<ManagedListing | null | undefined>();
   const items = listings.data?.data ?? [];
   const visibleItems = useMemo(() => filter === "ALL" ? items : items.filter((item) =>

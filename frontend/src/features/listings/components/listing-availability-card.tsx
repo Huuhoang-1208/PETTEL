@@ -56,7 +56,7 @@ export function ListingAvailabilityCard({ listing }: { listing: Listing }) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [hoveredDate, setHoveredDate] = useState<string | null>(null);
   const availability = useApi<AvailabilityResponse>(
-    `/api/listings/${listing.id}/availability?month=${month}`,
+    `/api/v1/listings/${listing.id}/availability?month=${month}`,
   );
   const [year, monthNumber] = month.split("-").map(Number);
   const firstDay = new Date(year, monthNumber - 1, 1);

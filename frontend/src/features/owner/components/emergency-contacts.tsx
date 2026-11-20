@@ -25,7 +25,7 @@ export function EmergencyContactCard({ profile, onUpdated }: { profile?: OwnerPr
     };
     setBusy(true); setError(undefined);
     try {
-      await write("patch", "/api/owner-profile", { emergency_contacts: emergency });
+      await write("patch", "/api/v1/owner-profile", { emergency_contacts: emergency });
       onUpdated(); setEditing(false); setSaved(true);
     } catch (failure) { setError(failure); } finally { setBusy(false); }
   }

@@ -47,7 +47,7 @@ const petRequirementOptions = [
 ];
 
 export function ProfileForm() {
-  const profile = useApi<{ data: Profile }>("/api/caregiver/profile");
+  const profile = useApi<{ data: Profile }>("/api/v1/caregiver/profile");
   const [draftOverride, setDraft] = useState<Profile | null>(null);
   const [applicationOverride, setApplication] = useState<SitterApplicationData | null>(null);
   const [pendingFiles, setPendingFiles] = useState<{
@@ -91,7 +91,7 @@ export function ProfileForm() {
   const typeLabel =
     draft.type === "FACILITY" ? "Cơ sở chăm sóc" : "Cá nhân · Pet Lover / Freelancer";
   const avatarUrl = application.avatar_media_id
-    ? `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}/api/caregiver/media/${application.avatar_media_id}/content`
+    ? `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}/api/v1/caregiver/media/${application.avatar_media_id}/content`
     : null;
   const savedContactEmail = value?.application_data_json?.contact_email?.trim().toLowerCase();
   const currentContactEmail = application.contact_email?.trim().toLowerCase();
@@ -169,7 +169,7 @@ export function ProfileForm() {
                 body.set("file", file);
                 const uploaded = await write<{ data: { id: string } }>(
                   "post",
-                  "/api/caregiver/media",
+                  "/api/v1/caregiver/media",
                   body,
                 );
                 return Number(uploaded.data.id);
@@ -204,7 +204,7 @@ export function ProfileForm() {
                 bio: draft.bio ?? "",
                 application_data_json: applicationData,
               };
-              await write(value ? "patch" : "post", "/api/caregiver/profile", data);
+              await write(value ? "patch" : "post", "/api/v1/caregiver/profile", data);
               setPendingFiles({ space: [] });
               setDraft(null);
               setApplication(null);

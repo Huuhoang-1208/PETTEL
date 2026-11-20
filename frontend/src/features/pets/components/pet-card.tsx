@@ -40,7 +40,7 @@ export function PetCard({
   };
   const isDog = pet.species === "DOG";
   const image = pet.photo_media_id
-    ? apiUrl(`/api/pets/media/${pet.photo_media_id}/content`)
+    ? apiUrl(`/api/v1/pets/media/${pet.photo_media_id}/content`)
     : isDog ? "/images/pet_sitter_poodle.png" : "/images/home_with_cats.png";
   const traits = [
     ...(pet.behavior_tags ?? []).map((tag) => behaviorLabels[tag] ?? tag),
@@ -112,7 +112,7 @@ export function PetCard({
             return <p key={key}><PettelIcon name={status === "DONE" ? "check" : "plus"} /> {label}: {displayStatus}{date ? ` · ${new Date(date).toLocaleDateString("vi-VN")}` : ""}</p>;
           })}</div>
           <p><PettelIcon name={pet.vaccination_note ? "check" : "plus"} /> {pet.vaccination_note || "Chưa có ghi chú tiêm chủng. Bạn có thể bổ sung trong phần chỉnh sửa hồ sơ."}</p>
-          {pet.vaccination_record_media_id && <p><PettelIcon name="camera" /> <a href={apiUrl(`/api/pets/media/${pet.vaccination_record_media_id}/content`)} target="_blank" rel="noreferrer">Xem ảnh sổ tiêm đã tải lên</a></p>}
+          {pet.vaccination_record_media_id && <p><PettelIcon name="camera" /> <a href={apiUrl(`/api/v1/pets/media/${pet.vaccination_record_media_id}/content`)} target="_blank" rel="noreferrer">Xem ảnh sổ tiêm đã tải lên</a></p>}
           {pet.special_needs && <p><PettelIcon name="heart" /> Lưu ý chăm sóc: {pet.special_needs}</p>}
         </section>
 

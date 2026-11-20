@@ -34,7 +34,7 @@ export function AdminLoginPage() {
         email: String(form.get("email")),
         password: String(form.get("password")),
       });
-      const { data: signedInUser } = await api.get<User>("/api/user");
+      const { data: signedInUser } = await api.get<User>("/api/v1/user");
       const staff = signedInUser.roles?.some((role) => role.role === "ADMIN" || role.role === "SUPPORT");
 
       if (!staff) {

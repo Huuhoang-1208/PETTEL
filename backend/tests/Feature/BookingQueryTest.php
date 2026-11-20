@@ -15,15 +15,15 @@ class BookingQueryTest extends TestCase
     {
         $fixture = BookingFixture::requested($this);
         $id = (string) $fixture['booking']->id;
-        $this->actingAs($fixture['owner'])->getJson('/api/bookings')->assertOk()
+        $this->actingAs($fixture['owner'])->getJson('/api/v1/bookings')->assertOk()
             ->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $id)
             ->assertJsonPath('data.0.participant_role', 'OWNER');
-        $this->getJson("/api/bookings/{$id}")->assertOk()->assertJsonPath('data.pet_name', 'Mochi');
-        $this->actingAs($fixture['caregiver'], 'web')->getJson("/api/bookings/{$id}")->assertOk()
+        $this->getJson("/api/v1/bookings/{$id}")->assertOk()->assertJsonPath('data.pet_name', 'Mochi');
+        $this->actingAs($fixture['caregiver'], 'web')->getJson("/api/v1/bookings/{$id}")->assertOk()
             ->assertJsonPath('data.participant_role', 'CAREGIVER');
         $otherOwner = User::query()->findOrFail($fixture['foreign_pet']->user_id);
-        $this->actingAs($otherOwner, 'web')->getJson('/api/bookings')->assertOk()->assertJsonCount(0, 'data');
-        $this->getJson("/api/bookings/{$id}")->assertNotFound();
+        $this->actingAs($otherOwner, 'web')->getJson('/api/v1/bookings')->assertOk()->assertJsonCount(0, 'data');
+        $this->getJson("/api/v1/bookings/{$id}")->assertNotFound();
     }
 
     public function test_redacted_snapshots_and_internal_keys_are_not_exposed(): void
@@ -32,14 +32,14 @@ class BookingQueryTest extends TestCase
         $booking = $fixture['booking'];
         $booking->privacy_redacted_at = now();
         $booking->save();
-        $this->actingAs($fixture['owner'])->getJson("/api/bookings/{$booking->id}")->assertOk()
+        $this->actingAs($fixture['owner'])->getJson("/api/v1/bookings/{$booking->id}")->assertOk()
             ->assertJsonPath('data.listing_title', null)->assertJsonPath('data.pet_name', null)
             ->assertJsonMissingPath('data.request_idempotency_key')->assertJsonMissingPath('data.request_payload_hash');
     }
 
     public function test_guest_cannot_read_bookings(): void
     {
-        $this->getJson('/api/bookings')->assertUnauthorized();
-        $this->getJson('/api/bookings/1')->assertUnauthorized();
+        $this->getJson('/api/v1/bookings')->assertUnauthorized();
+        $this->getJson('/api/v1/bookings/1')->assertUnauthorized();
     }
 }

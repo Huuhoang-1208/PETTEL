@@ -61,7 +61,7 @@ export function ChangeRequestReviewCard({
   isAdmin: boolean;
   refresh: () => void;
 }) {
-  const current = useApi<{ data: ManagedListing }>(`/api/admin/listings/${change.listing_id}`);
+  const current = useApi<{ data: ManagedListing }>(`/api/v1/admin/listings/${change.listing_id}`);
   const before = current.data?.data;
   const proposal = change.proposed_data_json.data as ProposalData;
   const proposalListing: Listing = {
@@ -128,7 +128,7 @@ export function ChangeRequestReviewCard({
         {!before && current.error !== undefined && <p className={styles.changeDiffHint}>Không tải được dữ liệu cũ; bên dưới là nội dung Sitter đề xuất.</p>}
       </section>
       {isAdmin
-        ? <ModerationCard listing={proposalListing} path={`/api/admin/listings/${change.listing_id}/change-requests/${change.id}`} refresh={refresh} />
+        ? <ModerationCard listing={proposalListing} path={`/api/v1/admin/listings/${change.listing_id}/change-requests/${change.id}`} refresh={refresh} />
         : <div className="app-card"><h3>{proposal.title}</h3><p>{proposal.description}</p><p>Support chỉ có quyền xem đề xuất này.</p></div>}
     </article>
   );

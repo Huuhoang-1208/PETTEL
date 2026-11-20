@@ -27,7 +27,7 @@ export function ReportForm({ target }: { target: { listing_id?: string; booking_
             setBusy(true);
             setError(undefined);
             try {
-              await write("post", "/api/reports", {
+              await write("post", "/api/v1/reports", {
                 ...target,
                 reason_code: form.get("reason_code"),
                 description: form.get("description"),

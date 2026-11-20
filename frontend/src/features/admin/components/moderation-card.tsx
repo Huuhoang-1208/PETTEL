@@ -27,7 +27,7 @@ export function ModerationCard({
     try {
       await write(
         "post",
-        `${path ?? `/api/admin/listings/${listing.id}`}/${action}`,
+        `${path ?? `/api/v1/admin/listings/${listing.id}`}/${action}`,
         reason ? { reason } : undefined,
       );
       refresh();

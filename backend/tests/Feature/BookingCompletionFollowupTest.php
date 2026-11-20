@@ -155,13 +155,13 @@ class BookingCompletionFollowupTest extends TestCase
         app(ProcessBookingCompletionFollowups::class)->handle();
 
         $this->actingAs($fixture['owner'])
-            ->getJson('/api/admin/booking-completion-reviews')
+            ->getJson('/api/v1/admin/booking-completion-reviews')
             ->assertForbidden();
 
         $admin = $this->admin();
 
         $this->actingAs($admin)
-            ->getJson('/api/admin/booking-completion-reviews')
+            ->getJson('/api/v1/admin/booking-completion-reviews')
             ->assertOk()
             ->assertJsonPath(
                 'data.overdue_bookings.0.booking_id',
@@ -173,7 +173,7 @@ class BookingCompletionFollowupTest extends TestCase
         $this->assertSame('SUSPENDED', $inactiveAdmin->fresh()->status);
 
         $this->actingAs($inactiveAdmin)
-            ->getJson('/api/admin/booking-completion-reviews')
+            ->getJson('/api/v1/admin/booking-completion-reviews')
             ->assertForbidden();
     }
 
@@ -185,7 +185,7 @@ class BookingCompletionFollowupTest extends TestCase
         app(ProcessBookingCompletionFollowups::class)->handle();
 
         $reportResponse = $this->actingAs($fixture['owner'])
-            ->postJson('/api/reports', [
+            ->postJson('/api/v1/reports', [
                 'booking_id' => $fixture['booking']->id,
                 'reason_code' => 'SERVICE_DISPUTE',
                 'description' => 'Test report for completion hold.',
@@ -196,7 +196,7 @@ class BookingCompletionFollowupTest extends TestCase
         $admin = $this->admin();
 
         $this->actingAs($admin)
-            ->postJson("/api/admin/reports/{$reportId}/status", [
+            ->postJson("/api/v1/admin/reports/{$reportId}/status", [
                 'status' => 'IN_REVIEW',
                 'reason' => 'Review the booking report.',
             ])
@@ -204,7 +204,7 @@ class BookingCompletionFollowupTest extends TestCase
 
         $this->actingAs($admin)
             ->postJson(
-                "/api/admin/booking-completion-reviews/{$fixture['booking']->id}/complete",
+                "/api/v1/admin/booking-completion-reviews/{$fixture['booking']->id}/complete",
                 ['reason' => 'Attempt completion while report is open.'],
             )
             ->assertStatus(409)
@@ -242,7 +242,7 @@ class BookingCompletionFollowupTest extends TestCase
         $firstResponse = $this->actingAs($admin)
             ->withHeader('X-Request-ID', $requestId)
             ->postJson(
-                "/api/admin/booking-completion-reviews/{$fixture['booking']->id}/complete",
+                "/api/v1/admin/booking-completion-reviews/{$fixture['booking']->id}/complete",
                 ['reason' => 'Owner did not respond after the review period.'],
             )
             ->assertAccepted()
@@ -275,7 +275,7 @@ class BookingCompletionFollowupTest extends TestCase
 
         $replay = $this->actingAs($admin)
             ->postJson(
-                "/api/admin/booking-completion-reviews/{$fixture['booking']->id}/complete",
+                "/api/v1/admin/booking-completion-reviews/{$fixture['booking']->id}/complete",
                 ['reason' => 'Owner did not respond after the review period.'],
             )
             ->assertOk()

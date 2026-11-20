@@ -25,7 +25,7 @@ class PublicReviewTest extends TestCase
         $this->addReview($booking, 3, bookingStatus: 'CONFIRMED');
         $id = $booking->listing_id;
 
-        $response = $this->getJson("/api/listings/{$id}/reviews")->assertOk()
+        $response = $this->getJson("/api/v1/listings/{$id}/reviews")->assertOk()
             ->assertJsonCount(3, 'data')
             ->assertJsonPath('rating_average', 4.5)
             ->assertJsonPath('review_count', 2)
@@ -41,10 +41,10 @@ class PublicReviewTest extends TestCase
             array_keys($response->json('data.0')),
         );
         $this->assertStringNotContainsString('Hidden review', $response->getContent());
-        $this->getJson("/api/listings/{$id}")->assertOk()
+        $this->getJson("/api/v1/listings/{$id}")->assertOk()
             ->assertJsonPath('data.rating_average', 4.5)
             ->assertJsonPath('data.review_count', 2);
-        $this->getJson('/api/listings')->assertOk()
+        $this->getJson('/api/v1/listings')->assertOk()
             ->assertJsonPath('data.0.rating_average', 4.5)
             ->assertJsonPath('data.0.review_count', 2);
     }
@@ -54,15 +54,15 @@ class PublicReviewTest extends TestCase
         $fixture = BookingFixture::requested($this);
         $id = $fixture['booking']->listing_id;
 
-        $this->getJson("/api/listings/{$id}/reviews")->assertOk()
+        $this->getJson("/api/v1/listings/{$id}/reviews")->assertOk()
             ->assertJsonCount(0, 'data')
             ->assertJsonPath('rating_average', null)
             ->assertJsonPath('review_count', 0)
             ->assertJsonPath('meta.total', 0);
-        $this->getJson("/api/listings/{$id}")->assertOk()
+        $this->getJson("/api/v1/listings/{$id}")->assertOk()
             ->assertJsonPath('data.rating_average', null)
             ->assertJsonPath('data.review_count', 0);
-        $this->getJson('/api/listings')->assertOk()
+        $this->getJson('/api/v1/listings')->assertOk()
             ->assertJsonPath('data.0.rating_average', null)
             ->assertJsonPath('data.0.review_count', 0);
     }
@@ -75,7 +75,7 @@ class PublicReviewTest extends TestCase
         $this->addReview($booking, 1, status: 'HIDDEN');
         $this->addReview($booking, 2, bookingStatus: 'CONFIRMED');
 
-        $this->getJson("/api/listings/{$booking->listing_id}/reviews")->assertOk()
+        $this->getJson("/api/v1/listings/{$booking->listing_id}/reviews")->assertOk()
             ->assertJsonCount(1, 'data')->assertJsonPath('data.0.is_demo', true)
             ->assertJsonPath('rating_average', null)
             ->assertJsonPath('review_count', 0);
@@ -86,13 +86,13 @@ class PublicReviewTest extends TestCase
         $fixture = BookingFixture::requested($this);
         $booking = $fixture['booking'];
         $booking->update(['status' => 'COMPLETED']);
-        $url = "/api/listings/{$booking->listing_id}";
+        $url = "/api/v1/listings/{$booking->listing_id}";
         $reviewsUrl = $url.'/reviews';
 
         $this->getJson($url)->assertOk()->assertJsonPath('data.review_count', 0);
         $this->getJson($reviewsUrl)->assertOk()->assertJsonCount(0, 'data');
 
-        $this->postJson("/api/bookings/{$booking->id}/reviews", ['rating' => 5])
+        $this->postJson("/api/v1/bookings/{$booking->id}/reviews", ['rating' => 5])
             ->assertCreated();
 
         $this->getJson($reviewsUrl)->assertOk()
@@ -128,7 +128,7 @@ class PublicReviewTest extends TestCase
         $this->addReview($booking, 2);
         $latestReal = $this->addReview($booking, 2);
         $demo = $this->addReview($booking, 5, demo: true);
-        $url = "/api/listings/{$booking->listing_id}/reviews";
+        $url = "/api/v1/listings/{$booking->listing_id}/reviews";
 
         $this->getJson($url.'?per_page=1&page=1')->assertOk()
             ->assertJsonCount(1, 'data')
@@ -156,7 +156,7 @@ class PublicReviewTest extends TestCase
         $second = BookingFixture::requested($this);
         $this->addReview($second['booking'], 1);
 
-        $this->getJson("/api/listings/{$second['booking']->listing_id}")->assertOk()
+        $this->getJson("/api/v1/listings/{$second['booking']->listing_id}")->assertOk()
             ->assertJsonPath('data.rating_average', 1)
             ->assertJsonPath('data.review_count', 1);
 
@@ -164,7 +164,7 @@ class PublicReviewTest extends TestCase
             'start_at' => $first['payload']['start_at'],
             'end_at' => $first['payload']['end_at'],
         ];
-        $response = $this->getJson('/api/listings?'.http_build_query($filters))->assertOk();
+        $response = $this->getJson('/api/v1/listings?'.http_build_query($filters))->assertOk();
         $items = collect($response->json('data'))->keyBy('id');
         $item = $items->get((string) $first['booking']->listing_id);
 
@@ -174,7 +174,7 @@ class PublicReviewTest extends TestCase
         $this->assertSame(150000, $item['price_total_vnd']);
 
         $this->actingAs($first['owner'])
-            ->getJson('/api/listings?'.http_build_query([
+            ->getJson('/api/v1/listings?'.http_build_query([
                 ...$filters,
                 'pet_id' => (string) $first['pet']->id,
             ]))->assertOk()->assertJsonPath('data.0.rating_average', 4.5);
@@ -186,7 +186,7 @@ class PublicReviewTest extends TestCase
         $booking = $fixture['booking'];
         $this->addReview($booking, 5);
         $id = $booking->listing_id;
-        $url = "/api/listings/{$id}/reviews";
+        $url = "/api/v1/listings/{$id}/reviews";
 
         foreach (['DRAFT', 'PENDING_REVIEW', 'SUSPENDED', 'ARCHIVED'] as $status) {
             DB::table('listings')->where('id', $id)->update([
@@ -206,13 +206,13 @@ class PublicReviewTest extends TestCase
         $fixture['caregiver']->forceFill(['status' => 'ACTIVE'])->save();
         $fixture['caregiver']->caregiverProfile()->firstOrFail()->delete();
         $this->getJson($url)->assertNotFound();
-        $this->getJson('/api/listings/0/reviews')->assertNotFound();
+        $this->getJson('/api/v1/listings/0/reviews')->assertNotFound();
     }
 
     public function test_review_query_validation(): void
     {
         $fixture = BookingFixture::requested($this);
-        $url = "/api/listings/{$fixture['booking']->listing_id}/reviews";
+        $url = "/api/v1/listings/{$fixture['booking']->listing_id}/reviews";
 
         foreach ([
             'per_page=0',

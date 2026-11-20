@@ -57,7 +57,7 @@ export function SitterMessageModal({ listing, pets, initial, onClose }: { listin
     setBusy(true);
     setError(undefined);
     try {
-      const result = await write<{ id: string }>("post", "/api/inquiries", {
+      const result = await write<{ id: string }>("post", "/api/v1/inquiries", {
         listing_id: listing.id, pet_id: context.petId || null,
         start_at: context.start ? vietnamISO(context.start) : null,
         end_at: context.end ? vietnamISO(context.end) : null,
@@ -76,7 +76,7 @@ export function SitterMessageModal({ listing, pets, initial, onClose }: { listin
       </header>
       <div className={styles.content}>
         <section className={styles.context} aria-label="Thông tin gửi kèm">
-          <span className={styles.avatar}>{pet?.photo_media_id ? <img src={apiUrl(`/api/pets/media/${pet.photo_media_id}/content`)} alt={pet.name} /> : <PettelIcon name={pet?.species === "CAT" ? "cat" : "dog"} />}</span>
+          <span className={styles.avatar}>{pet?.photo_media_id ? <img src={apiUrl(`/api/v1/pets/media/${pet.photo_media_id}/content`)} alt={pet.name} /> : <PettelIcon name={pet?.species === "CAT" ? "cat" : "dog"} />}</span>
           <div><strong>{pet ? `${pet.name} (${pet.breed || species[pet.species]}${pet.weight_kg ? ` · ${Number(pet.weight_kg).toLocaleString("vi-VN")}kg` : ""})` : "Chưa chọn bé cưng"}</strong><p>{services[listing.service_type]} · {context.start && context.end ? dateRange : "Chưa chọn ngày"}</p><small><PettelIcon name="check" /> Thông tin bé và ngày gửi được gửi kèm</small></div>
           <button type="button" className={styles.change} aria-expanded={editing} disabled={busy} onClick={() => setEditing(!editing)}><PettelIcon name="sliders" /> Đổi bé / ngày</button>
         </section>

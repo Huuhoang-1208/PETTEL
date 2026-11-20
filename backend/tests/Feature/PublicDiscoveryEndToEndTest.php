@@ -51,54 +51,54 @@ class PublicDiscoveryEndToEndTest extends TestCase
             'species' => 'DOG',
             'size' => 'SMALL',
         ]);
-        $this->getJson('/api/listings?'.$searchQuery)->assertOk()
+        $this->getJson('/api/v1/listings?'.$searchQuery)->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', (string) $listing->id)
             ->assertJsonPath('data.0.rating_average', null)
             ->assertJsonPath('data.0.review_count', 0);
 
-        $this->getJson('/api/listings/'.$listing->id)->assertOk()
+        $this->getJson('/api/v1/listings/'.$listing->id)->assertOk()
             ->assertJsonPath('data.id', (string) $listing->id)
             ->assertJsonPath('data.media.0.media_object_id', (string) $media->id);
-        $this->get('/api/listings/'.$listing->id.'/media/'.$media->id.'/content')
+        $this->get('/api/v1/listings/'.$listing->id.'/media/'.$media->id.'/content')
             ->assertOk()->assertContent($imageBytes);
-        $this->getJson('/api/listings/'.$listing->id.'/reviews')->assertOk()
+        $this->getJson('/api/v1/listings/'.$listing->id.'/reviews')->assertOk()
             ->assertJsonCount(0, 'data')
             ->assertJsonPath('rating_average', null)
             ->assertJsonPath('review_count', 0);
 
-        $this->actingAs($fixture['owner'])->postJson('/api/bookings/'.$booking->id.'/reviews', [
+        $this->actingAs($fixture['owner'])->postJson('/api/v1/bookings/'.$booking->id.'/reviews', [
             'rating' => 5,
             'body' => 'Excellent care from the verified booking.',
         ])->assertCreated()->assertJsonPath('data.status', 'VISIBLE');
 
-        $this->getJson('/api/listings/'.$listing->id.'/reviews')->assertOk()
+        $this->getJson('/api/v1/listings/'.$listing->id.'/reviews')->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.rating', 5)
             ->assertJsonPath('rating_average', 5)
             ->assertJsonPath('review_count', 1);
-        $this->getJson('/api/listings/'.$listing->id)->assertOk()
+        $this->getJson('/api/v1/listings/'.$listing->id)->assertOk()
             ->assertJsonPath('data.rating_average', 5)
             ->assertJsonPath('data.review_count', 1);
-        $this->getJson('/api/listings?'.$searchQuery)->assertOk()
+        $this->getJson('/api/v1/listings?'.$searchQuery)->assertOk()
             ->assertJsonPath('data.0.rating_average', 5)
             ->assertJsonPath('data.0.review_count', 1);
 
-        $this->getJson('/api/listings?q=E2E-No-Such-Service')->assertOk()
+        $this->getJson('/api/v1/listings?q=E2E-No-Such-Service')->assertOk()
             ->assertJsonCount(0, 'data')
             ->assertJsonPath('match_summary.code', 'NO_MATCHING_LISTINGS');
-        $this->getJson('/api/listings?service_type=INVALID')->assertUnprocessable()
+        $this->getJson('/api/v1/listings?service_type=INVALID')->assertUnprocessable()
             ->assertJsonPath('error.code', 'VALIDATION_ERROR');
 
         $admin = $this->admin();
-        $this->actingAs($admin)->postJson('/api/admin/listings/'.$listing->id.'/suspend', [
+        $this->actingAs($admin)->postJson('/api/v1/admin/listings/'.$listing->id.'/suspend', [
             'reason' => 'E2E public visibility check.',
         ])->assertOk()->assertJsonPath('data.status', 'SUSPENDED');
 
-        $this->getJson('/api/listings?'.$searchQuery)->assertOk()->assertJsonCount(0, 'data');
-        $this->getJson('/api/listings/'.$listing->id)->assertNotFound();
-        $this->get('/api/listings/'.$listing->id.'/media/'.$media->id.'/content')->assertNotFound();
-        $this->getJson('/api/listings/'.$listing->id.'/reviews')->assertNotFound();
+        $this->getJson('/api/v1/listings?'.$searchQuery)->assertOk()->assertJsonCount(0, 'data');
+        $this->getJson('/api/v1/listings/'.$listing->id)->assertNotFound();
+        $this->get('/api/v1/listings/'.$listing->id.'/media/'.$media->id.'/content')->assertNotFound();
+        $this->getJson('/api/v1/listings/'.$listing->id.'/reviews')->assertNotFound();
         $this->assertDatabaseHas('reviews', [
             'booking_id' => $booking->id,
             'rating' => 5,

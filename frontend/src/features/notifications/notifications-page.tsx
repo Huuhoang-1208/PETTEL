@@ -29,12 +29,12 @@ export function NotificationsPage() {
   const { user } = useSession();
   const [page, setPage] = useState(1);
   const [busy, setBusy] = useState(false);
-  const notifications = useApi<NotificationPage>(user ? `/api/notifications?page=${page}&per_page=20` : null, 30000);
+  const notifications = useApi<NotificationPage>(user ? `/api/v1/notifications?page=${page}&per_page=20` : null, 30000);
 
   async function markAllRead() {
     setBusy(true);
     try {
-      await write("post", "/api/notifications/read-all");
+      await write("post", "/api/v1/notifications/read-all");
       notifications.reload();
     } catch {
       // The page-level API error will be refreshed by the next list request.
@@ -45,7 +45,7 @@ export function NotificationsPage() {
 
   async function markRead(id: string) {
     try {
-      await write("patch", `/api/notifications/${encodeURIComponent(id)}/read`);
+      await write("patch", `/api/v1/notifications/${encodeURIComponent(id)}/read`);
       notifications.reload();
     } catch {
       // Keep navigation available if the read receipt cannot be saved.

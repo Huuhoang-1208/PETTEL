@@ -27,11 +27,11 @@ class BookingCareLifecycleTest extends TestCase
             ->count();
 
         $this->actingAs($fixture['caregiver'])
-            ->postJson("/api/bookings/{$booking->id}/start")
+            ->postJson("/api/v1/bookings/{$booking->id}/start")
             ->assertOk()
             ->assertJsonPath('status', 'IN_PROGRESS');
 
-        $this->postJson("/api/bookings/{$booking->id}/request-completion")
+        $this->postJson("/api/v1/bookings/{$booking->id}/request-completion")
             ->assertOk()
             ->assertJsonPath('status', 'AWAITING_CONFIRMATION');
 

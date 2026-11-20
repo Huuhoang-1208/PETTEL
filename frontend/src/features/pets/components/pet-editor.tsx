@@ -35,7 +35,7 @@ export function PetEditor({
 
   const photoPreview =
     localPhotoUrl ??
-    (editing?.photo_media_id ? apiUrl(`/api/pets/media/${editing.photo_media_id}/content`) : null);
+    (editing?.photo_media_id ? apiUrl(`/api/v1/pets/media/${editing.photo_media_id}/content`) : null);
 
   useEffect(
     () => () => {

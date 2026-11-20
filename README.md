@@ -52,6 +52,54 @@ Sau khi sửa frontend, chạy `docker compose up -d --build web` để cập nh
 
 Nếu thay `APP_PORT`, cập nhật đồng bộ `APP_URL`, `FRONTEND_URL`, `SANCTUM_STATEFUL_DOMAINS` trong `.env` và dùng cổng mới trong các lệnh kiểm tra.
 
+## REST API v1
+
+Base URL local là `http://localhost:8080`; các API resource có prefix `/api/v1`. Tài liệu OpenAPI do Scramble tạo tại `/docs/api` và `/docs/api.json`; quyền xem tài liệu chỉ dành cho tài khoản ADMIN đã đăng nhập.
+
+Ứng dụng frontend dùng phiên Sanctum cookie và CSRF. Client tích hợp bên ngoài dùng Sanctum Bearer token. Tạo token tại `POST /api/v1/tokens` bằng phiên đăng nhập hợp lệ, gửi JSON gồm tên token và abilities cần thiết:
+
+```json
+{
+  "name": "reporting-client",
+  "abilities": ["profile:read", "pets:read"]
+}
+```
+
+Token chỉ được trả về một lần và hết hạn sau 30 ngày. Lưu token an toàn, không đưa vào Git hoặc frontend công khai. Các abilities được hỗ trợ:
+
+| Ability | Quyền áp dụng |
+| --- | --- |
+| `profile:read` | Đọc `/user` và thông tin profile được cấp quyền |
+| `pets:read` | Đọc danh sách và chi tiết thú cưng |
+| `bookings:read` | Đọc danh sách và chi tiết booking |
+
+Ví dụ gọi endpoint đọc user bằng token có `profile:read`:
+
+```powershell
+curl.exe -H "Accept: application/json" -H "Authorization: Bearer <TOKEN>" "http://localhost:8080/api/v1/user"
+```
+
+Nếu token hợp lệ nhưng thiếu ability cần thiết, API trả `403 Forbidden`. Ví dụ gửi `profile:read` để đọc `/api/v1/pets` sẽ bị từ chối. Request không hợp lệ trả `422 Unprocessable Content` theo error envelope có `error.code`, `error.message`, `error.details` và `error.request_id`.
+
+Ví dụ lỗi validation khi yêu cầu trang review không hợp lệ:
+
+Thay `107` bằng ID của một listing đang public trong database local.
+
+```powershell
+curl.exe -H "Accept: application/json" "http://localhost:8080/api/v1/listings/107/reviews?page=0"
+```
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "<VALIDATION_MESSAGE>",
+    "details": { "page": ["<PAGE_VALIDATION_DETAIL>"] },
+    "request_id": "<REQUEST_ID>"
+  }
+}
+```
+
 ## Tài khoản và dữ liệu mẫu
 
 | Email | Vai trò | Mật khẩu khi tạo mới |

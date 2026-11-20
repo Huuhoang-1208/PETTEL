@@ -64,8 +64,8 @@ function statusTone(status: string) {
 }
 
 export function SitterManagementDashboard({ profile }: { profile: Profile }) {
-  const listings = useApi<Page<ManagedListing>>("/api/caregiver/listings?status=ALL&per_page=50", 15000);
-  const bookings = useApi<Page<Booking>>("/api/bookings?per_page=50", 15000);
+  const listings = useApi<Page<ManagedListing>>("/api/v1/caregiver/listings?status=ALL&per_page=50", 15000);
+  const bookings = useApi<Page<Booking>>("/api/v1/bookings?per_page=50", 15000);
   const [actionError, setActionError] = useState<unknown>();
   const [busyBooking, setBusyBooking] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
@@ -174,7 +174,7 @@ export function SitterManagementDashboard({ profile }: { profile: Profile }) {
     setBusyBooking(id);
     setActionError(undefined);
     try {
-      await write("post", `/api/bookings/${id}/${action}`, {});
+      await write("post", `/api/v1/bookings/${id}/${action}`, {});
       bookings.reload();
     } catch (error) {
       setActionError(error);

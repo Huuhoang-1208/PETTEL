@@ -49,7 +49,7 @@ class ReviewCreationConcurrencyTest extends TestCase
 require getcwd().'/vendor/autoload.php';
 $app = require getcwd().'/bootstrap/app.php';
 $kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
-$request = \Illuminate\Http\Request::create('/api/bookings/'.$argv[2].'/reviews', 'POST', [], [], [], [
+$request = \Illuminate\Http\Request::create('/api/v1/bookings/'.$argv[2].'/reviews', 'POST', [], [], [], [
     'CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json',
 ], '{"rating":5,"body":"Concurrent review"}');
 $app->instance('request', $request);
