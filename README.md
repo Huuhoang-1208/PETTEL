@@ -85,6 +85,25 @@ docker compose exec -T backend php artisan queue:failed
 
 Sau khi khởi động, chờ hơn một phút rồi đọc heartbeat. Đọc lại sau một phút: timestamp phải tăng, đồng thời log worker phải có job `DONE`. Giá trị `null` sau thời gian chờ hoặc timestamp không tăng cần kiểm tra log, Redis và trạng thái worker/scheduler. Timestamp mặc định được ghi theo UTC.
 
+## Cảnh báo lỗi qua Slack
+
+Tạo Slack Incoming Webhook cho kênh `#pettel-alerts`, rồi lưu URL trong `.env` gốc (không commit URL):
+
+```env
+LOG_STACK=single,slack
+LOG_SLACK_WEBHOOK_URL=https://hooks.slack.com/services/REPLACE_WITH_YOUR_WEBHOOK
+LOG_SLACK_LEVEL=error
+```
+
+Compose chuyển các biến này vào Laravel. Sau khi cập nhật `.env`, tạo lại các tiến trình Laravel rồi gửi thử một log lỗi:
+
+```powershell
+docker compose up -d --force-recreate backend worker scheduler
+docker compose exec -T backend php artisan tinker --execute='Log::error("PETTEL Slack integration test");'
+```
+
+Thông báo thử nghiệm cần xuất hiện trong `#pettel-alerts`. Webhook URL là thông tin bí mật; nếu bị lộ, thu hồi URL đó trong Slack và tạo URL mới.
+
 ## Kiểm tra định dạng, migration, seed và test
 
 Chạy tại gốc repo:
