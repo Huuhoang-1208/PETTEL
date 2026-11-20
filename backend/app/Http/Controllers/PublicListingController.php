@@ -20,7 +20,6 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +33,7 @@ class PublicListingController extends Controller
         SearchListingRequest $request,
         ApplyListingAvailability $availability,
         ResolveSmartMatchPet $resolveSmartMatchPet,
-    ): AnonymousResourceCollection {
+    ): JsonResponse {
         $filters = $request->filters();
         $pet = isset($filters['pet_id'])
             ? $resolveSmartMatchPet->handle($request->user(), (string) $filters['pet_id'], $filters)
@@ -172,7 +171,12 @@ class PublicListingController extends Controller
             ]);
         }
 
-        return $response;
+        return $response->response()->header(
+            'Cache-Control',
+            $pet === null
+            ? 'public, max-age=30, s-maxage=60, stale-while-revalidate=120'
+            : 'private, no-store',
+        );
     }
 
     /** @return array{string, list<string>} */
@@ -291,12 +295,17 @@ class PublicListingController extends Controller
         return array_values(array_unique($reasons));
     }
 
-    public function show(string $id): PublicListingResource
+    public function show(string $id): JsonResponse
     {
-        return PublicListingResource::make($this->findPublicListing($id));
+        return PublicListingResource::make($this->findPublicListing($id))
+            ->response()
+            ->header(
+                'Cache-Control',
+                'max-age=30, public, s-maxage=60, stale-while-revalidate=120',
+            );
     }
 
-    public function services(string $id): AnonymousResourceCollection
+    public function services(string $id): JsonResponse
     {
         $listing = $this->findPublicListing($id);
         $services = $this->publicListings()
@@ -305,7 +314,12 @@ class PublicListingController extends Controller
             ->orderBy('listings.id')
             ->get();
 
-        return PublicListingResource::collection($services);
+        return PublicListingResource::collection($services)
+            ->response()
+            ->header(
+                'Cache-Control',
+                'max-age=30, public, s-maxage=60, stale-while-revalidate=120',
+            );
     }
 
     public function availability(Request $request, string $id): mixed
@@ -351,7 +365,10 @@ class PublicListingController extends Controller
             $days[] = ['date' => $dateKey, 'status' => $timeSlots === [] ? 'FULL' : 'AVAILABLE', 'time_slots' => $timeSlots];
         }
 
-        return response()->json(['data' => $days, 'month' => $month->format('Y-m')]);
+        return response()->json([
+            'data' => $days,
+            'month' => $month->format('Y-m'),
+        ])->header('Cache-Control', 'private, no-store');
     }
 
     /**

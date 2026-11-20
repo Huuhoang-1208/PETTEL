@@ -137,7 +137,7 @@ export function PetEditor({
               1. Loại thú cưng của bạn <em>*</em>
             </h3>
             <div className={styles.speciesChoices}>
-              {Object.entries(species).map(([key, label]) => (
+              {Object.entries(species).map(([key]) => (
                 <label className={styles.speciesOption} key={key}>
                   <input
                     type="radio"

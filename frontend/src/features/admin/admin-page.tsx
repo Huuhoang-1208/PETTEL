@@ -10,6 +10,7 @@ import { write } from "@/lib/api/request";
 import { type Listing, type Page } from "@/lib/api/types";
 import { apiUrl, money } from "@/lib/format";
 import { useSession } from "@/providers/session-provider";
+import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import styles from "./admin-page.module.css";
@@ -239,7 +240,7 @@ function AdminConsole() {
                 {pendingListings.loading && <p className={styles.emptyState}>Đang tải hàng đợi duyệt…</p>}
                 {!pendingListings.loading && filteredListings.map((listing) => (
                   <article key={listing.id} className={styles.sitterCard}>
-                    <div className={styles.sitterAvatar}>{listing.media?.[0]?.thumbnail_url ? <img src={apiUrl(listing.media[0].thumbnail_url)} alt="" /> : <PettelIcon name="paw" />}</div>
+                    <div className={styles.sitterAvatar}>{listing.media?.[0]?.thumbnail_url ? <Image src={apiUrl(listing.media[0].thumbnail_url)} alt="" width={68} height={80} unoptimized /> : <PettelIcon name="paw" />}</div>
                     <div className={styles.sitterInfo}>
                       <div className={styles.sitterTitle}><h3>{listing.caregiver?.display_name ?? listing.caregiver?.name ?? listing.title}</h3><span>{listing.service_type}</span></div>
                       <p>{listing.title} · {listing.caregiver?.area_code ?? listing.area_code}</p>
@@ -361,7 +362,7 @@ function AdminConsole() {
               <button type="button" onClick={() => setPreviewListingId(null)} aria-label="Đóng bản xem trước">×</button>
             </header>
             <div className={styles.previewContent}>
-              {!!listing.media?.length && <div className={styles.previewMedia}>{listing.media.map((media, index) => <img key={media.image_url} src={apiUrl(media.image_url)} alt={`Ảnh dịch vụ ${index + 1}`} />)}</div>}
+              {!!listing.media?.length && <div className={styles.previewMedia}>{listing.media.map((media, index) => <Image key={media.image_url} src={apiUrl(media.image_url)} alt={`Ảnh dịch vụ ${index + 1}`} width={640} height={400} unoptimized />)}</div>}
               <div className={styles.previewFacts}>
                 <div><small>Người chăm</small><strong>{listing.caregiver?.display_name ?? listing.caregiver?.name ?? "Sitter PETTEL"}</strong></div>
                 <div><small>Loại dịch vụ</small><strong>{listing.service_type === "BOARDING" ? "Trông giữ qua đêm" : listing.service_type === "DAYCARE" ? "Chăm sóc ban ngày" : listing.service_type}</strong></div>

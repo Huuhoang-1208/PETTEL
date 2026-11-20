@@ -4,7 +4,9 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { CaregiverDashboard } from "@/features/caregiver/components/caregiver-dashboard";
 import { PettelIcon } from "@/components/ui/pettel-icon";
 import { useSession } from "@/providers/session-provider";
+import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import styles from "./caregiver-page.module.css";
 
@@ -90,6 +92,7 @@ const sitterStories = [
 
 export function CaregiverPage() {
   const { user, loading } = useSession();
+  const router = useRouter();
   const [selectedScenario, setSelectedScenario] = useState("freelance");
 
   if (!loading && !user) {
@@ -114,7 +117,7 @@ export function CaregiverPage() {
               </div>
             </div>
             <div className={styles.heroVisual}>
-              <img src="/images/pet-sitters/Labrador-retriever-sitting-on-the-couch-next-to-a-man-giving-a-high-five.jpg" alt="Người chăm sóc vui vẻ chơi đùa và đập tay cùng chú chó" />
+              <Image src="/images/pet-sitters/Labrador-retriever-sitting-on-the-couch-next-to-a-man-giving-a-high-five.jpg" alt="Người chăm sóc vui vẻ chơi đùa và đập tay cùng chú chó" fill priority sizes="(max-width: 900px) 100vw, 48vw" />
               <span className={styles.proBadge}><PettelIcon name="star" /> PETTEL Pro Sitter</span>
               <div className={styles.incomeCard}>
                 <span className={styles.walletIcon} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H19a1 1 0 0 1 1 1v2H6.5A2.5 2.5 0 0 1 4 5.5v12A2.5 2.5 0 0 0 6.5 20H20V9H6.5A2.5 2.5 0 0 1 4 6.5" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><path d="M20 11h-4a2 2 0 0 0 0 4h4v-4Z" fill="currentColor"/><circle cx="16" cy="13" r=".65" fill="#fff"/></svg></span>
@@ -196,7 +199,7 @@ export function CaregiverPage() {
             </div>
             <div className={styles.storyCards}>
               {sitterStories.map((story) => <article className={styles.storyCard} key={story.name}>
-                <img src={story.image} alt={story.alt} />
+                <Image src={story.image} alt={story.alt} width={82} height={82} sizes="82px" />
                 <div className={styles.storyContent}>
                   <div className={styles.storyAuthor}>
                     <div><h3>{story.name}</h3><p>{story.role}</p></div>
@@ -213,7 +216,7 @@ export function CaregiverPage() {
               <span className={styles.applicationIcon}><PettelIcon name="paw" /></span>
               <h2 id="sitter-application-title">Sẵn sàng khởi đầu hành trình cùng PETTEL?</h2>
               <p className={styles.applicationLead}>Tạo tài khoản miễn phí chỉ trong 60 giây. Đội ngũ điều phối PETTEL sẽ liên hệ tư vấn và khảo sát hồ sơ của bạn trong vòng 24 giờ.</p>
-              <form className={styles.applicationForm} onSubmit={(event) => { event.preventDefault(); window.location.assign("/register?next=%2Fcaregiver%2Fmanage"); }}>
+              <form className={styles.applicationForm} onSubmit={(event) => { event.preventDefault(); router.push("/register?next=%2Fcaregiver%2Fmanage"); }}>
                 <label>Họ và tên của bạn <b>*</b><input name="name" required maxLength={100} autoComplete="name" placeholder="Ví dụ: Nguyễn Văn An" /></label>
                 <label>Số điện thoại liên hệ <b>*</b><input name="phone" required type="tel" autoComplete="tel" pattern="[0-9+(). -]{9,16}" placeholder="Ví dụ: 0905 123 456" /></label>
                 <label>Khu vực bạn sinh sống <b>*</b><select name="area" required defaultValue=""><option value="" disabled>Chọn Quận/Huyện tại Đà Nẵng</option><option>Hải Châu</option><option>Sơn Trà</option><option>Thanh Khê</option><option>Ngũ Hành Sơn</option><option>Cẩm Lệ</option><option>Liên Chiểu</option><option>Hòa Vang</option></select></label>

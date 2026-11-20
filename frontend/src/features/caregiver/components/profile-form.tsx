@@ -7,6 +7,7 @@ import { useApi } from "@/hooks/use-api";
 import { write } from "@/lib/api/request";
 import { areas } from "@/lib/constants";
 import axios from "axios";
+import Image from "next/image";
 import { useState } from "react";
 import styles from "./profile-form.module.css";
 
@@ -729,7 +730,7 @@ export function ProfileForm() {
           </div>
           <div className={styles.cover}>
             {avatarUrl ? (
-              <img className={styles.coverAvatar} src={avatarUrl} alt="Ảnh đại diện Sitter" />
+              <Image className={styles.coverAvatar} src={avatarUrl} alt="Ảnh đại diện Sitter" width={72} height={72} unoptimized />
             ) : (
               <span className={styles.avatar}>
                 <PettelIcon name="user" />
