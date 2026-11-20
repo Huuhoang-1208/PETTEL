@@ -174,11 +174,11 @@ final class MonitorServerResources extends Command
         $total = @disk_total_space('/');
         $free = @disk_free_space('/');
 
-        if (! is_float($total) && ! is_int($total)) {
+        if (! is_float($total)) {
             return null;
         }
 
-        if ((! is_float($free) && ! is_int($free)) || $total <= 0) {
+        if (! is_float($free) || $total <= 0) {
             return null;
         }
 
