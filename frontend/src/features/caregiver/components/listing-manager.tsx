@@ -19,6 +19,8 @@ const filters: { id: Filter; label: string }[] = [
   { id: "DRAFT", label: "Bản nháp" },
 ];
 
+const EMPTY_ITEMS: ManagedListing[] = [];
+
 function isPendingReview(item: ManagedListing) {
   return item.status === "PENDING_REVIEW" || !!item.pending_change_request_id;
 }
@@ -32,7 +34,7 @@ export function ListingManager({ includeAvailability = true }: { includeAvailabi
   const [filter, setFilter] = useState<Filter>("ALL");
   const listings = useApi<Page<ManagedListing>>(`/api/v1/caregiver/listings?status=ALL&page=${page}&per_page=50`, 15000);
   const [editing, setEditing] = useState<ManagedListing | null | undefined>();
-  const items = listings.data?.data ?? [];
+  const items = listings.data?.data ?? EMPTY_ITEMS;
   const visibleItems = useMemo(() => filter === "ALL" ? items : items.filter((item) =>
     filter === "PENDING_REVIEW" ? isPendingReview(item) : filter === "ACTIVE" ? isActive(item) : item.status === filter,
   ), [filter, items]);

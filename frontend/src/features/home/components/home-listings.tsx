@@ -1,12 +1,13 @@
 "use client";
 
 import { ApiError } from "@/components/ui/api-error";
+import { PettelIcon } from "@/components/ui/pettel-icon";
 import { HomeListingCard } from "@/features/home/components/home-listing-card";
 import styles from "@/features/home/styles/home-listings.module.css";
 import { useApi } from "@/hooks/use-api";
 import type { Listing, Page } from "@/lib/api/types";
+import Image from "next/image";
 import Link from "next/link";
-import { PettelIcon } from "@/components/ui/pettel-icon";
 
 const filters = [
   { label: "Tất cả", href: "/services", active: true },
@@ -70,9 +71,11 @@ export function HomeListings() {
           </div>
 
           <aside className={styles.map} aria-label="Bản đồ khu vực dịch vụ Đà Nẵng">
-            <img
+            <Image
               src="/images/danang_map.png"
               alt="Bản đồ các dịch vụ chăm sóc thú cưng tại Đà Nẵng"
+              fill
+              sizes="(max-width: 800px) 100vw, 40vw"
             />
             <div className={styles.mapLabel}>
               <span className={styles.mapDot} />

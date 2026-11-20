@@ -151,4 +151,42 @@ class PublicListingTest extends TestCase
             ->assertJsonPath('error.code', 'NOT_FOUND')
             ->assertJsonPath('error.message', 'Listing not found.');
     }
+
+    public function test_listing_search_only_uses_shared_cache_for_non_personalized_results(): void
+    {
+        $fixture = ListingFixture::make();
+
+        $this->getJson('/api/v1/listings?per_page=3')
+            ->assertOk()
+            ->assertHeader(
+                'Cache-Control',
+                'max-age=30, public, s-maxage=60, stale-while-revalidate=120',
+            );
+
+        $this->actingAs($fixture['owner'])
+            ->getJson('/api/v1/listings?pet_id='.$fixture['pet']->id)
+            ->assertOk()
+            ->assertHeader('Cache-Control', 'no-store, private');
+    }
+
+    public function test_public_listing_cache_policy_matches_data_freshness(): void
+    {
+        $fixture = ListingFixture::make();
+        $listingId = (string) $fixture['active_listing_id'];
+        $publicCache = 'max-age=30, public, s-maxage=60, stale-while-revalidate=120';
+
+        $this->getJson("/api/v1/listings/{$listingId}")
+            ->assertOk()
+            ->assertHeader('Cache-Control', $publicCache);
+
+        $this->getJson("/api/v1/listings/{$listingId}/services")
+            ->assertOk()
+            ->assertHeader('Cache-Control', $publicCache);
+
+        $this->getJson(
+            "/api/v1/listings/{$listingId}/availability?month=".now()->format('Y-m'),
+        )
+            ->assertOk()
+            ->assertHeader('Cache-Control', 'no-store, private');
+    }
 }

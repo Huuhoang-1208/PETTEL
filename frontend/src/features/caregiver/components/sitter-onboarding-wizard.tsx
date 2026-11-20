@@ -4,6 +4,7 @@ import { ApiError } from "@/components/ui/api-error";
 import { PettelIcon } from "@/components/ui/pettel-icon";
 import { write } from "@/lib/api/request";
 import { areas } from "@/lib/constants";
+import Image from "next/image";
 import { useState, type FormEvent } from "react";
 import type { SitterApplicationData } from "../types";
 import styles from "../sitter-onboarding.module.css";
@@ -183,7 +184,7 @@ export function SitterOnboardingWizard({ userName, userEmail, onComplete }: Prop
             <div className={styles.sectionTitle}><span>1</span><div><h2>Hồ sơ cá nhân &amp; Kinh nghiệm</h2><p>Thông tin hiển thị cho khách hàng khi tìm kiếm người chăm sóc</p></div><b>BẮT BUỘC</b></div>
             <div className={styles.avatarPanel}>
               <label className={styles.avatarPreview}>
-                {avatar ? <img src={avatar} alt="Xem trước ảnh đại diện Sitter" /> : <span><PettelIcon name="user" /></span>}
+                {avatar ? <Image src={avatar} alt="Xem trước ảnh đại diện Sitter" fill sizes="76px" unoptimized /> : <span><PettelIcon name="user" /></span>}
                 <input name="avatar" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) setAvatar(URL.createObjectURL(file)); }} />
               </label>
               <div><strong>Ảnh đại diện thân thiện</strong><p>Chọn ảnh rõ mặt, nụ cười thân thiện cùng thú cưng để hồ sơ dễ nhận diện hơn.</p><label className={styles.uploadButton}><PettelIcon name="plus" /> Tải ảnh lên<input name="avatar" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) setAvatar(URL.createObjectURL(file)); }} /></label><small>JPG, PNG hoặc WEBP dưới 5MB</small></div>
@@ -222,7 +223,7 @@ export function SitterOnboardingWizard({ userName, userEmail, onComplete }: Prop
         </section>
 
         <aside className={styles.sidebar}>
-          <section className={styles.previewCard}><div className={styles.previewHeading}><span>XEM TRƯỚC THẺ HIỂN THỊ</span><b>● Bản nháp</b></div><div className={styles.previewImage}>{avatar ? <img src={avatar} alt="Ảnh xem trước hồ sơ Sitter" /> : <span><PettelIcon name="paw" /></span>}<small>Hồ sơ PETTEL Sitter</small></div><div className={styles.previewInfo}><h3>{displayName.trim() || "Tên hiển thị của bạn"}<PettelIcon name="award" /></h3><p><PettelIcon name="pin" /> {areas[area as keyof typeof areas]} · Khu vực hoạt động</p><div><span>{type === "INDIVIDUAL" ? "Cá nhân" : "Cơ sở chuyên nghiệp"}</span><span>Bản nháp</span></div><strong>Giá dịch vụ sẽ hiển thị sau khi tạo listing</strong></div><p className={styles.previewHint}>Thẻ Sitter chỉ xuất hiện trên kết quả tìm kiếm sau khi dịch vụ được PETTEL duyệt.</p></section>
+          <section className={styles.previewCard}><div className={styles.previewHeading}><span>XEM TRƯỚC THẺ HIỂN THỊ</span><b>● Bản nháp</b></div><div className={styles.previewImage}>{avatar ? <Image src={avatar} alt="Ảnh xem trước hồ sơ Sitter" fill sizes="(max-width: 700px) 100vw, 320px" unoptimized /> : <span><PettelIcon name="paw" /></span>}<small>Hồ sơ PETTEL Sitter</small></div><div className={styles.previewInfo}><h3>{displayName.trim() || "Tên hiển thị của bạn"}<PettelIcon name="award" /></h3><p><PettelIcon name="pin" /> {areas[area as keyof typeof areas]} · Khu vực hoạt động</p><div><span>{type === "INDIVIDUAL" ? "Cá nhân" : "Cơ sở chuyên nghiệp"}</span><span>Bản nháp</span></div><strong>Giá dịch vụ sẽ hiển thị sau khi tạo listing</strong></div><p className={styles.previewHint}>Thẻ Sitter chỉ xuất hiện trên kết quả tìm kiếm sau khi dịch vụ được PETTEL duyệt.</p></section>
           <section className={styles.rightCard}><h3><PettelIcon name="shield" /> Quyền lợi Sitter PETTEL</h3><p><PettelIcon name="check" /> Hỗ trợ thú y và chăm sóc an toàn</p><p><PettelIcon name="check" /> Kết nối khách hàng đã xác minh</p><p><PettelIcon name="check" /> Theo dõi lịch và đơn trên cùng tài khoản</p></section>
           <section className={`${styles.rightCard} ${styles.supportCard}`}><h3><PettelIcon name="message" /> Cần hỗ trợ đăng ký?</h3><p>Đội ngũ PETTEL sẵn sàng hướng dẫn bạn hoàn thiện hồ sơ.</p><a href="/contact-support"><PettelIcon name="mail" /> Liên hệ PETTEL</a></section>
         </aside>
