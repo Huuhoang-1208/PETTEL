@@ -97,7 +97,7 @@ class BookingIdempotencyConcurrencyTest extends TestCase
 require getcwd().'/vendor/autoload.php';
 $app = require getcwd().'/bootstrap/app.php';
 $kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
-$request = \Illuminate\Http\Request::create('/api/bookings', 'POST', [], [], [], [
+$request = \Illuminate\Http\Request::create('/api/v1/bookings', 'POST', [], [], [], [
     'CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json', 'HTTP_IDEMPOTENCY_KEY' => $argv[3],
 ], base64_decode($argv[2], true));
 $app->instance('request', $request);

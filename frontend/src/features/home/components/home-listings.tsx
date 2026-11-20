@@ -16,7 +16,7 @@ const filters = [
 ];
 
 export function HomeListings() {
-  const resource = useApi<Page<Listing>>("/api/listings?per_page=3");
+  const resource = useApi<Page<Listing>>("/api/v1/listings?per_page=3");
   const count = resource.data?.meta?.total ?? resource.data?.data.length ?? 0;
 
   return (

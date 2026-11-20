@@ -22,7 +22,7 @@ export function ReviewForm({ id }: { id: string }) {
             setBusy(true);
             setError(undefined);
             try {
-              await write("post", `/api/bookings/${id}/reviews`, {
+              await write("post", `/api/v1/bookings/${id}/reviews`, {
                 rating: Number(data.get("rating")),
                 body: data.get("body"),
               });

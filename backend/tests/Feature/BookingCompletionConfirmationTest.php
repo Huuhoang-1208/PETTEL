@@ -17,7 +17,7 @@ class BookingCompletionConfirmationTest extends TestCase
     {
         $fixture = $this->awaitingConfirmation();
         $booking = $fixture['booking'];
-        $url = "/api/bookings/{$booking->id}/confirm-completion";
+        $url = "/api/v1/bookings/{$booking->id}/confirm-completion";
         $version = $booking->version;
         $eventCount = DB::table('booking_status_events')->where('booking_id', $booking->id)->count();
 
@@ -45,7 +45,7 @@ class BookingCompletionConfirmationTest extends TestCase
     public function test_non_owner_cannot_request_release(): void
     {
         $fixture = $this->awaitingConfirmation();
-        $url = "/api/bookings/{$fixture['booking']->id}/confirm-completion";
+        $url = "/api/v1/bookings/{$fixture['booking']->id}/confirm-completion";
 
         $this->actingAs($fixture['caregiver'])->postJson($url)->assertNotFound();
 
@@ -56,13 +56,13 @@ class BookingCompletionConfirmationTest extends TestCase
     {
         $fixture = $this->awaitingConfirmation(status: 'IN_PROGRESS');
         $this->actingAs($fixture['owner'])
-            ->postJson("/api/bookings/{$fixture['booking']->id}/confirm-completion")
+            ->postJson("/api/v1/bookings/{$fixture['booking']->id}/confirm-completion")
             ->assertConflict()
             ->assertJsonPath('error.code', 'INVALID_STATE');
 
         $fixture = $this->awaitingConfirmation(paymentStatus: 'FAILED');
         $this->actingAs($fixture['owner'])
-            ->postJson("/api/bookings/{$fixture['booking']->id}/confirm-completion")
+            ->postJson("/api/v1/bookings/{$fixture['booking']->id}/confirm-completion")
             ->assertConflict()
             ->assertJsonPath('error.code', 'PAYMENT_STATE_MISMATCH');
 
@@ -82,7 +82,7 @@ class BookingCompletionConfirmationTest extends TestCase
         ]);
 
         $this->actingAs($fixture['owner'])
-            ->postJson("/api/bookings/{$fixture['booking']->id}/confirm-completion")
+            ->postJson("/api/v1/bookings/{$fixture['booking']->id}/confirm-completion")
             ->assertConflict()
             ->assertJsonPath('error.code', 'REPORT_IN_REVIEW');
 
@@ -125,7 +125,7 @@ class BookingCompletionConfirmationTest extends TestCase
         $eventCount = DB::table('booking_status_events')->where('booking_id', $booking->id)->count();
 
         $this->actingAs($fixture['owner'])
-            ->postJson("/api/bookings/{$booking->id}/confirm-completion")
+            ->postJson("/api/v1/bookings/{$booking->id}/confirm-completion")
             ->assertOk()
             ->assertJsonPath('status', 'COMPLETED');
 

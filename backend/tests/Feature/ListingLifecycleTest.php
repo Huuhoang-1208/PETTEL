@@ -26,12 +26,12 @@ class ListingLifecycleTest extends TestCase
         $admin = $this->admin();
         $id = $fixture['draft_listing_id'];
 
-        $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$id}/submit")
+        $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$id}/submit")
             ->assertOk()->assertJsonPath('data.status', 'PENDING_REVIEW')
             ->assertJsonPath('data.version', 2);
-        $this->actingAs($caregiver)->postJson("/api/admin/listings/{$id}/approve")
+        $this->actingAs($caregiver)->postJson("/api/v1/admin/listings/{$id}/approve")
             ->assertForbidden();
-        $this->actingAs($admin)->postJson("/api/admin/listings/{$id}/reject", ['reason' => 'Please add clearer care details.'])
+        $this->actingAs($admin)->postJson("/api/v1/admin/listings/{$id}/reject", ['reason' => 'Please add clearer care details.'])
             ->assertOk()->assertJsonPath('data.status', 'DRAFT');
         $this->assertDatabaseHas('audit_logs', [
             'resource_type' => 'LISTING', 'resource_id' => $id,
@@ -45,21 +45,21 @@ class ListingLifecycleTest extends TestCase
         $caregiver = $fixture['caregiver'];
         $admin = $this->admin();
         $id = $fixture['draft_listing_id'];
-        $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$id}/submit")->assertOk();
-        $this->actingAs($admin)->postJson("/api/admin/listings/{$id}/approve")->assertOk()
+        $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$id}/submit")->assertOk();
+        $this->actingAs($admin)->postJson("/api/v1/admin/listings/{$id}/approve")->assertOk()
             ->assertJsonPath('data.status', 'ACTIVE');
-        $this->getJson("/api/listings/{$id}")->assertOk();
+        $this->getJson("/api/v1/listings/{$id}")->assertOk();
 
-        $this->actingAs($admin)->postJson("/api/admin/listings/{$id}/suspend", ['reason' => 'Moderation review.'])
+        $this->actingAs($admin)->postJson("/api/v1/admin/listings/{$id}/suspend", ['reason' => 'Moderation review.'])
             ->assertOk()->assertJsonPath('data.status', 'SUSPENDED')
             ->assertJsonPath('data.suspension_source', 'ADMIN');
-        $this->getJson("/api/listings/{$id}")->assertNotFound();
-        $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$id}/restore")
+        $this->getJson("/api/v1/listings/{$id}")->assertNotFound();
+        $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$id}/restore")
             ->assertForbidden()->assertJsonPath('error.code', 'FORBIDDEN');
-        $this->actingAs($admin)->postJson("/api/admin/listings/{$id}/restore", ['reason' => 'Review complete.'])
+        $this->actingAs($admin)->postJson("/api/v1/admin/listings/{$id}/restore", ['reason' => 'Review complete.'])
             ->assertOk()->assertJsonPath('data.status', 'ACTIVE')
             ->assertJsonPath('data.suspension_source', null);
-        $this->getJson("/api/listings/{$id}")->assertOk();
+        $this->getJson("/api/v1/listings/{$id}")->assertOk();
     }
 
     public function test_change_request_keeps_old_public_content_until_admin_approves(): void
@@ -68,15 +68,15 @@ class ListingLifecycleTest extends TestCase
         $caregiver = $fixture['caregiver'];
         $admin = $this->admin();
         $id = $fixture['active_listing_id'];
-        $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$id}/change-requests", [
+        $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$id}/change-requests", [
             'base_listing_version' => 1,
             'changes' => ['title' => 'New approved title', 'media' => []],
         ])->assertCreated()->assertJsonPath('data.status', 'PENDING_REVIEW');
         $changeId = DB::table('listing_change_requests')->where('listing_id', $id)->value('id');
-        $this->getJson("/api/listings/{$id}")->assertOk()->assertJsonPath('data.title', 'Test daycare');
-        $this->actingAs($admin)->postJson("/api/admin/listings/{$id}/change-requests/{$changeId}/approve")
+        $this->getJson("/api/v1/listings/{$id}")->assertOk()->assertJsonPath('data.title', 'Test daycare');
+        $this->actingAs($admin)->postJson("/api/v1/admin/listings/{$id}/change-requests/{$changeId}/approve")
             ->assertOk()->assertJsonPath('data.status', 'APPROVED')->assertJsonPath('data.listing_version', 2);
-        $this->getJson("/api/listings/{$id}")->assertOk()->assertJsonPath('data.title', 'New approved title');
+        $this->getJson("/api/v1/listings/{$id}")->assertOk()->assertJsonPath('data.title', 'New approved title');
     }
 
     public function test_slot_overlap_and_held_booking_coverage_are_protected(): void
@@ -86,7 +86,7 @@ class ListingLifecycleTest extends TestCase
         $id = $fixture['active_listing_id'];
         $start = $fixture['start_at']->copy()->addHour()->toIso8601String();
         $end = $fixture['start_at']->copy()->addHours(2)->toIso8601String();
-        $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$id}/availability-slots", [
+        $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$id}/availability-slots", [
             'start_at' => $start, 'end_at' => $end,
         ])->assertConflict()->assertJsonPath('error.code', 'AVAILABILITY_CONFLICT');
 
@@ -105,7 +105,7 @@ class ListingLifecycleTest extends TestCase
             'version' => 1, 'created_at' => now(), 'updated_at' => now(),
         ]);
         $slotId = DB::table('availability_slots')->where('listing_id', $id)->value('id');
-        $this->deleteJson("/api/caregiver/listings/{$id}/availability-slots/{$slotId}")
+        $this->deleteJson("/api/v1/caregiver/listings/{$id}/availability-slots/{$slotId}")
             ->assertConflict()->assertJsonPath('error.code', 'AVAILABILITY_CONFLICT');
         $this->assertDatabaseHas('availability_slots', ['id' => $slotId, 'deleted_at' => null]);
     }
@@ -117,23 +117,23 @@ class ListingLifecycleTest extends TestCase
         $caregiver = $fixture['caregiver'];
         $admin = $this->admin();
         $id = $fixture['draft_listing_id'];
-        $upload = $this->actingAs($caregiver)->postJson('/api/caregiver/media', [
+        $upload = $this->actingAs($caregiver)->postJson('/api/v1/caregiver/media', [
             'file' => UploadedFile::fake()->image('care.png', 120, 90),
         ])->assertCreated();
         $mediaId = $upload->json('data.id');
         $this->assertDatabaseHas('media_objects', ['id' => $mediaId, 'visibility' => 'PRIVATE', 'state' => 'READY']);
 
-        $this->putJson("/api/caregiver/listings/{$id}/media", ['media' => [[
+        $this->putJson("/api/v1/caregiver/listings/{$id}/media", ['media' => [[
             'media_object_id' => $mediaId, 'sort_order' => 1,
         ]]])->assertOk();
-        $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$id}/submit")->assertOk();
-        $this->actingAs($admin)->postJson("/api/admin/listings/{$id}/approve")->assertOk();
+        $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$id}/submit")->assertOk();
+        $this->actingAs($admin)->postJson("/api/v1/admin/listings/{$id}/approve")->assertOk();
         $this->assertDatabaseHas('media_objects', ['id' => $mediaId, 'visibility' => 'PUBLIC_ELIGIBLE']);
-        $this->getJson("/api/listings/{$id}")->assertOk()->assertJsonPath('data.media.0.media_object_id', (string) $mediaId);
-        $this->get("/api/listings/{$id}/media/{$mediaId}/content")->assertOk()->assertHeader('Content-Type', 'image/png');
+        $this->getJson("/api/v1/listings/{$id}")->assertOk()->assertJsonPath('data.media.0.media_object_id', (string) $mediaId);
+        $this->get("/api/v1/listings/{$id}/media/{$mediaId}/content")->assertOk()->assertHeader('Content-Type', 'image/png');
 
-        $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$id}/suspend", ['reason' => 'Temporarily unavailable.'])->assertOk();
-        $this->get("/api/listings/{$id}/media/{$mediaId}/content")->assertNotFound();
+        $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$id}/suspend", ['reason' => 'Temporarily unavailable.'])->assertOk();
+        $this->get("/api/v1/listings/{$id}/media/{$mediaId}/content")->assertNotFound();
     }
 
     public function test_suspension_source_check_rejects_invalid_state_source_pairs(): void
@@ -165,12 +165,12 @@ class ListingLifecycleTest extends TestCase
         $active = $fixture['active_listing_id'];
         $slotId = DB::table('availability_slots')->where('listing_id', $active)->value('id');
 
-        $this->actingAs($caregiver)->getJson("/api/caregiver/listings/{$foreignDraft}/change-requests")->assertNotFound();
-        $this->postJson("/api/caregiver/listings/{$foreignDraft}/submit")->assertNotFound();
-        $this->postJson("/api/caregiver/listings/{$foreignDraft}/availability-slots", [
+        $this->actingAs($caregiver)->getJson("/api/v1/caregiver/listings/{$foreignDraft}/change-requests")->assertNotFound();
+        $this->postJson("/api/v1/caregiver/listings/{$foreignDraft}/submit")->assertNotFound();
+        $this->postJson("/api/v1/caregiver/listings/{$foreignDraft}/availability-slots", [
             'start_at' => 'invalid', 'end_at' => 'invalid',
         ])->assertNotFound();
-        $this->deleteJson("/api/caregiver/listings/{$ownDraft}/availability-slots/{$slotId}")->assertNotFound();
+        $this->deleteJson("/api/v1/caregiver/listings/{$ownDraft}/availability-slots/{$slotId}")->assertNotFound();
     }
 
     public function test_admin_cannot_review_their_own_listing(): void
@@ -182,9 +182,9 @@ class ListingLifecycleTest extends TestCase
         ]);
         $id = $fixture['draft_listing_id'];
 
-        $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$id}/submit")->assertOk();
-        $this->postJson("/api/admin/listings/{$id}/approve")->assertForbidden();
-        $this->postJson("/api/admin/listings/{$id}/reject")->assertForbidden();
+        $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$id}/submit")->assertOk();
+        $this->postJson("/api/v1/admin/listings/{$id}/approve")->assertForbidden();
+        $this->postJson("/api/v1/admin/listings/{$id}/reject")->assertForbidden();
         $this->assertDatabaseHas('listings', ['id' => $id, 'status' => 'PENDING_REVIEW', 'version' => 2]);
     }
 
@@ -196,7 +196,7 @@ class ListingLifecycleTest extends TestCase
 
         $this->actingAs($fixture['caregiver'])
             ->withHeader('X-Request-ID', $requestId)
-            ->postJson("/api/caregiver/listings/{$id}/submit")
+            ->postJson("/api/v1/caregiver/listings/{$id}/submit")
             ->assertOk();
 
         $audit = DB::table('audit_logs')->where('action', 'LISTING_SUBMITTED')->first();
@@ -211,14 +211,14 @@ class ListingLifecycleTest extends TestCase
         $fixture = BookingFixture::make();
         $caregiver = $fixture['caregiver'];
         $listingId = $fixture['active_listing_id'];
-        $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$listingId}/change-requests", [
+        $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$listingId}/change-requests", [
             'base_listing_version' => 1,
             'changes' => ['title' => 'Proposed title', 'media' => []],
         ])->assertCreated();
 
         $requestId = 'fb8ea28a-9da3-40ed-97f5-5bfb2a65cd80';
         $this->withHeader('X-Request-ID', $requestId)
-            ->postJson("/api/caregiver/listings/{$listingId}/suspend", ['reason' => 'Temporarily unavailable.'])
+            ->postJson("/api/v1/caregiver/listings/{$listingId}/suspend", ['reason' => 'Temporarily unavailable.'])
             ->assertOk();
         $changeId = DB::table('listing_change_requests')->where('listing_id', $listingId)->value('id');
         $this->assertDatabaseHas('listing_change_requests', [
@@ -248,7 +248,7 @@ class ListingLifecycleTest extends TestCase
         $this->app->instance(ListingWorkflow::class, $workflow);
 
         $this->actingAs($fixture['caregiver'])
-            ->postJson("/api/caregiver/listings/{$listingId}/submit")
+            ->postJson("/api/v1/caregiver/listings/{$listingId}/submit")
             ->assertInternalServerError();
 
         $this->assertDatabaseHas('listings', ['id' => $listingId, 'status' => 'DRAFT', 'version' => 1]);
@@ -262,12 +262,12 @@ class ListingLifecycleTest extends TestCase
         $draftId = $fixture['draft_listing_id'];
         $draft = DB::table('listings')->where('id', $draftId)->first();
 
-        $this->actingAs($caregiver)->patchJson("/api/caregiver/listings/{$draftId}", ['title' => $draft->title])->assertOk();
+        $this->actingAs($caregiver)->patchJson("/api/v1/caregiver/listings/{$draftId}", ['title' => $draft->title])->assertOk();
         $this->assertDatabaseHas('listings', ['id' => $draftId, 'version' => 1]);
 
         $activeId = $fixture['active_listing_id'];
         $version = DB::table('listings')->where('id', $activeId)->value('version');
-        $this->postJson("/api/caregiver/listings/{$activeId}/availability-slots", [
+        $this->postJson("/api/v1/caregiver/listings/{$activeId}/availability-slots", [
             'start_at' => now()->addDays(30)->toIso8601String(),
             'end_at' => now()->addDays(30)->addHour()->toIso8601String(),
         ])->assertCreated();

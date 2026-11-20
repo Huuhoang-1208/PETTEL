@@ -16,10 +16,10 @@ export function ModerationDashboard() {
   const [page, setPage] = useState(1);
   const [changePage, setChangePage] = useState(1);
   const listings = useApi<Page<Listing>>(
-    allowed ? `/api/admin/listings?status=${status}&page=${page}` : null,
+    allowed ? `/api/v1/admin/listings?status=${status}&page=${page}` : null,
   );
   const changes = useApi<Page<Change>>(
-    allowed ? `/api/admin/listing-change-requests?page=${changePage}` : null,
+    allowed ? `/api/v1/admin/listing-change-requests?page=${changePage}` : null,
   );
   if (!allowed) return <p className="app-notice">Tài khoản hiện tại không có quyền quản trị.</p>;
   return (
@@ -78,7 +78,7 @@ export function ModerationDashboard() {
         <ModerationCard
           key={change.id}
           listing={change.proposed_data_json.data}
-          path={`/api/admin/listings/${change.listing_id}/change-requests/${change.id}`}
+          path={`/api/v1/admin/listings/${change.listing_id}/change-requests/${change.id}`}
           refresh={() => {
             changes.reload();
             listings.reload();

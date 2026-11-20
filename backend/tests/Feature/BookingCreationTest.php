@@ -56,7 +56,7 @@ class BookingCreationTest extends TestCase
         $this->assertArrayNotHasKey('user_id', $snapshot);
 
         $this->actingAs($fixture['owner'], 'web')
-            ->getJson('/api/user')
+            ->getJson('/api/v1/user')
             ->assertOk();
 
         $this->assertDatabaseCount('bookings', 0);
@@ -66,7 +66,7 @@ class BookingCreationTest extends TestCase
     {
         $fixture = $this->bookingFixture();
         $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', $fixture['idempotency_key'])
-            ->postJson('/api/bookings', $fixture['payload'] + [
+            ->postJson('/api/v1/bookings', $fixture['payload'] + [
                 'owner_id' => $fixture['foreign_pet']->user_id,
                 'amount' => 1,
                 'status' => 'CONFIRMED',
@@ -84,15 +84,15 @@ class BookingCreationTest extends TestCase
     {
         $fixture = $this->bookingFixture();
         $this->withHeader('Idempotency-Key', $fixture['idempotency_key'])
-            ->postJson('/api/bookings', $fixture['payload'])->assertUnauthorized();
+            ->postJson('/api/v1/bookings', $fixture['payload'])->assertUnauthorized();
 
         DB::table('user_roles')->where('user_id', $fixture['caregiver']->id)->where('role', 'OWNER')->delete();
-        $this->actingAs($fixture['caregiver'])->postJson('/api/bookings', $fixture['payload'])->assertForbidden();
+        $this->actingAs($fixture['caregiver'])->postJson('/api/v1/bookings', $fixture['payload'])->assertForbidden();
 
         foreach (['SUSPENDED', 'DELETION_PENDING', 'DEACTIVATED'] as $status) {
             $fixture['owner']->status = $status;
             $fixture['owner']->save();
-            $this->actingAs($fixture['owner'])->postJson('/api/bookings', $fixture['payload'])->assertForbidden();
+            $this->actingAs($fixture['owner'])->postJson('/api/v1/bookings', $fixture['payload'])->assertForbidden();
         }
         $this->assertDatabaseCount('bookings', 0);
     }
@@ -107,7 +107,7 @@ class BookingCreationTest extends TestCase
             if ($key === null) {
                 $this->withoutHeader('Idempotency-Key');
             }
-            $this->postJson('/api/bookings', $fixture['payload'] + ['Idempotency-Key' => 'forged-body-key'])
+            $this->postJson('/api/v1/bookings', $fixture['payload'] + ['Idempotency-Key' => 'forged-body-key'])
                 ->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR')
                 ->assertJsonStructure(['error' => ['details' => ['Idempotency-Key'], 'request_id']]);
         }
@@ -123,7 +123,7 @@ class BookingCreationTest extends TestCase
             ['start_at', '2030-01-01T08:00:00.1234567Z'],
         ] as [$field, $value]) {
             $payload = array_replace($fixture['payload'], [$field => $value]);
-            $this->postJson('/api/bookings', $payload)->assertUnprocessable()
+            $this->postJson('/api/v1/bookings', $payload)->assertUnprocessable()
                 ->assertJsonPath('error.code', 'VALIDATION_ERROR')
                 ->assertJsonStructure(['error' => ['details' => [$field]]]);
         }
@@ -230,7 +230,7 @@ class BookingCreationTest extends TestCase
             }
 
             $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', $fixture['idempotency_key'])
-                ->postJson('/api/bookings', $payload)->assertStatus($status)->assertJsonPath('error.code', $code);
+                ->postJson('/api/v1/bookings', $payload)->assertStatus($status)->assertJsonPath('error.code', $code);
         }
         $this->assertDatabaseCount('bookings', 0);
     }
@@ -259,7 +259,7 @@ class BookingCreationTest extends TestCase
                 'updated_at' => now(),
             ]);
             $response = $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', $fixture['idempotency_key'])
-                ->postJson('/api/bookings', $fixture['payload']);
+                ->postJson('/api/v1/bookings', $fixture['payload']);
             if (in_array($state, ['AWAITING_PAYMENT', 'CONFIRMED', 'IN_PROGRESS', 'AWAITING_CONFIRMATION'], true)) {
                 $response->assertConflict()->assertJsonPath('error.code', 'AVAILABILITY_CONFLICT');
             } else {
@@ -279,7 +279,7 @@ class BookingCreationTest extends TestCase
                 ->update(['end_at' => $end->addHour()->format('Y-m-d H:i:s.u')]);
             $payload = array_replace($fixture['payload'], ['end_at' => $end->toIso8601String()]);
             $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', $fixture['idempotency_key'])
-                ->postJson('/api/bookings', $payload)->assertStatus($status);
+                ->postJson('/api/v1/bookings', $payload)->assertStatus($status);
         }
         $this->assertDatabaseCount('bookings', 2);
     }
@@ -287,7 +287,7 @@ class BookingCreationTest extends TestCase
     public function test_quote_needs_no_key_and_ignores_client_price(): void
     {
         $fixture = $this->bookingFixture();
-        $this->actingAs($fixture['owner'])->postJson('/api/bookings/quote', $fixture['payload'] + [
+        $this->actingAs($fixture['owner'])->postJson('/api/v1/bookings/quote', $fixture['payload'] + [
             'amount' => 1,
             'price_vnd' => 1,
             'owner_id' => $fixture['caregiver']->id,
@@ -311,20 +311,20 @@ class BookingCreationTest extends TestCase
         $this->app->instance(CalculateBookingPrice::class, $calculator);
 
         $fixture = $this->bookingFixture();
-        $this->actingAs($fixture['owner'])->postJson('/api/bookings/quote', $fixture['payload'])
+        $this->actingAs($fixture['owner'])->postJson('/api/v1/bookings/quote', $fixture['payload'])
             ->assertOk()->assertJsonPath('price_total_vnd', 150000);
         $this->withHeader('Idempotency-Key', $fixture['idempotency_key'])
-            ->postJson('/api/bookings', $fixture['payload'])->assertCreated();
+            ->postJson('/api/v1/bookings', $fixture['payload'])->assertCreated();
         $this->assertDatabaseCount('bookings', 1);
     }
 
     public function test_quote_reflects_current_listing_price(): void
     {
         $fixture = $this->bookingFixture();
-        $this->actingAs($fixture['owner'])->postJson('/api/bookings/quote', $fixture['payload'])
+        $this->actingAs($fixture['owner'])->postJson('/api/v1/bookings/quote', $fixture['payload'])
             ->assertOk()->assertJsonPath('price_total_vnd', 150000);
         DB::table('listings')->where('id', $fixture['active_listing_id'])->update(['price_vnd' => 70000]);
-        $this->postJson('/api/bookings/quote', $fixture['payload'])
+        $this->postJson('/api/v1/bookings/quote', $fixture['payload'])
             ->assertOk()->assertJsonPath('price_total_vnd', 210000);
         $this->assertDatabaseCount('bookings', 0);
     }
@@ -332,11 +332,11 @@ class BookingCreationTest extends TestCase
     public function test_quote_uses_the_same_auth_ownership_and_availability_checks(): void
     {
         $fixture = $this->bookingFixture();
-        $this->postJson('/api/bookings/quote', $fixture['payload'])->assertUnauthorized();
+        $this->postJson('/api/v1/bookings/quote', $fixture['payload'])->assertUnauthorized();
         $foreign = array_replace($fixture['payload'], ['pet_id' => (string) $fixture['foreign_pet']->id]);
-        $this->actingAs($fixture['owner'])->postJson('/api/bookings/quote', $foreign)->assertNotFound();
+        $this->actingAs($fixture['owner'])->postJson('/api/v1/bookings/quote', $foreign)->assertNotFound();
         DB::table('availability_slots')->where('listing_id', $fixture['active_listing_id'])->delete();
-        $this->postJson('/api/bookings/quote', $fixture['payload'])
+        $this->postJson('/api/v1/bookings/quote', $fixture['payload'])
             ->assertConflict()->assertJsonPath('error.code', 'AVAILABILITY_CONFLICT');
         $this->assertDatabaseCount('bookings', 0);
     }
@@ -347,7 +347,7 @@ class BookingCreationTest extends TestCase
         $payload = array_replace($fixture['payload'], [
             'end_at' => $fixture['start_at']->addHour()->addMicrosecond()->format('Y-m-d\TH:i:s.u\Z'),
         ]);
-        $this->actingAs($fixture['owner'])->postJson('/api/bookings/quote', $payload)
+        $this->actingAs($fixture['owner'])->postJson('/api/v1/bookings/quote', $payload)
             ->assertOk()->assertJsonPath('quantity', 2)->assertJsonPath('price_total_vnd', 100000);
     }
 
@@ -360,7 +360,7 @@ class BookingCreationTest extends TestCase
         DB::table('availability_slots')->where('listing_id', $fixture['active_listing_id'])
             ->update(['end_at' => $end->addHour()->format('Y-m-d H:i:s.u')]);
         $payload = array_replace($fixture['payload'], ['end_at' => $end->toIso8601String()]);
-        $this->actingAs($fixture['owner'])->postJson('/api/bookings/quote', $payload)
+        $this->actingAs($fixture['owner'])->postJson('/api/v1/bookings/quote', $payload)
             ->assertOk()->assertJsonPath('quantity', 2)->assertJsonPath('price_unit', 'NIGHT')
             ->assertJsonPath('price_total_vnd', 400000);
     }
@@ -369,10 +369,10 @@ class BookingCreationTest extends TestCase
     {
         $fixture = $this->bookingFixture();
         DB::table('listings')->where('id', $fixture['active_listing_id'])->update(['price_vnd' => PHP_INT_MAX]);
-        $this->actingAs($fixture['owner'])->postJson('/api/bookings/quote', $fixture['payload'])
+        $this->actingAs($fixture['owner'])->postJson('/api/v1/bookings/quote', $fixture['payload'])
             ->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
         $this->withHeader('Idempotency-Key', $fixture['idempotency_key'])
-            ->postJson('/api/bookings', $fixture['payload'])
+            ->postJson('/api/v1/bookings', $fixture['payload'])
             ->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
         $this->assertDatabaseCount('bookings', 0);
     }
@@ -389,7 +389,7 @@ class BookingCreationTest extends TestCase
         ]);
 
         $response = $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', $fixture['idempotency_key'])
-            ->postJson('/api/bookings', $payload)->assertCreated();
+            ->postJson('/api/v1/bookings', $payload)->assertCreated();
         $booking = Booking::query()->findOrFail($response->json('id'));
 
         $response->assertExactJson([
@@ -472,7 +472,7 @@ class BookingCreationTest extends TestCase
 
         try {
             $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', $fixture['idempotency_key'])
-                ->postJson('/api/bookings', $fixture['payload']);
+                ->postJson('/api/v1/bookings', $fixture['payload']);
             $this->fail('Expected the event write to fail.');
         } catch (\RuntimeException $exception) {
             $this->assertSame('Simulated status-event failure', $exception->getMessage());
@@ -485,7 +485,7 @@ class BookingCreationTest extends TestCase
     {
         $fixture = $this->bookingFixture();
         $first = $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', $fixture['idempotency_key'])
-            ->postJson('/api/bookings', $fixture['payload'])->assertCreated();
+            ->postJson('/api/v1/bookings', $fixture['payload'])->assertCreated();
         $booking = Booking::findOrFail($first->json('id'));
 
         $fixture['pet']->update(['diet_notes' => 'Changed notes', 'status' => 'ARCHIVED']);
@@ -501,7 +501,7 @@ class BookingCreationTest extends TestCase
 
         $this->travelTo($fixture['end_at']->addDay());
         try {
-            $this->postJson('/api/bookings', $fixture['payload'])->assertOk()
+            $this->postJson('/api/v1/bookings', $fixture['payload'])->assertOk()
                 ->assertJsonPath('id', $first->json('id'))
                 ->assertJsonPath('status', 'CANCELLED')
                 ->assertJsonPath('price_snapshot_vnd', 150000);
@@ -517,7 +517,7 @@ class BookingCreationTest extends TestCase
     {
         $fixture = $this->bookingFixture();
         $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', $fixture['idempotency_key'])
-            ->postJson('/api/bookings', $fixture['payload'])->assertCreated();
+            ->postJson('/api/v1/bookings', $fixture['payload'])->assertCreated();
 
         foreach ([
             'pet_id' => (string) $fixture['foreign_pet']->id,
@@ -526,7 +526,7 @@ class BookingCreationTest extends TestCase
             'end_at' => $fixture['end_at']->addSecond()->toIso8601String(),
             'instructions' => 'Different instructions',
         ] as $field => $value) {
-            $this->postJson('/api/bookings', array_replace($fixture['payload'], [$field => $value]))
+            $this->postJson('/api/v1/bookings', array_replace($fixture['payload'], [$field => $value]))
                 ->assertConflict()->assertJsonPath('error.code', 'IDEMPOTENCY_CONFLICT');
         }
         $this->assertDatabaseCount('bookings', 1);
@@ -540,7 +540,7 @@ class BookingCreationTest extends TestCase
             'instructions' => "  Cafe\u{0301} / feed  ",
         ]);
         $first = $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', $fixture['idempotency_key'])
-            ->postJson('/api/bookings', $payload)->assertCreated();
+            ->postJson('/api/v1/bookings', $payload)->assertCreated();
 
         $replay = array_replace($payload, [
             'pet_id' => '00'.$fixture['pet']->id,
@@ -552,7 +552,7 @@ class BookingCreationTest extends TestCase
             'status' => 'CONFIRMED',
             'amount' => 1,
         ]);
-        $this->postJson('/api/bookings', $replay)->assertOk()->assertExactJson($first->json());
+        $this->postJson('/api/v1/bookings', $replay)->assertOk()->assertExactJson($first->json());
         $booking = Booking::findOrFail($first->json('id'));
         $this->assertSame('Café / feed', $booking->instructions_snapshot);
         $this->assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/', $booking->request_payload_hash);
@@ -566,9 +566,9 @@ class BookingCreationTest extends TestCase
         $payload = $fixture['payload'];
         unset($payload['instructions']);
         $first = $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', $fixture['idempotency_key'])
-            ->postJson('/api/bookings', $payload)->assertCreated();
+            ->postJson('/api/v1/bookings', $payload)->assertCreated();
         foreach ([null, '', '   '] as $instructions) {
-            $this->postJson('/api/bookings', $payload + ['instructions' => $instructions])
+            $this->postJson('/api/v1/bookings', $payload + ['instructions' => $instructions])
                 ->assertOk()->assertExactJson($first->json());
         }
         $this->assertDatabaseCount('bookings', 1);
@@ -579,12 +579,12 @@ class BookingCreationTest extends TestCase
     {
         $fixture = $this->bookingFixture();
         $first = $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', $fixture['idempotency_key'])
-            ->postJson('/api/bookings', $fixture['payload'])->assertCreated();
+            ->postJson('/api/v1/bookings', $fixture['payload'])->assertCreated();
         $otherOwner = User::findOrFail($fixture['foreign_pet']->user_id);
         $payload = array_replace($fixture['payload'], ['pet_id' => (string) $fixture['foreign_pet']->id]);
-        $second = $this->actingAs($otherOwner)->postJson('/api/bookings', $payload)->assertCreated();
+        $second = $this->actingAs($otherOwner)->postJson('/api/v1/bookings', $payload)->assertCreated();
         $this->assertNotSame($first->json('id'), $second->json('id'));
-        $this->actingAs($otherOwner, 'web')->postJson('/api/bookings', $payload)
+        $this->actingAs($otherOwner, 'web')->postJson('/api/v1/bookings', $payload)
             ->assertOk()->assertJsonPath('id', $second->json('id'));
         $this->assertDatabaseCount('bookings', 2);
         $this->assertDatabaseCount('booking_status_events', 2);
@@ -594,14 +594,14 @@ class BookingCreationTest extends TestCase
     {
         $fixture = $this->bookingFixture();
         $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', $fixture['idempotency_key'])
-            ->postJson('/api/bookings', $fixture['payload'])->assertCreated();
+            ->postJson('/api/v1/bookings', $fixture['payload'])->assertCreated();
         $fixture['owner']->status = 'SUSPENDED';
         $fixture['owner']->save();
-        $this->postJson('/api/bookings', $fixture['payload'])->assertForbidden();
+        $this->postJson('/api/v1/bookings', $fixture['payload'])->assertForbidden();
         $fixture['owner']->status = 'ACTIVE';
         $fixture['owner']->save();
         DB::table('user_roles')->where('user_id', $fixture['owner']->id)->where('role', 'OWNER')->delete();
-        $this->postJson('/api/bookings', $fixture['payload'])->assertForbidden();
+        $this->postJson('/api/v1/bookings', $fixture['payload'])->assertForbidden();
         $this->assertDatabaseCount('bookings', 1);
         $this->assertDatabaseCount('booking_status_events', 1);
     }
@@ -612,7 +612,7 @@ class BookingCreationTest extends TestCase
         $petId = $fixture['pet']->id;
         $response = $this->actingAs($fixture['owner'])
             ->withHeader('Idempotency-Key', $fixture['idempotency_key'])
-            ->postJson('/api/bookings', $fixture['payload'])->assertCreated();
+            ->postJson('/api/v1/bookings', $fixture['payload'])->assertCreated();
         $bookingId = $response->json('id');
         $booking = Booking::query()->findOrFail($bookingId);
         $savedBooking = $booking->getAttributes();
@@ -621,7 +621,7 @@ class BookingCreationTest extends TestCase
         $this->assertCount(1, $savedHistory);
 
         // Edit the real pet through its API, then change the listing source price.
-        $this->patchJson("/api/pets/{$petId}", [
+        $this->patchJson("/api/v1/pets/{$petId}", [
             'name' => 'Mochi updated',
             'diet_notes' => 'No fish',
             'special_needs' => 'New care notes',
@@ -633,7 +633,7 @@ class BookingCreationTest extends TestCase
         $this->assertSame($savedBooking, $booking->refresh()->getAttributes());
 
         // Soft deletion keeps the pet row and all existing booking references.
-        $this->deleteJson("/api/pets/{$petId}")->assertNoContent();
+        $this->deleteJson("/api/v1/pets/{$petId}")->assertNoContent();
         $this->assertSoftDeleted('pets', ['id' => $petId]);
         $this->assertDatabaseHas('pets', ['id' => $petId, 'user_id' => $fixture['owner']->id]);
         $this->assertDatabaseHas('bookings', [
@@ -641,16 +641,16 @@ class BookingCreationTest extends TestCase
             'pet_id' => $petId,
             'status' => 'REQUESTED',
         ]);
-        $this->getJson("/api/pets/{$petId}")->assertNotFound();
+        $this->getJson("/api/v1/pets/{$petId}")->assertNotFound();
         $this->assertSame($savedBooking, $booking->refresh()->getAttributes());
         $this->assertSame($savedHistory, DB::table('booking_status_events')
             ->where('booking_id', $bookingId)->orderBy('id')->get()
             ->map(fn ($event) => (array) $event)->all());
 
         // Retrying the old operation succeeds; a new booking for this pet fails.
-        $this->postJson('/api/bookings', $fixture['payload'])->assertOk()->assertExactJson($response->json());
+        $this->postJson('/api/v1/bookings', $fixture['payload'])->assertOk()->assertExactJson($response->json());
         $this->withHeader('Idempotency-Key', 'new-booking-after-pet-deletion')
-            ->postJson('/api/bookings', $fixture['payload'])->assertNotFound()
+            ->postJson('/api/v1/bookings', $fixture['payload'])->assertNotFound()
             ->assertJsonPath('error.code', 'NOT_FOUND');
         $this->assertSame($savedBooking, $booking->refresh()->getAttributes());
         $this->assertDatabaseCount('bookings', 1);

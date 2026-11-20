@@ -24,7 +24,7 @@ class BookingLifecycleEndToEndTest extends TestCase
         // 1. Owner tạo booking qua API.
         $created = $this->actingAs($fixture['owner'])
             ->withHeader('Idempotency-Key', $fixture['idempotency_key'])
-            ->postJson('/api/bookings', $fixture['payload'])
+            ->postJson('/api/v1/bookings', $fixture['payload'])
             ->assertCreated()
             ->assertJsonPath('status', 'REQUESTED');
 
@@ -32,14 +32,14 @@ class BookingLifecycleEndToEndTest extends TestCase
 
         // 2. Caregiver chấp nhận booking.
         $this->actingAs($fixture['caregiver'])
-            ->postJson("/api/bookings/{$booking->id}/accept")
+            ->postJson("/api/v1/bookings/{$booking->id}/accept")
             ->assertOk()
             ->assertJsonPath('status', 'AWAITING_PAYMENT');
 
         // 3. Owner tạo payment attempt và mô phỏng thanh toán thành công.
         $attemptResponse = $this->actingAs($fixture['owner'])
             ->withHeader('Idempotency-Key', 'e2e-payment-'.$booking->id)
-            ->postJson("/api/bookings/{$booking->id}/sandbox-payments")
+            ->postJson("/api/v1/bookings/{$booking->id}/sandbox-payments")
             ->assertCreated();
 
         $attempt = PaymentAttempt::query()->findOrFail(
@@ -47,7 +47,7 @@ class BookingLifecycleEndToEndTest extends TestCase
         );
 
         $this->postJson(
-            "/api/bookings/{$booking->id}/sandbox-payments/{$attempt->id}/simulate",
+            "/api/v1/bookings/{$booking->id}/sandbox-payments/{$attempt->id}/simulate",
             ['result' => 'SUCCESS'],
         )
             ->assertOk()
@@ -56,17 +56,17 @@ class BookingLifecycleEndToEndTest extends TestCase
 
         // 4. Caregiver bắt đầu và yêu cầu xác nhận hoàn tất.
         $this->actingAs($fixture['caregiver'])
-            ->postJson("/api/bookings/{$booking->id}/start")
+            ->postJson("/api/v1/bookings/{$booking->id}/start")
             ->assertOk()
             ->assertJsonPath('status', 'IN_PROGRESS');
 
-        $this->postJson("/api/bookings/{$booking->id}/request-completion")
+        $this->postJson("/api/v1/bookings/{$booking->id}/request-completion")
             ->assertOk()
             ->assertJsonPath('status', 'AWAITING_CONFIRMATION');
 
         // 5. Owner xác nhận. Booking chờ tác vụ release xử lý.
         $confirmation = $this->actingAs($fixture['owner'])
-            ->postJson("/api/bookings/{$booking->id}/confirm-completion")
+            ->postJson("/api/v1/bookings/{$booking->id}/confirm-completion")
             ->assertAccepted()
             ->assertJsonPath('booking.status', 'AWAITING_CONFIRMATION')
             ->assertJsonPath('release.status', 'PENDING');

@@ -19,9 +19,9 @@ import styles from "../chat.module.css";
 
 export function Conversation({ id, kind = "bookings" }: { id: string; kind?: ChatKind }) {
   const { user } = useSession();
-  const resource = useApi<{ data: ChatRecord }>(`/api/${kind}/${id}`);
+  const resource = useApi<{ data: ChatRecord }>(`/api/v1/${kind}/${id}`);
   const record = resource.data?.data;
-  const listing = useApi<{ data: Listing }>(record?.listing_id ? `/api/listings/${record.listing_id}` : null);
+  const listing = useApi<{ data: Listing }>(record?.listing_id ? `/api/v1/listings/${record.listing_id}` : null);
   const { messages, error: connectionError, refresh, nextPage } = useBookingMessages(id, kind);
   const [older, setOlder] = useState<Message[]>([]);
   const [olderNext, setOlderNext] = useState<string | null | undefined>();
@@ -64,7 +64,7 @@ export function Conversation({ id, kind = "bookings" }: { id: string; kind?: Cha
     } satisfies Message : null;
     setOptimisticMessage(pending);
     try {
-      await write("post", `/api/${kind}/${id}/messages`, kind === "inquiries" ? { body: draft.trim(), request_key: sendKey.current } : data);
+      await write("post", `/api/v1/${kind}/${id}/messages`, kind === "inquiries" ? { body: draft.trim(), request_key: sendKey.current } : data);
       sendKey.current = crypto.randomUUID(); setDraft(""); setFiles([]); setEmojisOpen(false);
       if (picker.current) picker.current.value = "";
       nearBottom.current = true;

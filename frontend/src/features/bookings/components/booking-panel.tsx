@@ -27,7 +27,7 @@ const bookingStatusStyles: Record<string, string> = {
 };
 
 export function BookingPanel({ id, onChange, variant = "default" }: { id: string; onChange: () => void; variant?: "default" | "caregiver" }) {
-  const booking = useApi<{ data: Booking }>(`/api/bookings/${id}`, 15000);
+  const booking = useApi<{ data: Booking }>(`/api/v1/bookings/${id}`, 15000);
   const [error, setError] = useState<unknown>();
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
@@ -44,7 +44,7 @@ export function BookingPanel({ id, onChange, variant = "default" }: { id: string
     setNotice("");
     const key = (keys.current[name] ??= crypto.randomUUID());
     try {
-      await write("post", `/api/bookings/${id}/${name}`, payload, key);
+      await write("post", `/api/v1/bookings/${id}/${name}`, payload, key);
       delete keys.current[name];
       setNotice("Yêu cầu đã được gửi. Trạng thái bên dưới được cập nhật từ máy chủ.");
       booking.reload();
@@ -63,7 +63,7 @@ export function BookingPanel({ id, onChange, variant = "default" }: { id: string
     try {
       const result = await write<{ data: NonNullable<typeof attempt> }>(
         "post",
-        `/api/bookings/${id}/sandbox-payments`,
+        `/api/v1/bookings/${id}/sandbox-payments`,
         undefined,
         (keys.current.payment ??= crypto.randomUUID()),
       );

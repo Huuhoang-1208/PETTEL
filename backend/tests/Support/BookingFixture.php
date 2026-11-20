@@ -125,7 +125,7 @@ class BookingFixture
         $fixture = self::make();
         $response = $test->actingAs($fixture['owner'])
             ->withHeader('Idempotency-Key', $fixture['idempotency_key'])
-            ->postJson('/api/bookings', $fixture['payload'])->assertCreated();
+            ->postJson('/api/v1/bookings', $fixture['payload'])->assertCreated();
         $fixture['booking'] = Booking::query()->findOrFail($response->json('id'));
 
         return $fixture;

@@ -42,14 +42,14 @@ export function ListingEditor({
     setError(undefined);
     try {
       if (live)
-        await write("post", `/api/caregiver/listings/${listing.id}/change-requests`, {
+        await write("post", `/api/v1/caregiver/listings/${listing.id}/change-requests`, {
           base_listing_version: listing.version,
           changes: payload,
         });
       else
         await write(
           listing ? "patch" : "post",
-          listing ? `/api/caregiver/listings/${listing.id}` : "/api/caregiver/listings",
+          listing ? `/api/v1/caregiver/listings/${listing.id}` : "/api/v1/caregiver/listings",
           payload,
         );
       onSave();

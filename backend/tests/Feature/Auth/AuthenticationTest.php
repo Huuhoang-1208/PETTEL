@@ -52,17 +52,17 @@ class AuthenticationTest extends TestCase
     public function test_expired_session_cannot_access_private_api(): void
     {
         $this->withCookie(config('session.cookie'), 'expired-session-id')
-            ->getJson('/api/user')
+            ->getJson('/api/v1/user')
             ->assertUnauthorized();
     }
 
     public function test_current_user_endpoint_requires_authentication_and_returns_the_session_user(): void
     {
-        $this->getJson('/api/user')->assertUnauthorized();
+        $this->getJson('/api/v1/user')->assertUnauthorized();
 
         $user = User::factory()->create();
 
-        $this->actingAs($user)->getJson('/api/user')
+        $this->actingAs($user)->getJson('/api/v1/user')
             ->assertOk()
             ->assertJsonPath('id', $user->id)
             ->assertJsonPath('email', $user->email);

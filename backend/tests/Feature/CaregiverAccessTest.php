@@ -45,14 +45,14 @@ class CaregiverAccessTest extends TestCase
             'display_name' => 'Not allowed',
             'area_code' => 'DN_CENTER',
         ];
-        $listingUrl = "/api/caregiver/listings/{$draft->id}";
+        $listingUrl = "/api/v1/caregiver/listings/{$draft->id}";
 
         foreach ([
-            ['GET', '/api/caregiver/profile', []],
-            ['POST', '/api/caregiver/profile', $profilePayload],
-            ['PATCH', '/api/caregiver/profile', ['bio' => 'Not allowed']],
-            ['GET', '/api/caregiver/listings', []],
-            ['POST', '/api/caregiver/listings', $draft->only($draft->getFillable())],
+            ['GET', '/api/v1/caregiver/profile', []],
+            ['POST', '/api/v1/caregiver/profile', $profilePayload],
+            ['PATCH', '/api/v1/caregiver/profile', ['bio' => 'Not allowed']],
+            ['GET', '/api/v1/caregiver/listings', []],
+            ['POST', '/api/v1/caregiver/listings', $draft->only($draft->getFillable())],
             ['GET', $listingUrl, []],
             ['PATCH', $listingUrl, ['title' => 'Not allowed']],
             ['DELETE', $listingUrl, []],
@@ -92,11 +92,11 @@ class CaregiverAccessTest extends TestCase
         $this->actingAs($fixture['caregiver']);
 
         $responses = [
-            $this->postJson('/api/caregiver/listings', [
+            $this->postJson('/api/v1/caregiver/listings', [
                 ...$draft->only($draft->getFillable()),
                 ...$changes,
             ]),
-            $this->patchJson("/api/caregiver/listings/{$draft->id}", $changes),
+            $this->patchJson("/api/v1/caregiver/listings/{$draft->id}", $changes),
         ];
 
         foreach ($responses as $response) {

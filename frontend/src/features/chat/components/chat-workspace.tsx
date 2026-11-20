@@ -15,8 +15,8 @@ import styles from "../chat.module.css";
 export function ChatWorkspace({ inquiryId, bookingId }: { inquiryId: string | null; bookingId: string | null }) {
   const [inquiryPage, setInquiryPage] = useState(1);
   const [bookingPage, setBookingPage] = useState(1);
-  const inquiries = useApi<Page<Inquiry>>(`/api/inquiries?page=${inquiryPage}`, 10000);
-  const bookings = useApi<Page<Booking>>(`/api/bookings?page=${bookingPage}&per_page=20`, 10000);
+  const inquiries = useApi<Page<Inquiry>>(`/api/v1/inquiries?page=${inquiryPage}`, 10000);
+  const bookings = useApi<Page<Booking>>(`/api/v1/bookings?page=${bookingPage}&per_page=20`, 10000);
   const threads: ChatThread[] = [
     ...(inquiries.data?.data ?? []).map((thread) => ({ id: thread.id, kind: "inquiries" as const, title: thread.sitter_name, subtitle: thread.listing_title, listingId: thread.listing_id })),
     ...(bookings.data?.data ?? []).map((thread) => ({ id: thread.id, kind: "bookings" as const, title: thread.listing_title || `Đơn chăm sóc #${thread.id}`, subtitle: statuses[thread.status] ?? thread.status, listingId: thread.listing_id, petName: thread.pet_name, status: thread.status })),

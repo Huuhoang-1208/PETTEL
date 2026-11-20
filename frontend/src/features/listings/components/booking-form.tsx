@@ -121,8 +121,8 @@ function bookingDate(value: string) {
 export function BookingForm({ listing }: { listing: Listing }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
-  const pets = useApi<Page<Pet>>("/api/pets");
-  const offerings = useApi<Page<Listing>>(`/api/listings/${listing.id}/services`);
+  const pets = useApi<Page<Pet>>("/api/v1/pets");
+  const offerings = useApi<Page<Listing>>(`/api/v1/listings/${listing.id}/services`);
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [pending, setPending] = useState<BookingPayload | null>(null);
@@ -139,7 +139,7 @@ export function BookingForm({ listing }: { listing: Listing }) {
   const selectedListing =
     availableOfferings.find((item) => item.id === selectedListingId) ?? listing;
   const availability = useApi<AvailabilityResponse>(
-    `/api/listings/${selectedListing.id}/availability?month=${availabilityMonth}`,
+    `/api/v1/listings/${selectedListing.id}/availability?month=${availabilityMonth}`,
   );
   const availabilityWindows = useMemo(
     () =>
@@ -253,7 +253,7 @@ export function BookingForm({ listing }: { listing: Listing }) {
     setError(undefined);
     try {
       const payload = { ...pending, addons: selectedAddons };
-      const data = await write<Quote>("post", "/api/bookings/quote", payload);
+      const data = await write<Quote>("post", "/api/v1/bookings/quote", payload);
       setDraft({ payload, quote: data, key: crypto.randomUUID() });
     } catch (failure) {
       setError(failure);
@@ -267,7 +267,7 @@ export function BookingForm({ listing }: { listing: Listing }) {
     setBusy(true);
     setError(undefined);
     try {
-      await write<{ id: string }>("post", "/api/bookings", draft.payload, draft.key);
+      await write<{ id: string }>("post", "/api/v1/bookings", draft.payload, draft.key);
       router.push("/owner-profile#history");
     } catch (failure) {
       setError(failure);
@@ -540,7 +540,7 @@ export function BookingForm({ listing }: { listing: Listing }) {
                     {pendingPet?.photo_media_id ? (
                       // eslint-disable-next-line @next/next/no-img-element -- Private pet photo uses the authenticated API.
                       <img
-                        src={apiUrl(`/api/pets/media/${pendingPet.photo_media_id}/content`)}
+                        src={apiUrl(`/api/v1/pets/media/${pendingPet.photo_media_id}/content`)}
                         alt={`Ảnh ${pendingPet.name}`}
                       />
                     ) : (

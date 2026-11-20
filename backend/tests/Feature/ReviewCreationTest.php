@@ -17,7 +17,7 @@ class ReviewCreationTest extends TestCase
         $booking = $fixture['booking'];
         $booking->update(['status' => 'COMPLETED']);
 
-        $this->postJson("/api/bookings/{$booking->id}/reviews", [
+        $this->postJson("/api/v1/bookings/{$booking->id}/reviews", [
             'rating' => 5,
             'body' => "  Cha\u{0306}m sóc tốt  ",
         ])->assertCreated()
@@ -44,14 +44,14 @@ class ReviewCreationTest extends TestCase
         $booking = $fixture['booking'];
         $booking->update(['status' => 'COMPLETED']);
 
-        $this->postJson("/api/bookings/{$booking->id}/reviews", ['rating' => 1])
+        $this->postJson("/api/v1/bookings/{$booking->id}/reviews", ['rating' => 1])
             ->assertCreated()->assertJsonPath('data.body', null)
             ->assertJsonPath('data.rating', 1);
     }
 
     public function test_login_is_required(): void
     {
-        $this->postJson('/api/bookings/1/reviews', ['rating' => 5])
+        $this->postJson('/api/v1/bookings/1/reviews', ['rating' => 5])
             ->assertUnauthorized();
 
         $this->assertDatabaseCount('reviews', 0);
@@ -66,7 +66,7 @@ class ReviewCreationTest extends TestCase
         $this->actingAs($otherOwner);
 
         foreach ([$booking->id, 0] as $id) {
-            $this->postJson("/api/bookings/{$id}/reviews", ['rating' => 5])
+            $this->postJson("/api/v1/bookings/{$id}/reviews", ['rating' => 5])
                 ->assertNotFound()->assertJsonPath('error.code', 'NOT_FOUND');
         }
 
@@ -78,7 +78,7 @@ class ReviewCreationTest extends TestCase
         $fixture = BookingFixture::requested($this);
         $booking = $fixture['booking'];
         $booking->update(['status' => 'COMPLETED']);
-        $url = "/api/bookings/{$booking->id}/reviews";
+        $url = "/api/v1/bookings/{$booking->id}/reviews";
 
         foreach (['DEACTIVATED', 'DELETION_PENDING'] as $status) {
             $fixture['owner']->forceFill(['status' => $status])->save();
@@ -112,7 +112,7 @@ class ReviewCreationTest extends TestCase
         ] as $status) {
             $booking->update(['status' => $status]);
 
-            $this->postJson("/api/bookings/{$booking->id}/reviews", ['rating' => 5])
+            $this->postJson("/api/v1/bookings/{$booking->id}/reviews", ['rating' => 5])
                 ->assertConflict()->assertJsonPath('error.code', 'INVALID_STATE');
         }
 
@@ -124,7 +124,7 @@ class ReviewCreationTest extends TestCase
         $fixture = BookingFixture::requested($this);
         $booking = $fixture['booking'];
         $booking->update(['status' => 'COMPLETED']);
-        $url = "/api/bookings/{$booking->id}/reviews";
+        $url = "/api/v1/bookings/{$booking->id}/reviews";
 
         foreach ([
             [],
@@ -155,7 +155,7 @@ class ReviewCreationTest extends TestCase
         $fixture = BookingFixture::requested($this);
         $booking = $fixture['booking'];
         $booking->update(['status' => 'COMPLETED']);
-        $url = "/api/bookings/{$booking->id}/reviews";
+        $url = "/api/v1/bookings/{$booking->id}/reviews";
 
         $this->postJson($url, ['rating' => 3])->assertCreated();
 

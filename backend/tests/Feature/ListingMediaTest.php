@@ -69,9 +69,9 @@ class ListingMediaTest extends TestCase
             $this->assertSame($mime, getimagesize($disk->path($media->object_key))['mime']);
             $this->assertSame('image/webp', getimagesize($disk->path($thumbnailKey))['mime']);
 
-            $this->actingAs($caregiver)->getJson("/api/caregiver/media/{$media->id}/content")
+            $this->actingAs($caregiver)->getJson("/api/v1/caregiver/media/{$media->id}/content")
                 ->assertOk()->assertHeader('Content-Type', $mime);
-            $this->actingAs($caregiver)->getJson("/api/caregiver/media/{$media->id}/content?variant=thumbnail")
+            $this->actingAs($caregiver)->getJson("/api/v1/caregiver/media/{$media->id}/content?variant=thumbnail")
                 ->assertOk()->assertHeader('Content-Type', 'image/webp');
         }
 
@@ -121,15 +121,15 @@ class ListingMediaTest extends TestCase
 
         $this->postImage($caregiver, $this->image('png'), ['unexpected' => 'value'])
             ->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
-        $this->actingAs($caregiver)->putJson("/api/caregiver/listings/{$listingId}/media", ['media' => [], 'unexpected' => true])
+        $this->actingAs($caregiver)->putJson("/api/v1/caregiver/listings/{$listingId}/media", ['media' => [], 'unexpected' => true])
             ->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
-        $this->putJson("/api/caregiver/listings/{$listingId}/media?unexpected=1", ['media' => []])
+        $this->putJson("/api/v1/caregiver/listings/{$listingId}/media?unexpected=1", ['media' => []])
             ->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
-        $this->putJson("/api/caregiver/listings/{$listingId}/media", ['media' => [['media_object_id' => (string) $media->id, 'sort_order' => 1]]])
+        $this->putJson("/api/v1/caregiver/listings/{$listingId}/media", ['media' => [['media_object_id' => (string) $media->id, 'sort_order' => 1]]])
             ->assertOk();
-        $this->get("/api/caregiver/listings/{$listingId}/media/{$media->id}/content?unexpected=1")
+        $this->get("/api/v1/caregiver/listings/{$listingId}/media/{$media->id}/content?unexpected=1")
             ->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
-        $this->get("/api/caregiver/listings/{$listingId}/media/{$media->id}/content?variant=small")
+        $this->get("/api/v1/caregiver/listings/{$listingId}/media/{$media->id}/content?variant=small")
             ->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
         $this->assertDatabaseHas('listing_media', ['listing_id' => $listingId, 'media_object_id' => $media->id, 'sort_order' => 1]);
     }
@@ -186,7 +186,7 @@ class ListingMediaTest extends TestCase
         $listingId = $fixture['draft_listing_id'];
         $first = $this->uploadedMedia($caregiver);
         $second = $this->uploadedMedia($caregiver);
-        $url = "/api/caregiver/listings/{$listingId}/media";
+        $url = "/api/v1/caregiver/listings/{$listingId}/media";
 
         $this->actingAs($caregiver)->putJson($url, ['media' => [
             ['media_object_id' => (string) $first->id, 'sort_order' => 1],
@@ -212,7 +212,7 @@ class ListingMediaTest extends TestCase
         Storage::fake('local');
         $fixture = ListingFixture::make();
         $caregiver = $fixture['caregiver'];
-        $url = "/api/caregiver/listings/{$fixture['draft_listing_id']}/media";
+        $url = "/api/v1/caregiver/listings/{$fixture['draft_listing_id']}/media";
         $plain = $this->media($caregiver);
         $foreign = $this->media($fixture['other_caregiver']);
         $pendingDelete = $this->media($caregiver, 'PENDING_DELETE');
@@ -260,7 +260,7 @@ class ListingMediaTest extends TestCase
         DB::table('listing_media')->insert([
             ['listing_id' => $listingId, 'media_object_id' => $first->id, 'sort_order' => 1],
         ]);
-        $url = "/api/caregiver/listings/{$listingId}/media";
+        $url = "/api/v1/caregiver/listings/{$listingId}/media";
 
         foreach (['PENDING_REVIEW', 'ACTIVE', 'SUSPENDED', 'ARCHIVED'] as $status) {
             DB::table('listings')->where('id', $listingId)->update([
@@ -296,46 +296,46 @@ class ListingMediaTest extends TestCase
         $current = $this->uploadedMedia($caregiver);
         $proposal = $this->uploadedMedia($caregiver);
 
-        $this->putJson("/api/caregiver/listings/{$listingId}/media", ['media' => [
+        $this->putJson("/api/v1/caregiver/listings/{$listingId}/media", ['media' => [
             ['media_object_id' => (string) $current->id, 'sort_order' => 1],
         ]])->assertOk();
-        $this->getJson("/api/caregiver/listings/{$fixture['active_listing_id']}/media/{$current->id}/content")
+        $this->getJson("/api/v1/caregiver/listings/{$fixture['active_listing_id']}/media/{$current->id}/content")
             ->assertNotFound();
         $this->app['auth']->forgetGuards();
-        $this->getJson("/api/caregiver/listings/{$listingId}/media/{$current->id}/content")->assertUnauthorized();
+        $this->getJson("/api/v1/caregiver/listings/{$listingId}/media/{$current->id}/content")->assertUnauthorized();
 
-        $this->actingAs($caregiver)->getJson("/api/caregiver/listings/{$listingId}/media/{$current->id}/content")
+        $this->actingAs($caregiver)->getJson("/api/v1/caregiver/listings/{$listingId}/media/{$current->id}/content")
             ->assertOk()->assertHeader('Content-Type', 'image/png');
         $this->actingAs($fixture['other_caregiver'])
-            ->getJson("/api/caregiver/listings/{$listingId}/media/{$current->id}/content")->assertNotFound();
-        $this->actingAs($admin)->getJson("/api/admin/listings/{$listingId}/media/{$current->id}/content")
+            ->getJson("/api/v1/caregiver/listings/{$listingId}/media/{$current->id}/content")->assertNotFound();
+        $this->actingAs($admin)->getJson("/api/v1/admin/listings/{$listingId}/media/{$current->id}/content")
             ->assertOk()->assertHeader('Content-Type', 'image/png');
 
-        $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$listingId}/submit")->assertOk();
-        $this->actingAs($admin)->postJson("/api/admin/listings/{$listingId}/approve")->assertOk();
-        $this->getJson("/api/listings/{$listingId}/media/{$proposal->id}/content")->assertNotFound();
-        $request = $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$listingId}/change-requests", [
+        $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$listingId}/submit")->assertOk();
+        $this->actingAs($admin)->postJson("/api/v1/admin/listings/{$listingId}/approve")->assertOk();
+        $this->getJson("/api/v1/listings/{$listingId}/media/{$proposal->id}/content")->assertNotFound();
+        $request = $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$listingId}/change-requests", [
             'base_listing_version' => DB::table('listings')->where('id', $listingId)->value('version'),
             'changes' => ['media' => [['media_object_id' => (string) $proposal->id, 'sort_order' => 1]]],
         ])->assertCreated();
         $changeId = $request->json('data.id');
 
-        $this->actingAs($admin)->getJson("/api/admin/listings/{$listingId}/media/{$proposal->id}/content")
+        $this->actingAs($admin)->getJson("/api/v1/admin/listings/{$listingId}/media/{$proposal->id}/content")
             ->assertNotFound();
-        $this->getJson("/api/admin/listings/{$listingId}/media/{$proposal->id}/content?change_request_id={$changeId}")
+        $this->getJson("/api/v1/admin/listings/{$listingId}/media/{$proposal->id}/content?change_request_id={$changeId}")
             ->assertOk()->assertHeader('Content-Type', 'image/png');
-        $this->getJson("/api/listings/{$listingId}/media/{$proposal->id}/content")->assertNotFound();
+        $this->getJson("/api/v1/listings/{$listingId}/media/{$proposal->id}/content")->assertNotFound();
 
         DB::table('media_objects')->where('id', $current->id)->update(['state' => 'PENDING_DELETE']);
-        $this->actingAs($caregiver)->getJson("/api/caregiver/listings/{$listingId}")
+        $this->actingAs($caregiver)->getJson("/api/v1/caregiver/listings/{$listingId}")
             ->assertOk()->assertJsonPath('data.media', []);
-        $this->getJson("/api/caregiver/listings/{$listingId}/media/{$current->id}/content")->assertNotFound();
+        $this->getJson("/api/v1/caregiver/listings/{$listingId}/media/{$current->id}/content")->assertNotFound();
     }
 
     private function postImage(User $owner, UploadedFile $file, array $extra = []): TestResponse
     {
         try {
-            return $this->actingAs($owner)->postJson('/api/caregiver/media', ['file' => $file, ...$extra]);
+            return $this->actingAs($owner)->postJson('/api/v1/caregiver/media', ['file' => $file, ...$extra]);
         } finally {
             if (is_file($file->getPathname())) {
                 @unlink($file->getPathname());

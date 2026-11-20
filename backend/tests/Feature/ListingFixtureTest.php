@@ -46,13 +46,13 @@ class ListingFixtureTest extends TestCase
             ->where('end_at', '>=', $fixture['end_at']->format('Y-m-d H:i:s.u'))
             ->exists());
 
-        $this->actingAs($fixture['owner'])->postJson('/api/bookings/quote', $fixture['payload'])
+        $this->actingAs($fixture['owner'])->postJson('/api/v1/bookings/quote', $fixture['payload'])
             ->assertOk()->assertJsonPath('price_total_vnd', 150000);
 
         $draftPayload = array_replace($fixture['payload'], [
             'listing_id' => (string) $fixture['draft_listing_id'],
         ]);
-        $this->postJson('/api/bookings/quote', $draftPayload)->assertNotFound();
+        $this->postJson('/api/v1/bookings/quote', $draftPayload)->assertNotFound();
 
         $this->assertDatabaseCount('caregiver_profiles', 2);
         $this->assertDatabaseCount('listings', 3);
@@ -67,12 +67,12 @@ class ListingFixtureTest extends TestCase
             [$fixture['caregiver'], $fixture['draft_listing_id'], $fixture['other_draft_listing_id']],
             [$fixture['other_caregiver'], $fixture['other_draft_listing_id'], $fixture['draft_listing_id']],
         ] as [$caregiver, $ownId, $foreignId]) {
-            $this->actingAs($caregiver)->getJson('/api/caregiver/listings')
+            $this->actingAs($caregiver)->getJson('/api/v1/caregiver/listings')
                 ->assertOk()->assertJsonCount(1, 'data')
                 ->assertJsonPath('data.0.id', (string) $ownId);
-            $this->getJson("/api/caregiver/listings/{$ownId}")->assertOk();
+            $this->getJson("/api/v1/caregiver/listings/{$ownId}")->assertOk();
 
-            $url = "/api/caregiver/listings/{$foreignId}";
+            $url = "/api/v1/caregiver/listings/{$foreignId}";
             $this->getJson($url)->assertNotFound();
             $this->patchJson($url, ['title' => 'Not allowed'])->assertNotFound();
             $this->deleteJson($url)->assertNotFound();
@@ -111,7 +111,7 @@ class ListingFixtureTest extends TestCase
         ];
 
         $response = $this->actingAs($fixture['caregiver'])
-            ->postJson('/api/caregiver/listings', $payload);
+            ->postJson('/api/v1/caregiver/listings', $payload);
 
         $response->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
         $this->assertArrayHasKey('status', $response->json('error.details'));

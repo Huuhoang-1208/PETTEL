@@ -26,7 +26,7 @@ class BookingCancellationTest extends TestCase
         $fixture = BookingFixture::requested($this);
         $booking = $fixture['booking'];
         $key = 'cancel-owner-001';
-        $url = "/api/bookings/{$booking->id}/cancel";
+        $url = "/api/v1/bookings/{$booking->id}/cancel";
         $this->actingAs($fixture['owner']);
 
         $first = $this->withHeader('Idempotency-Key', $key)
@@ -60,7 +60,7 @@ class BookingCancellationTest extends TestCase
     public function test_cancel_requires_valid_key_and_same_key_cannot_change_note(): void
     {
         $fixture = BookingFixture::requested($this);
-        $url = "/api/bookings/{$fixture['booking']->id}/cancel";
+        $url = "/api/v1/bookings/{$fixture['booking']->id}/cancel";
 
         $this->actingAs($fixture['owner'])->flushHeaders();
         $this->postJson($url)->assertUnprocessable()
@@ -79,7 +79,7 @@ class BookingCancellationTest extends TestCase
     {
         $fixture = BookingFixture::requested($this);
         $otherOwner = BookingFixture::make()['owner'];
-        $url = "/api/bookings/{$fixture['booking']->id}/cancel";
+        $url = "/api/v1/bookings/{$fixture['booking']->id}/cancel";
 
         Auth::guard('web')->logout();
         Auth::forgetGuards();
@@ -92,7 +92,7 @@ class BookingCancellationTest extends TestCase
         $second = BookingFixture::requested($this);
         DB::table('user_roles')->where('user_id', $second['caregiver']->id)->where('role', 'CAREGIVER')->delete();
         $this->actingAs($second['caregiver'])->withHeader('Idempotency-Key', 'caregiver-role-revoked')
-            ->postJson("/api/bookings/{$second['booking']->id}/cancel")
+            ->postJson("/api/v1/bookings/{$second['booking']->id}/cancel")
             ->assertForbidden()->assertJsonPath('error.code', 'FORBIDDEN');
         $this->assertSame('REQUESTED', $second['booking']->fresh()->status);
     }
@@ -104,7 +104,7 @@ class BookingCancellationTest extends TestCase
         $booking->update(['status' => 'AWAITING_PAYMENT', 'payment_due_at' => now()->addMinutes(15)]);
         $attemptId = $this->createAttempt($booking, 'PENDING');
         $booking->update(['current_payment_attempt_id' => $attemptId]);
-        $url = "/api/bookings/{$booking->id}/cancel";
+        $url = "/api/v1/bookings/{$booking->id}/cancel";
 
         $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', 'cancel-pending-void')
             ->postJson($url)->assertStatus(202)
@@ -137,7 +137,7 @@ class BookingCancellationTest extends TestCase
         $booking->update(['status' => 'CONFIRMED', 'start_at' => now()->addHour()]);
         $attemptId = $this->createAttempt($booking, 'AUTHORIZED');
         $booking->update(['current_payment_attempt_id' => $attemptId]);
-        $url = "/api/bookings/{$booking->id}/cancel";
+        $url = "/api/v1/bookings/{$booking->id}/cancel";
 
         $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', 'cancel-confirmed')
             ->postJson($url)->assertStatus(202);
@@ -155,7 +155,7 @@ class BookingCancellationTest extends TestCase
         $secondAttempt = $this->createAttempt($second['booking'], 'AUTHORIZED');
         $second['booking']->update(['current_payment_attempt_id' => $secondAttempt]);
         $this->actingAs($second['owner'])->withHeader('Idempotency-Key', 'too-late-confirmed')
-            ->postJson("/api/bookings/{$second['booking']->id}/cancel")
+            ->postJson("/api/v1/bookings/{$second['booking']->id}/cancel")
             ->assertConflict()->assertJsonPath('error.code', 'INVALID_STATE');
     }
 
@@ -171,7 +171,7 @@ class BookingCancellationTest extends TestCase
         $voidBooking->update(['current_payment_attempt_id' => $voidAttemptId]);
 
         $this->actingAs($voidFixture['owner'])->withHeader('Idempotency-Key', 'sandbox-default-void')
-            ->postJson("/api/bookings/{$voidBooking->id}/cancel")
+            ->postJson("/api/v1/bookings/{$voidBooking->id}/cancel")
             ->assertStatus(202);
 
         $voidResult = app(ProcessCancellationOutbox::class)->handle();
@@ -190,7 +190,7 @@ class BookingCancellationTest extends TestCase
         $refundBooking->update(['current_payment_attempt_id' => $refundAttemptId]);
 
         $this->actingAs($refundFixture['owner'])->withHeader('Idempotency-Key', 'sandbox-default-refund')
-            ->postJson("/api/bookings/{$refundBooking->id}/cancel")
+            ->postJson("/api/v1/bookings/{$refundBooking->id}/cancel")
             ->assertStatus(202);
 
         $refundResult = app(ProcessCancellationOutbox::class)->handle();
@@ -209,7 +209,7 @@ class BookingCancellationTest extends TestCase
         $booking->update(['current_payment_attempt_id' => $attemptId]);
 
         $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', 'mismatched-payment')
-            ->postJson("/api/bookings/{$booking->id}/cancel")
+            ->postJson("/api/v1/bookings/{$booking->id}/cancel")
             ->assertConflict()->assertJsonPath('error.code', 'PAYMENT_STATE_MISMATCH');
 
         $this->assertSame('CONFIRMED', $booking->fresh()->status);
@@ -230,7 +230,7 @@ class BookingCancellationTest extends TestCase
         $attemptId = $this->createAttempt($booking, 'PENDING');
         $booking->update(['current_payment_attempt_id' => $attemptId]);
         $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', 'retry-void-key')
-            ->postJson("/api/bookings/{$booking->id}/cancel")->assertStatus(202);
+            ->postJson("/api/v1/bookings/{$booking->id}/cancel")->assertStatus(202);
         $operation = BookingCancellationOperation::query()->firstOrFail();
 
         $gateway = new class implements PaymentCancellationGateway
@@ -259,7 +259,7 @@ class BookingCancellationTest extends TestCase
         $booking->update(['current_payment_attempt_id' => $attemptId]);
 
         $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', 'admin-queue-cancel')
-            ->postJson("/api/bookings/{$booking->id}/cancel")->assertStatus(202);
+            ->postJson("/api/v1/bookings/{$booking->id}/cancel")->assertStatus(202);
         $operation = BookingCancellationOperation::query()->firstOrFail();
         $operation->update(['status' => 'MANUAL_REVIEW', 'last_error_code' => 'PAYMENT_GATEWAY_ERROR']);
 
@@ -269,11 +269,11 @@ class BookingCancellationTest extends TestCase
             'role' => 'ADMIN',
             'assigned_at' => now(),
         ]);
-        $this->actingAs($admin)->getJson('/api/admin/booking-cancellations')
+        $this->actingAs($admin)->getJson('/api/v1/admin/booking-cancellations')
             ->assertOk()->assertJsonPath('data.0.id', (string) $operation->id);
         $key = $operation->gateway_operation_key;
 
-        $this->postJson("/api/admin/booking-cancellations/{$operation->id}/retry", [
+        $this->postJson("/api/v1/admin/booking-cancellations/{$operation->id}/retry", [
             'reason' => 'Reviewed transient payment gateway failure.',
         ])->assertStatus(202)->assertJsonPath('status', 'CANCELLATION_PENDING');
 

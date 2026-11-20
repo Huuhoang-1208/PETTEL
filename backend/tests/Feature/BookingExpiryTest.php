@@ -42,7 +42,7 @@ class BookingExpiryTest extends TestCase
         $this->assertDatabaseCount('booking_status_events', 2);
 
         $this->actingAs($fixture['owner'])->withHeader('Idempotency-Key', 'cancel-after-expiry')
-            ->postJson("/api/bookings/{$booking->id}/cancel")
+            ->postJson("/api/v1/bookings/{$booking->id}/cancel")
             ->assertConflict()->assertJsonPath('error.code', 'INVALID_STATE');
     }
 

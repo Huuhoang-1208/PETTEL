@@ -34,7 +34,7 @@ class SandboxPaymentSimulationTest extends TestCase
 
         $this->actingAs($fixture['owner'])
             ->withHeader('Idempotency-Key', 'cancel-before-payment-callback')
-            ->postJson('/api/bookings/'.$fixture['booking']->id.'/cancel')
+            ->postJson('/api/v1/bookings/'.$fixture['booking']->id.'/cancel')
             ->assertStatus(202);
 
         $gateway = new SuccessfulPaymentCancellationGateway;
@@ -61,7 +61,7 @@ class SandboxPaymentSimulationTest extends TestCase
             'X-Payment-Signature',
             app(SandboxCallbackSignature::class)->sign($payload),
         )
-            ->postJson('/api/sandbox/payment-callback', $payload)
+            ->postJson('/api/v1/sandbox/payment-callback', $payload)
             ->assertOk()
             ->assertJsonPath('data.booking_status', 'CANCELLED')
             ->assertJsonPath('data.processing_status', 'PROCESSED');
@@ -90,7 +90,7 @@ class SandboxPaymentSimulationTest extends TestCase
         $attempt = $this->startAttempt($fixture, 'payment-success-1');
 
         $this->actingAs($fixture['owner'])
-            ->postJson('/api/bookings/'.$fixture['booking']->id.'/sandbox-payments/'.$attempt->id.'/simulate', [
+            ->postJson('/api/v1/bookings/'.$fixture['booking']->id.'/sandbox-payments/'.$attempt->id.'/simulate', [
                 'result' => 'SUCCESS',
             ])
             ->assertOk()
@@ -113,7 +113,7 @@ class SandboxPaymentSimulationTest extends TestCase
     public function test_payment_start_replay_returns_the_existing_attempt_with_http_200(): void
     {
         $fixture = $this->awaitingPaymentFixture();
-        $url = '/api/bookings/'.$fixture['booking']->id.'/sandbox-payments';
+        $url = '/api/v1/bookings/'.$fixture['booking']->id.'/sandbox-payments';
         $key = 'payment-start-replay-1';
 
         $created = $this->actingAs($fixture['owner'])
@@ -136,7 +136,7 @@ class SandboxPaymentSimulationTest extends TestCase
         $firstAttempt = $this->startAttempt($fixture, 'payment-failure-1');
 
         $this->actingAs($fixture['owner'])
-            ->postJson('/api/bookings/'.$fixture['booking']->id.'/sandbox-payments/'.$firstAttempt->id.'/simulate', [
+            ->postJson('/api/v1/bookings/'.$fixture['booking']->id.'/sandbox-payments/'.$firstAttempt->id.'/simulate', [
                 'result' => 'FAILURE',
             ])
             ->assertOk()
@@ -147,7 +147,7 @@ class SandboxPaymentSimulationTest extends TestCase
         $this->assertSame(2, (int) $secondAttempt->attempt_no);
 
         $this->actingAs($fixture['owner'])
-            ->postJson('/api/bookings/'.$fixture['booking']->id.'/sandbox-payments/'.$secondAttempt->id.'/simulate', [
+            ->postJson('/api/v1/bookings/'.$fixture['booking']->id.'/sandbox-payments/'.$secondAttempt->id.'/simulate', [
                 'result' => 'TIMEOUT',
             ])
             ->assertStatus(202)
@@ -172,19 +172,19 @@ class SandboxPaymentSimulationTest extends TestCase
             'result' => 'AUTHORIZED',
         ];
 
-        $this->postJson('/api/sandbox/payment-callback', $payload)
+        $this->postJson('/api/v1/sandbox/payment-callback', $payload)
             ->assertUnauthorized()
             ->assertJsonPath('error.code', 'INVALID_CALLBACK_SIGNATURE');
 
         $signature = app(SandboxCallbackSignature::class)->sign($payload);
         $this->withHeader('X-Payment-Signature', $signature)
-            ->postJson('/api/sandbox/payment-callback', $payload)
+            ->postJson('/api/v1/sandbox/payment-callback', $payload)
             ->assertOk()
             ->assertJsonPath('data.replayed', false)
             ->assertJsonPath('data.booking_status', 'CONFIRMED');
 
         $this->withHeader('X-Payment-Signature', $signature)
-            ->postJson('/api/sandbox/payment-callback', $payload)
+            ->postJson('/api/v1/sandbox/payment-callback', $payload)
             ->assertOk()
             ->assertJsonPath('data.replayed', true);
 
@@ -203,7 +203,7 @@ class SandboxPaymentSimulationTest extends TestCase
 
         $this->actingAs($fixture['owner'])
             ->withHeader('Idempotency-Key', 'cancel-pending-void-race')
-            ->postJson('/api/bookings/'.$fixture['booking']->id.'/cancel')
+            ->postJson('/api/v1/bookings/'.$fixture['booking']->id.'/cancel')
             ->assertStatus(202);
 
         $voidOperation = DB::table('booking_cancellation_operations')
@@ -225,7 +225,7 @@ class SandboxPaymentSimulationTest extends TestCase
             'X-Payment-Signature',
             app(SandboxCallbackSignature::class)->sign($payload),
         )
-            ->postJson('/api/sandbox/payment-callback', $payload)
+            ->postJson('/api/v1/sandbox/payment-callback', $payload)
             ->assertOk()
             ->assertJsonPath('data.booking_status', 'AWAITING_PAYMENT')
             ->assertJsonPath('data.processing_status', 'PROCESSED');
@@ -271,7 +271,7 @@ class SandboxPaymentSimulationTest extends TestCase
         ];
 
         $this->withHeader('X-Payment-Signature', app(SandboxCallbackSignature::class)->sign($payload))
-            ->postJson('/api/sandbox/payment-callback', $payload)
+            ->postJson('/api/v1/sandbox/payment-callback', $payload)
             ->assertOk()
             ->assertJsonPath('data.booking_status', 'AWAITING_PAYMENT')
             ->assertJsonPath('data.compensation_operation_id', fn ($id) => is_string($id));
@@ -291,7 +291,7 @@ class SandboxPaymentSimulationTest extends TestCase
 
     public function test_malformed_callback_payload_is_rejected_before_processing(): void
     {
-        $this->postJson('/api/sandbox/payment-callback', [
+        $this->postJson('/api/v1/sandbox/payment-callback', [
             'event_id' => 'not-a-uuid',
             'booking_id' => '1',
             'attempt_reference' => 'sandbox-attempt',
@@ -322,7 +322,7 @@ class SandboxPaymentSimulationTest extends TestCase
             'X-Payment-Signature',
             app(SandboxCallbackSignature::class)->sign($payload),
         )
-            ->postJson('/api/sandbox/payment-callback', $payload)
+            ->postJson('/api/v1/sandbox/payment-callback', $payload)
             ->assertOk()
             ->assertJsonPath('data.processing_status', 'REJECTED')
             ->assertJsonPath('data.rejection_code', 'PAYMENT_REFERENCE_MISMATCH');
@@ -354,7 +354,7 @@ class SandboxPaymentSimulationTest extends TestCase
             'X-Payment-Signature',
             app(SandboxCallbackSignature::class)->sign($payload),
         )
-            ->postJson('/api/sandbox/payment-callback', $payload)
+            ->postJson('/api/v1/sandbox/payment-callback', $payload)
             ->assertOk()
             ->assertJsonPath('data.processing_status', 'REJECTED')
             ->assertJsonPath('data.rejection_code', 'PAYMENT_AMOUNT_MISMATCH');
@@ -376,7 +376,7 @@ class SandboxPaymentSimulationTest extends TestCase
 
         $this->actingAs($fixture['owner'])
             ->postJson(
-                '/api/bookings/'.$fixture['booking']->id.'/sandbox-payments/'.$oldAttempt->id.'/simulate',
+                '/api/v1/bookings/'.$fixture['booking']->id.'/sandbox-payments/'.$oldAttempt->id.'/simulate',
                 ['result' => 'FAILURE'],
             )
             ->assertOk()
@@ -396,7 +396,7 @@ class SandboxPaymentSimulationTest extends TestCase
             'X-Payment-Signature',
             app(SandboxCallbackSignature::class)->sign($payload),
         )
-            ->postJson('/api/sandbox/payment-callback', $payload)
+            ->postJson('/api/v1/sandbox/payment-callback', $payload)
             ->assertOk()
             ->assertJsonPath('data.processing_status', 'REJECTED')
             ->assertJsonPath('data.rejection_code', 'PAYMENT_STATE_MISMATCH');
@@ -435,7 +435,7 @@ class SandboxPaymentSimulationTest extends TestCase
 
         try {
             $this->withHeader('X-Payment-Signature', $signature)
-                ->postJson('/api/sandbox/payment-callback', $payload);
+                ->postJson('/api/v1/sandbox/payment-callback', $payload);
 
             $this->fail('Expected callback event write failure.');
         } catch (RuntimeException $exception) {
@@ -474,7 +474,7 @@ class SandboxPaymentSimulationTest extends TestCase
             'X-Payment-Signature',
             app(SandboxCallbackSignature::class)->sign($authorizedPayload),
         )
-            ->postJson('/api/sandbox/payment-callback', $authorizedPayload)
+            ->postJson('/api/v1/sandbox/payment-callback', $authorizedPayload)
             ->assertOk()
             ->assertJsonPath('data.booking_status', 'CONFIRMED');
 
@@ -488,7 +488,7 @@ class SandboxPaymentSimulationTest extends TestCase
             'X-Payment-Signature',
             app(SandboxCallbackSignature::class)->sign($failedPayload),
         )
-            ->postJson('/api/sandbox/payment-callback', $failedPayload)
+            ->postJson('/api/v1/sandbox/payment-callback', $failedPayload)
             ->assertOk()
             ->assertJsonPath('data.processing_status', 'REJECTED')
             ->assertJsonPath('data.rejection_code', 'PAYMENT_STATE_MISMATCH');
@@ -521,7 +521,7 @@ class SandboxPaymentSimulationTest extends TestCase
     {
         $response = $this->actingAs($fixture['owner'])
             ->withHeader('Idempotency-Key', $idempotencyKey)
-            ->postJson('/api/bookings/'.$fixture['booking']->id.'/sandbox-payments');
+            ->postJson('/api/v1/bookings/'.$fixture['booking']->id.'/sandbox-payments');
         $response->assertCreated();
 
         return PaymentAttempt::query()->findOrFail($response->json('data.id'));

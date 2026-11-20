@@ -18,7 +18,7 @@ class BookingRejectionTest extends TestCase
         $fixture = BookingFixture::requested($this);
         $booking = $fixture['booking'];
         $before = $booking->getAttributes();
-        $url = "/api/bookings/{$booking->id}/reject";
+        $url = "/api/v1/bookings/{$booking->id}/reject";
         $this->actingAs($fixture['caregiver']);
 
         $response = $this->postJson($url)->assertOk()
@@ -56,11 +56,11 @@ class BookingRejectionTest extends TestCase
         $other = BookingFixture::make()['caregiver'];
 
         $this->actingAs($other)
-            ->postJson("/api/bookings/{$booking->id}/reject")
+            ->postJson("/api/v1/bookings/{$booking->id}/reject")
             ->assertNotFound()->assertJsonPath('error.code', 'NOT_FOUND');
 
         $this->actingAs($fixture['caregiver'])
-            ->postJson('/api/bookings/0/reject')
+            ->postJson('/api/v1/bookings/0/reject')
             ->assertNotFound()->assertJsonPath('error.code', 'NOT_FOUND');
 
         $this->assertSame('REQUESTED', $booking->fresh()->status);
@@ -69,9 +69,9 @@ class BookingRejectionTest extends TestCase
 
     public function test_reject_requires_login_role_and_active_account(): void
     {
-        $this->postJson('/api/bookings/0/reject')->assertUnauthorized();
+        $this->postJson('/api/v1/bookings/0/reject')->assertUnauthorized();
         $fixture = BookingFixture::requested($this);
-        $url = "/api/bookings/{$fixture['booking']->id}/reject";
+        $url = "/api/v1/bookings/{$fixture['booking']->id}/reject";
 
         $this->actingAs($fixture['owner'])->postJson($url)->assertForbidden();
         $fixture['caregiver']->forceFill(['status' => 'DEACTIVATED'])->save();
@@ -89,7 +89,7 @@ class BookingRejectionTest extends TestCase
 
         foreach (['AWAITING_PAYMENT', 'CONFIRMED', 'IN_PROGRESS', 'AWAITING_CONFIRMATION', 'COMPLETED', 'CANCELLED'] as $status) {
             $booking->update(['status' => $status]);
-            $this->postJson("/api/bookings/{$booking->id}/reject")
+            $this->postJson("/api/v1/bookings/{$booking->id}/reject")
                 ->assertConflict()->assertJsonPath('error.code', 'INVALID_STATE');
             $this->assertSame($status, $booking->fresh()->status);
             $this->assertDatabaseCount('booking_status_events', 1);
@@ -112,7 +112,7 @@ class BookingRejectionTest extends TestCase
         ]);
 
         $this->actingAs($fixture['caregiver'])
-            ->postJson("/api/bookings/{$booking->id}/reject")
+            ->postJson("/api/v1/bookings/{$booking->id}/reject")
             ->assertConflict()->assertJsonPath('error.code', 'INVALID_STATE');
         $this->assertDatabaseCount('booking_status_events', 2);
     }
@@ -124,7 +124,7 @@ class BookingRejectionTest extends TestCase
             ->update(['status' => 'SUSPENDED', 'suspension_source' => 'ADMIN']);
 
         $this->actingAs($fixture['caregiver'])
-            ->postJson("/api/bookings/{$fixture['booking']->id}/reject")
+            ->postJson("/api/v1/bookings/{$fixture['booking']->id}/reject")
             ->assertOk()->assertJsonPath('status', 'CANCELLED');
     }
 
@@ -143,7 +143,7 @@ class BookingRejectionTest extends TestCase
 
         try {
             $this->actingAs($fixture['caregiver'])
-                ->postJson("/api/bookings/{$booking->id}/reject");
+                ->postJson("/api/v1/bookings/{$booking->id}/reject");
             $this->fail('Expected event failure.');
         } catch (RuntimeException $exception) {
             $this->assertSame('Simulated event failure', $exception->getMessage());

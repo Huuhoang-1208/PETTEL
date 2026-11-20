@@ -13,7 +13,7 @@ export function CaregiverDashboard() {
   const { user, refresh } = useSession();
   const router = useRouter();
   const enabled = user?.roles?.some((role) => role.role === "CAREGIVER");
-  const profile = useApi<{ data: Profile }>(enabled ? "/api/caregiver/profile" : null);
+  const profile = useApi<{ data: Profile }>(enabled ? "/api/v1/caregiver/profile" : null);
   const finishOnboarding = () => {
     refresh();
     profile.reload();

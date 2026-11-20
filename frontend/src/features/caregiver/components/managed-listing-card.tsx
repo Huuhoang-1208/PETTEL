@@ -30,7 +30,7 @@ export function ManagedListingCard({
     setBusy(true);
     setError(undefined);
     try {
-      await write("post", `/api/caregiver/listings/${listing.id}/${name}`, payload);
+      await write("post", `/api/v1/caregiver/listings/${listing.id}/${name}`, payload);
       reload();
     } catch (failure) {
       setError(failure);
@@ -45,8 +45,8 @@ export function ManagedListingCard({
     setBusy(true);
     setError(undefined);
     try {
-      const media = await write<{ data: { id: string } }>("post", "/api/caregiver/media", data);
-      await write("put", `/api/caregiver/listings/${listing.id}/media`, {
+      const media = await write<{ data: { id: string } }>("post", "/api/v1/caregiver/media", data);
+      await write("put", `/api/v1/caregiver/listings/${listing.id}/media`, {
         media: [
           ...listing.media.map((item, index) => ({
             media_object_id: item.media_object_id,

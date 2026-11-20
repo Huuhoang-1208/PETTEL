@@ -114,7 +114,7 @@ class BookingAcceptanceConditionsTest extends TestCase
         $booking = $fixture['booking'];
         $response = $this->actingAs($fixture['owner'])
             ->withHeader('Idempotency-Key', 'accept-conditions-second')
-            ->postJson('/api/bookings', $fixture['payload'])->assertCreated();
+            ->postJson('/api/v1/bookings', $fixture['payload'])->assertCreated();
         $other = Booking::query()->findOrFail($response->json('id'));
 
         foreach (['REQUESTED', 'COMPLETED', 'CANCELLED'] as $status) {

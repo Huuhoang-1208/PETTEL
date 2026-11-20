@@ -52,12 +52,12 @@ class ListingResource extends JsonResource
             )->map(fn (MediaObject $media): array => [
                 'media_object_id' => (string) $media->id,
                 'sort_order' => (int) $media->pivot->sort_order,
-                'image_url' => (string) ($request->is('api/admin/*')
-                    ? url("/api/admin/listings/{$this->id}/media/{$media->id}/content")
-                    : url("/api/caregiver/listings/{$this->id}/media/{$media->id}/content")),
-                'thumbnail_url' => (string) (($request->is('api/admin/*')
-                    ? url("/api/admin/listings/{$this->id}/media/{$media->id}/content")
-                    : url("/api/caregiver/listings/{$this->id}/media/{$media->id}/content")).'?variant=thumbnail'),
+                'image_url' => (string) ($request->is('api/v1/admin/*')
+                    ? url("/api/v1/admin/listings/{$this->id}/media/{$media->id}/content")
+                    : url("/api/v1/caregiver/listings/{$this->id}/media/{$media->id}/content")),
+                'thumbnail_url' => (string) (($request->is('api/v1/admin/*')
+                    ? url("/api/v1/admin/listings/{$this->id}/media/{$media->id}/content")
+                    : url("/api/v1/caregiver/listings/{$this->id}/media/{$media->id}/content")).'?variant=thumbnail'),
             ])->values()),
         ];
     }

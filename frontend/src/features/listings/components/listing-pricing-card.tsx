@@ -23,7 +23,7 @@ function formatPrice(price: number): string {
 }
 
 export function ListingPricingCard({ listing }: { listing: Listing }) {
-  const response = useApi<Page<Listing>>(`/api/listings/${listing.id}/services`);
+  const response = useApi<Page<Listing>>(`/api/v1/listings/${listing.id}/services`);
   const offers = response.data?.data ?? [listing];
   const orderedOffers = [
     ...offers.filter((offer) => offer.service_type === "BOARDING"),

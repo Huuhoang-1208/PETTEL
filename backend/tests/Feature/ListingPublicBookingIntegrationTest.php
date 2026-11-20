@@ -22,16 +22,16 @@ class ListingPublicBookingIntegrationTest extends TestCase
         $owner = $fixture['owner'];
         $listingId = $fixture['active_listing_id'];
         $oldSlotId = DB::table('availability_slots')->where('listing_id', $listingId)->value('id');
-        $this->actingAs($caregiver)->deleteJson("/api/caregiver/listings/{$listingId}/availability-slots/{$oldSlotId}")
+        $this->actingAs($caregiver)->deleteJson("/api/v1/caregiver/listings/{$listingId}/availability-slots/{$oldSlotId}")
             ->assertNoContent();
         $start = now('UTC')->addDays(10)->setTime(9, 0, 0, 123456);
         $end = $start->copy()->addHours(2);
         $startText = $start->format('Y-m-d\TH:i:s.u\Z');
         $endText = $end->format('Y-m-d\TH:i:s.u\Z');
-        $url = '/api/listings?'.http_build_query(['start_at' => $startText, 'end_at' => $endText]);
+        $url = '/api/v1/listings?'.http_build_query(['start_at' => $startText, 'end_at' => $endText]);
 
         $this->getJson($url)->assertOk()->assertJsonCount(0, 'data');
-        $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$listingId}/availability-slots", [
+        $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$listingId}/availability-slots", [
             'start_at' => $startText, 'end_at' => $endText,
         ])->assertCreated();
         $this->getJson($url)->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', (string) $listingId);
@@ -42,12 +42,12 @@ class ListingPublicBookingIntegrationTest extends TestCase
             'start_at' => $startText,
             'end_at' => $endText,
         ];
-        $this->actingAs($owner)->postJson('/api/bookings/quote', $payload)->assertOk()
+        $this->actingAs($owner)->postJson('/api/v1/bookings/quote', $payload)->assertOk()
             ->assertJsonPath('price_total_vnd', 100000);
         $created = $this->withHeader('Idempotency-Key', 'listing-slot-api-booking')
-            ->postJson('/api/bookings', $payload)->assertCreated();
+            ->postJson('/api/v1/bookings', $payload)->assertCreated();
         $bookingId = $created->json('id');
-        $this->actingAs($caregiver)->postJson("/api/bookings/{$bookingId}/accept")
+        $this->actingAs($caregiver)->postJson("/api/v1/bookings/{$bookingId}/accept")
             ->assertOk()->assertJsonPath('status', 'AWAITING_PAYMENT');
         $this->assertDatabaseHas('bookings', ['id' => $bookingId, 'status' => 'AWAITING_PAYMENT']);
     }
@@ -59,25 +59,25 @@ class ListingPublicBookingIntegrationTest extends TestCase
         $caregiver = $fixture['caregiver'];
         $listingId = $fixture['active_listing_id'];
         $acceptRequest = $this->withHeader('Idempotency-Key', 'suspend-existing-accept')
-            ->actingAs($owner)->postJson('/api/bookings', $fixture['payload'])->assertCreated();
+            ->actingAs($owner)->postJson('/api/v1/bookings', $fixture['payload'])->assertCreated();
         $rejectRequest = $this->withHeader('Idempotency-Key', 'suspend-existing-reject')
-            ->postJson('/api/bookings', $fixture['payload'])->assertCreated();
+            ->postJson('/api/v1/bookings', $fixture['payload'])->assertCreated();
         $acceptId = $acceptRequest->json('id');
         $rejectId = $rejectRequest->json('id');
         $snapshot = DB::table('bookings')->where('id', $acceptId)->value('listing_snapshot_json');
         $events = DB::table('booking_status_events')->whereIn('booking_id', [$acceptId, $rejectId])->count();
 
-        $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$listingId}/suspend", ['reason' => 'Pause new requests.'])
+        $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$listingId}/suspend", ['reason' => 'Pause new requests.'])
             ->assertOk()->assertJsonPath('data.status', 'SUSPENDED');
-        $this->getJson("/api/listings/{$listingId}")->assertNotFound();
-        $this->getJson('/api/listings')->assertOk()->assertJsonCount(0, 'data');
-        $this->actingAs($owner)->postJson('/api/bookings/quote', $fixture['payload'])
+        $this->getJson("/api/v1/listings/{$listingId}")->assertNotFound();
+        $this->getJson('/api/v1/listings')->assertOk()->assertJsonCount(0, 'data');
+        $this->actingAs($owner)->postJson('/api/v1/bookings/quote', $fixture['payload'])
             ->assertNotFound()->assertJsonPath('error.code', 'NOT_FOUND');
-        $this->withHeader('Idempotency-Key', 'suspend-new-request')->postJson('/api/bookings', $fixture['payload'])
+        $this->withHeader('Idempotency-Key', 'suspend-new-request')->postJson('/api/v1/bookings', $fixture['payload'])
             ->assertNotFound();
-        $this->actingAs($caregiver)->postJson("/api/bookings/{$acceptId}/accept")
+        $this->actingAs($caregiver)->postJson("/api/v1/bookings/{$acceptId}/accept")
             ->assertConflict()->assertJsonPath('error.code', 'INVALID_STATE');
-        $this->postJson("/api/bookings/{$rejectId}/reject")->assertOk()->assertJsonPath('status', 'CANCELLED');
+        $this->postJson("/api/v1/bookings/{$rejectId}/reject")->assertOk()->assertJsonPath('status', 'CANCELLED');
 
         $this->assertSame($snapshot, DB::table('bookings')->where('id', $acceptId)->value('listing_snapshot_json'));
         $this->assertDatabaseHas('bookings', ['id' => $acceptId, 'status' => 'REQUESTED']);
@@ -93,13 +93,13 @@ class ListingPublicBookingIntegrationTest extends TestCase
         $booking = $fixture['booking'];
         $snapshot = $booking->listing_snapshot_json;
         $priceSnapshot = $booking->price_snapshot_vnd;
-        $request = $this->actingAs($fixture['caregiver'])->postJson("/api/caregiver/listings/{$listingId}/change-requests", [
+        $request = $this->actingAs($fixture['caregiver'])->postJson("/api/v1/caregiver/listings/{$listingId}/change-requests", [
             'base_listing_version' => 1,
             'changes' => ['title' => 'New public title', 'price_vnd' => 60000],
         ])->assertCreated();
-        $this->actingAs($admin)->postJson("/api/admin/listings/{$listingId}/change-requests/{$request->json('data.id')}/approve")
+        $this->actingAs($admin)->postJson("/api/v1/admin/listings/{$listingId}/change-requests/{$request->json('data.id')}/approve")
             ->assertOk();
-        $this->actingAs($fixture['caregiver'])->postJson("/api/bookings/{$booking->id}/accept")
+        $this->actingAs($fixture['caregiver'])->postJson("/api/v1/bookings/{$booking->id}/accept")
             ->assertOk()->assertJsonPath('status', 'AWAITING_PAYMENT');
         $this->assertSame($snapshot, $booking->fresh()->listing_snapshot_json);
         $this->assertSame($priceSnapshot, $booking->fresh()->price_snapshot_vnd);
@@ -110,12 +110,12 @@ class ListingPublicBookingIntegrationTest extends TestCase
         ] as $changes) {
             $next = BookingFixture::requested($this);
             $id = $next['active_listing_id'];
-            $pending = $this->actingAs($next['caregiver'])->postJson("/api/caregiver/listings/{$id}/change-requests", [
+            $pending = $this->actingAs($next['caregiver'])->postJson("/api/v1/caregiver/listings/{$id}/change-requests", [
                 'base_listing_version' => 1, 'changes' => $changes,
             ])->assertCreated();
-            $this->actingAs($admin)->postJson("/api/admin/listings/{$id}/change-requests/{$pending->json('data.id')}/approve")
+            $this->actingAs($admin)->postJson("/api/v1/admin/listings/{$id}/change-requests/{$pending->json('data.id')}/approve")
                 ->assertOk();
-            $this->actingAs($next['caregiver'])->postJson("/api/bookings/{$next['booking']->id}/accept")
+            $this->actingAs($next['caregiver'])->postJson("/api/v1/bookings/{$next['booking']->id}/accept")
                 ->assertConflict()->assertJsonPath('error.code', 'INVALID_STATE');
             $this->assertDatabaseHas('bookings', ['id' => $next['booking']->id, 'status' => 'REQUESTED']);
         }
@@ -141,15 +141,15 @@ class ListingPublicBookingIntegrationTest extends TestCase
         $media->save();
         DB::table('listing_media')->insert(['listing_id' => $listingId, 'media_object_id' => $media->id, 'sort_order' => 1]);
 
-        $this->get("/api/listings/{$listingId}/media/{$media->id}/content")->assertOk();
-        $proposal = $this->actingAs($caregiver)->postJson("/api/caregiver/listings/{$listingId}/change-requests", [
+        $this->get("/api/v1/listings/{$listingId}/media/{$media->id}/content")->assertOk();
+        $proposal = $this->actingAs($caregiver)->postJson("/api/v1/caregiver/listings/{$listingId}/change-requests", [
             'base_listing_version' => 1, 'changes' => ['media' => []],
         ])->assertCreated();
-        $this->actingAs($admin)->postJson("/api/admin/listings/{$listingId}/change-requests/{$proposal->json('data.id')}/approve")
+        $this->actingAs($admin)->postJson("/api/v1/admin/listings/{$listingId}/change-requests/{$proposal->json('data.id')}/approve")
             ->assertOk();
 
-        $this->getJson("/api/listings/{$listingId}")->assertOk()->assertJsonPath('data.media', []);
-        $this->get("/api/listings/{$listingId}/media/{$media->id}/content")->assertNotFound();
+        $this->getJson("/api/v1/listings/{$listingId}")->assertOk()->assertJsonPath('data.media', []);
+        $this->get("/api/v1/listings/{$listingId}/media/{$media->id}/content")->assertNotFound();
         $this->assertDatabaseHas('media_objects', ['id' => $media->id, 'state' => 'READY']);
         Storage::disk('local')->assertExists($key);
         Storage::disk('local')->assertExists('listings/'.$caregiver->id.'/retained-thumb.webp');
@@ -162,23 +162,23 @@ class ListingPublicBookingIntegrationTest extends TestCase
         $payload = $fixture['payload'];
 
         $this->actingAs($fixture['caregiver'])
-            ->postJson("/api/caregiver/listings/{$listingId}/change-requests", [
+            ->postJson("/api/v1/caregiver/listings/{$listingId}/change-requests", [
                 'base_listing_version' => 1,
                 'changes' => ['price_vnd' => 60000],
             ])->assertCreated();
 
-        $this->actingAs($fixture['owner'])->getJson("/api/listings/{$listingId}")
+        $this->actingAs($fixture['owner'])->getJson("/api/v1/listings/{$listingId}")
             ->assertOk()->assertJsonPath('data.price_vnd', 50000);
-        $this->postJson('/api/bookings/quote', $payload)
+        $this->postJson('/api/v1/bookings/quote', $payload)
             ->assertOk()->assertJsonPath('price_total_vnd', 150000);
         $booking = $this->withHeader('Idempotency-Key', 'pending-price-booking')
-            ->postJson('/api/bookings', $payload)->assertCreated();
+            ->postJson('/api/v1/bookings', $payload)->assertCreated();
 
         $this->assertDatabaseHas('bookings', [
             'id' => $booking->json('id'),
             'price_snapshot_vnd' => 150000,
         ]);
-        $this->postJson('/api/inquiries', [
+        $this->postJson('/api/v1/inquiries', [
             'listing_id' => $listingId,
             'body' => 'Tôi muốn hỏi thêm về dịch vụ.',
             'request_key' => (string) Str::uuid(),

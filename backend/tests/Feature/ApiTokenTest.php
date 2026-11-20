@@ -17,7 +17,7 @@ class ApiTokenTest extends TestCase
         $token = $user->createToken('profile-client', ['profile:read'])->plainTextToken;
 
         $this->withToken($token)
-            ->getJson('/api/user')
+            ->getJson('/api/v1/user')
             ->assertOk()
             ->assertJsonPath('id', $user->id);
     }
@@ -28,7 +28,7 @@ class ApiTokenTest extends TestCase
         $token = $user->createToken('pets-client', ['pets:read'])->plainTextToken;
 
         $this->withToken($token)
-            ->getJson('/api/user')
+            ->getJson('/api/v1/user')
             ->assertForbidden();
     }
 
@@ -38,7 +38,7 @@ class ApiTokenTest extends TestCase
         $token = $user->createToken('profile-client', ['profile:read'])->plainTextToken;
 
         $this->withToken($token)
-            ->getJson('/api/notifications')
+            ->getJson('/api/v1/notifications')
             ->assertForbidden();
     }
 
@@ -46,7 +46,7 @@ class ApiTokenTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->postJson('/api/tokens', [
+        $response = $this->actingAs($user)->postJson('/api/v1/tokens', [
             'name' => 'profile-client',
             'abilities' => ['profile:read'],
         ])->assertCreated()
@@ -58,7 +58,7 @@ class ApiTokenTest extends TestCase
         Auth::forgetGuards();
 
         $this->withToken($token)
-            ->getJson('/api/user')
+            ->getJson('/api/v1/user')
             ->assertOk()
             ->assertJsonPath('id', $user->id);
     }
@@ -71,18 +71,18 @@ class ApiTokenTest extends TestCase
         $otherToken = $otherUser->createToken('other-client', ['profile:read']);
 
         $this->actingAs($user)
-            ->deleteJson('/api/tokens/'.$otherToken->accessToken->id)
+            ->deleteJson('/api/v1/tokens/'.$otherToken->accessToken->id)
             ->assertNotFound();
 
         $this->actingAs($user)
-            ->deleteJson('/api/tokens/'.$token->accessToken->id)
+            ->deleteJson('/api/v1/tokens/'.$token->accessToken->id)
             ->assertNoContent();
 
         Auth::guard('web')->logout();
         Auth::forgetGuards();
 
         $this->withToken($token->plainTextToken)
-            ->getJson('/api/user')
+            ->getJson('/api/v1/user')
             ->assertUnauthorized();
     }
 
@@ -90,7 +90,7 @@ class ApiTokenTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user)->postJson('/api/tokens', [
+        $this->actingAs($user)->postJson('/api/v1/tokens', [
             'name' => 'unrestricted-client',
             'abilities' => ['*'],
         ])->assertUnprocessable();

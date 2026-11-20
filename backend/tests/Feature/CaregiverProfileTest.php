@@ -17,11 +17,11 @@ class CaregiverProfileTest extends TestCase
         $payload = $this->payload();
         $payload['display_name'] = "  Cafe\u{0301}  ";
 
-        $this->actingAs($user)->postJson('/api/caregiver/profile', $payload)
+        $this->actingAs($user)->postJson('/api/v1/caregiver/profile', $payload)
             ->assertCreated()->assertJsonPath('data.display_name', 'Café');
-        $this->getJson('/api/caregiver/profile')->assertOk()
+        $this->getJson('/api/v1/caregiver/profile')->assertOk()
             ->assertJsonMissingPath('data.user_id');
-        $this->patchJson('/api/caregiver/profile', ['bio' => null])
+        $this->patchJson('/api/v1/caregiver/profile', ['bio' => null])
             ->assertOk()->assertJsonPath('data.bio', null)
             ->assertJsonPath('data.type', 'INDIVIDUAL');
 
@@ -48,11 +48,11 @@ class CaregiverProfileTest extends TestCase
     {
         $first = $this->userWithRole();
         $second = $this->userWithRole();
-        $this->actingAs($first)->postJson('/api/caregiver/profile', $this->payload())
+        $this->actingAs($first)->postJson('/api/v1/caregiver/profile', $this->payload())
             ->assertCreated();
 
-        $this->actingAs($second)->getJson('/api/caregiver/profile')->assertNotFound();
-        $this->patchJson('/api/caregiver/profile', ['display_name' => 'Changed'])
+        $this->actingAs($second)->getJson('/api/v1/caregiver/profile')->assertNotFound();
+        $this->patchJson('/api/v1/caregiver/profile', ['display_name' => 'Changed'])
             ->assertNotFound();
         $this->assertDatabaseHas('caregiver_profiles', [
             'user_id' => $first->id,
@@ -62,29 +62,29 @@ class CaregiverProfileTest extends TestCase
 
     public function test_routes_require_an_active_caregiver(): void
     {
-        $this->getJson('/api/caregiver/profile')->assertUnauthorized();
+        $this->getJson('/api/v1/caregiver/profile')->assertUnauthorized();
         $this->actingAs($this->userWithRole('OWNER'))
-            ->postJson('/api/caregiver/profile', $this->payload())->assertForbidden();
+            ->postJson('/api/v1/caregiver/profile', $this->payload())->assertForbidden();
 
         foreach (['DELETION_PENDING', 'DEACTIVATED'] as $status) {
             $this->actingAs($this->userWithRole('CAREGIVER', $status))
-                ->getJson('/api/caregiver/profile')->assertForbidden();
+                ->getJson('/api/v1/caregiver/profile')->assertForbidden();
         }
     }
 
     public function test_duplicate_profile_is_rejected_even_after_soft_delete(): void
     {
         $user = $this->userWithRole();
-        $this->actingAs($user)->postJson('/api/caregiver/profile', $this->payload())
+        $this->actingAs($user)->postJson('/api/v1/caregiver/profile', $this->payload())
             ->assertCreated();
-        $this->postJson('/api/caregiver/profile', $this->payload())
+        $this->postJson('/api/v1/caregiver/profile', $this->payload())
             ->assertConflict()->assertJsonPath('error.code', 'INVALID_STATE');
 
         $user->caregiverProfile()->firstOrFail()->delete();
 
-        $this->postJson('/api/caregiver/profile', $this->payload())->assertConflict();
-        $this->getJson('/api/caregiver/profile')->assertNotFound();
-        $this->patchJson('/api/caregiver/profile', ['bio' => 'New'])->assertNotFound();
+        $this->postJson('/api/v1/caregiver/profile', $this->payload())->assertConflict();
+        $this->getJson('/api/v1/caregiver/profile')->assertNotFound();
+        $this->patchJson('/api/v1/caregiver/profile', ['bio' => 'New'])->assertNotFound();
         $this->assertDatabaseCount('caregiver_profiles', 1);
     }
 
@@ -99,20 +99,20 @@ class CaregiverProfileTest extends TestCase
             ['bio' => str_repeat('x', 2001)],
             ['area_code' => 'UNKNOWN'],
         ] as $invalid) {
-            $this->postJson('/api/caregiver/profile', array_replace($this->payload(), $invalid))
+            $this->postJson('/api/v1/caregiver/profile', array_replace($this->payload(), $invalid))
                 ->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
         }
 
         foreach (['id', 'user_id', 'caregiver_profile_id', 'status', 'capacity', 'version', 'published_at', 'created_at', 'updated_at', 'deleted_at'] as $field) {
-            $this->postJson('/api/caregiver/profile', $this->payload() + [$field => null])
+            $this->postJson('/api/v1/caregiver/profile', $this->payload() + [$field => null])
                 ->assertUnprocessable()->assertJsonStructure(['error' => ['details' => [$field]]]);
         }
 
         $this->assertDatabaseCount('caregiver_profiles', 0);
-        $this->postJson('/api/caregiver/profile', $this->payload())->assertCreated();
-        $this->patchJson('/api/caregiver/profile', ['user_id' => null])
+        $this->postJson('/api/v1/caregiver/profile', $this->payload())->assertCreated();
+        $this->patchJson('/api/v1/caregiver/profile', ['user_id' => null])
             ->assertUnprocessable();
-        $this->patchJson('/api/caregiver/profile', ['display_name' => null])
+        $this->patchJson('/api/v1/caregiver/profile', ['display_name' => null])
             ->assertUnprocessable();
         $this->assertDatabaseCount('caregiver_profiles', 1);
     }

@@ -22,7 +22,7 @@ class CareUpdateTest extends TestCase
         $fixture = BookingFixture::requested($this);
         $booking = $fixture['booking'];
         $booking->update(['status' => 'IN_PROGRESS']);
-        $url = "/api/bookings/{$booking->id}/care-updates";
+        $url = "/api/v1/bookings/{$booking->id}/care-updates";
 
         $this->actingAs($fixture['caregiver'])->postJson($url, ['body' => 'Walk completed.'])
             ->assertCreated()->assertJsonPath('data.booking_id', (string) $booking->id)
@@ -54,7 +54,7 @@ class CareUpdateTest extends TestCase
         $fixture = BookingFixture::requested($this);
         $booking = $fixture['booking'];
         $booking->update(['status' => 'IN_PROGRESS']);
-        $url = "/api/bookings/{$booking->id}/care-updates";
+        $url = "/api/v1/bookings/{$booking->id}/care-updates";
         $response = $this->actingAs($fixture['caregiver'])->post($url, [
             'body' => 'Photo update',
             'image' => UploadedFile::fake()->image('care.jpg', 32, 24),
@@ -76,7 +76,7 @@ class CareUpdateTest extends TestCase
         $fixture = BookingFixture::requested($this);
         $booking = $fixture['booking'];
         $booking->update(['status' => 'IN_PROGRESS']);
-        $url = "/api/bookings/{$booking->id}/care-updates";
+        $url = "/api/v1/bookings/{$booking->id}/care-updates";
 
         $this->actingAs($fixture['caregiver'])->postJson($url, [])->assertUnprocessable();
         $this->actingAs($fixture['caregiver'])->postJson($url, ['body' => '   '])->assertUnprocessable();
@@ -101,7 +101,7 @@ class CareUpdateTest extends TestCase
         Log::spy();
 
         $this->actingAs($fixture['caregiver'])->post(
-            "/api/bookings/{$booking->id}/care-updates",
+            "/api/v1/bookings/{$booking->id}/care-updates",
             ['image' => UploadedFile::fake()->image('failed.png', 30, 20)],
             ['Accept' => 'application/json'],
         )->assertInternalServerError()->assertJsonPath('error.code', 'MEDIA_UPLOAD_FAILED');
@@ -116,7 +116,7 @@ class CareUpdateTest extends TestCase
         $fixture = BookingFixture::requested($this);
         $booking = $fixture['booking'];
         $booking->update(['status' => 'IN_PROGRESS']);
-        $url = "/api/bookings/{$booking->id}/care-updates";
+        $url = "/api/v1/bookings/{$booking->id}/care-updates";
         $first = $this->actingAs($fixture['caregiver'])->postJson($url, ['body' => 'first'])->assertCreated();
         $second = $this->actingAs($fixture['caregiver'])->postJson($url, ['body' => 'second'])->assertCreated();
 

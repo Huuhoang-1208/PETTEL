@@ -20,7 +20,7 @@ class ReportWorkflowTest extends TestCase
 
         $response = $this->actingAs($fixture['owner'])
             ->withHeader('X-Request-ID', $requestId)
-            ->postJson('/api/reports', [
+            ->postJson('/api/v1/reports', [
                 'listing_id' => $fixture['active_listing_id'],
                 'reason_code' => 'SAFETY_CONCERN',
                 'description' => 'Please review this listing.',
@@ -56,24 +56,24 @@ class ReportWorkflowTest extends TestCase
     public function test_reporter_can_only_list_their_own_reports(): void
     {
         $fixture = BookingFixture::make();
-        $this->actingAs($fixture['owner'])->postJson('/api/reports', [
+        $this->actingAs($fixture['owner'])->postJson('/api/v1/reports', [
             'listing_id' => $fixture['active_listing_id'],
             'reason_code' => 'OTHER',
         ])->assertCreated();
 
         $secondReporter = User::factory()->create();
-        $this->actingAs($secondReporter)->postJson('/api/reports', [
+        $this->actingAs($secondReporter)->postJson('/api/v1/reports', [
             'listing_id' => $fixture['draft_listing_id'],
             'reason_code' => 'OTHER',
         ])->assertCreated();
 
-        $this->actingAs($fixture['owner'])->getJson('/api/reports/mine')
+        $this->actingAs($fixture['owner'])->getJson('/api/v1/reports/mine')
             ->assertOk()->assertJsonCount(1, 'data');
-        $this->actingAs($secondReporter)->getJson('/api/reports/mine')
+        $this->actingAs($secondReporter)->getJson('/api/v1/reports/mine')
             ->assertOk()->assertJsonCount(1, 'data');
 
         $outsider = User::factory()->create();
-        $this->actingAs($outsider)->getJson('/api/reports/mine')
+        $this->actingAs($outsider)->getJson('/api/v1/reports/mine')
             ->assertOk()->assertJsonCount(0, 'data');
     }
 
@@ -89,12 +89,12 @@ class ReportWorkflowTest extends TestCase
             'created_at' => now('UTC'),
         ]);
 
-        $this->actingAs($outsider)->postJson('/api/reports', [
+        $this->actingAs($outsider)->postJson('/api/v1/reports', [
             'booking_id' => $fixture['booking']->id,
             'reason_code' => 'OTHER',
         ])->assertNotFound();
 
-        $this->actingAs($outsider)->postJson('/api/reports', [
+        $this->actingAs($outsider)->postJson('/api/v1/reports', [
             'message_id' => $messageId,
             'reason_code' => 'OTHER',
         ])->assertNotFound();
@@ -105,34 +105,34 @@ class ReportWorkflowTest extends TestCase
     public function test_admin_status_workflow_records_history_and_blocks_non_admin(): void
     {
         $fixture = BookingFixture::make();
-        $created = $this->actingAs($fixture['owner'])->postJson('/api/reports', [
+        $created = $this->actingAs($fixture['owner'])->postJson('/api/v1/reports', [
             'listing_id' => $fixture['active_listing_id'],
             'reason_code' => 'OTHER',
         ])->assertCreated();
         $reportId = $created->json('data.id');
         $admin = $this->admin();
 
-        $this->actingAs($fixture['owner'])->postJson("/api/admin/reports/{$reportId}/status", [
+        $this->actingAs($fixture['owner'])->postJson("/api/v1/admin/reports/{$reportId}/status", [
             'status' => 'IN_REVIEW',
             'reason' => 'Start review',
         ])->assertForbidden();
 
         $requestId = (string) Str::uuid();
         $this->actingAs($admin)->withHeader('X-Request-ID', $requestId)
-            ->getJson('/api/admin/reports?status=OPEN')
+            ->getJson('/api/v1/admin/reports?status=OPEN')
             ->assertOk()->assertJsonPath('data.0.id', (string) $reportId);
 
-        $this->actingAs($admin)->postJson("/api/admin/reports/{$reportId}/status", [
+        $this->actingAs($admin)->postJson("/api/v1/admin/reports/{$reportId}/status", [
             'status' => 'IN_REVIEW',
             'reason' => 'Review started.',
         ])->assertOk()->assertJsonPath('data.status', 'IN_REVIEW');
 
-        $this->actingAs($admin)->postJson("/api/admin/reports/{$reportId}/status", [
+        $this->actingAs($admin)->postJson("/api/v1/admin/reports/{$reportId}/status", [
             'status' => 'RESOLVED',
             'reason' => 'Reviewed and resolved.',
         ])->assertOk()->assertJsonPath('data.status', 'RESOLVED');
 
-        $this->actingAs($admin)->getJson("/api/admin/reports/{$reportId}/history")
+        $this->actingAs($admin)->getJson("/api/v1/admin/reports/{$reportId}/history")
             ->assertOk()
             ->assertJsonCount(3, 'data')
             ->assertJsonPath('data.0.to_status', 'OPEN')
@@ -160,7 +160,7 @@ class ReportWorkflowTest extends TestCase
             'created_at' => now('UTC'),
         ]);
 
-        $created = $this->actingAs($fixture['owner'])->postJson('/api/reports', [
+        $created = $this->actingAs($fixture['owner'])->postJson('/api/v1/reports', [
             'message_id' => $messageId,
             'reason_code' => 'HARASSMENT',
             'description' => 'Please review this private message.',
@@ -168,20 +168,20 @@ class ReportWorkflowTest extends TestCase
         $reportId = $created->json('data.id');
         $admin = $this->admin();
 
-        $this->actingAs($fixture['owner'])->getJson("/api/admin/reports/{$reportId}/evidence")
+        $this->actingAs($fixture['owner'])->getJson("/api/v1/admin/reports/{$reportId}/evidence")
             ->assertForbidden();
 
-        $this->actingAs($admin)->getJson("/api/admin/reports/{$reportId}/evidence")
+        $this->actingAs($admin)->getJson("/api/v1/admin/reports/{$reportId}/evidence")
             ->assertForbidden();
 
-        $this->actingAs($admin)->postJson("/api/admin/reports/{$reportId}/status", [
+        $this->actingAs($admin)->postJson("/api/v1/admin/reports/{$reportId}/status", [
             'status' => 'IN_REVIEW',
             'reason' => 'Review private evidence.',
         ])->assertOk();
 
         $requestId = (string) Str::uuid();
         $this->actingAs($admin)->withHeader('X-Request-ID', $requestId)
-            ->getJson("/api/admin/reports/{$reportId}/evidence")
+            ->getJson("/api/v1/admin/reports/{$reportId}/evidence")
             ->assertOk()
             ->assertHeader('X-Request-ID', $requestId)
             ->assertJsonPath('data.type', 'MESSAGE')
@@ -202,14 +202,14 @@ class ReportWorkflowTest extends TestCase
     public function test_shared_moderation_hides_listing_without_mutating_booking(): void
     {
         $fixture = BookingFixture::requested($this);
-        $created = $this->actingAs($fixture['owner'])->postJson('/api/reports', [
+        $created = $this->actingAs($fixture['owner'])->postJson('/api/v1/reports', [
             'listing_id' => $fixture['active_listing_id'],
             'reason_code' => 'SAFETY_CONCERN',
         ])->assertCreated();
         $reportId = $created->json('data.id');
         $admin = $this->admin();
 
-        $this->actingAs($admin)->postJson("/api/admin/reports/{$reportId}/status", [
+        $this->actingAs($admin)->postJson("/api/v1/admin/reports/{$reportId}/status", [
             'status' => 'IN_REVIEW',
             'reason' => 'Review listing report.',
         ])->assertOk();
@@ -218,7 +218,7 @@ class ReportWorkflowTest extends TestCase
         $bookingEventsBefore = DB::table('booking_status_events')
             ->where('booking_id', $booking->id)->count();
 
-        $this->actingAs($admin)->postJson("/api/admin/reports/{$reportId}/moderation", [
+        $this->actingAs($admin)->postJson("/api/v1/admin/reports/{$reportId}/moderation", [
             'action' => 'HIDE',
             'reason' => 'Hide listing while reviewing report.',
         ])->assertOk();
@@ -251,24 +251,24 @@ class ReportWorkflowTest extends TestCase
         $fixture = BookingFixture::requested($this);
         $fixture['booking']->update(['status' => 'COMPLETED']);
         $review = $this->actingAs($fixture['owner'])->postJson(
-            "/api/bookings/{$fixture['booking']->id}/reviews",
+            "/api/v1/bookings/{$fixture['booking']->id}/reviews",
             ['rating' => 4, 'body' => 'Review subject to moderation.'],
         )->assertCreated();
         $reviewId = $review->json('data.id');
 
-        $report = $this->actingAs($fixture['caregiver'])->postJson('/api/reports', [
+        $report = $this->actingAs($fixture['caregiver'])->postJson('/api/v1/reports', [
             'review_id' => $reviewId,
             'reason_code' => 'OTHER',
         ])->assertCreated();
         $reportId = $report->json('data.id');
         $admin = $this->admin();
 
-        $this->actingAs($admin)->postJson("/api/admin/reports/{$reportId}/status", [
+        $this->actingAs($admin)->postJson("/api/v1/admin/reports/{$reportId}/status", [
             'status' => 'IN_REVIEW',
             'reason' => 'Review reported review.',
         ])->assertOk();
 
-        $this->actingAs($admin)->postJson("/api/admin/reports/{$reportId}/moderation", [
+        $this->actingAs($admin)->postJson("/api/v1/admin/reports/{$reportId}/moderation", [
             'action' => 'HIDE',
             'reason' => 'Hide reported review.',
         ])->assertOk();
@@ -294,7 +294,7 @@ class ReportWorkflowTest extends TestCase
         $bookingBefore = $booking->fresh()->getAttributes();
         $privateText = $fixture['payload']['instructions'];
 
-        $created = $this->actingAs($fixture['owner'])->postJson('/api/reports', [
+        $created = $this->actingAs($fixture['owner'])->postJson('/api/v1/reports', [
             'booking_id' => $booking->id,
             'reason_code' => 'SERVICE_DISPUTE',
             'description' => 'Please review this booking.',
@@ -304,13 +304,13 @@ class ReportWorkflowTest extends TestCase
         $admin = $this->admin();
 
         $this->actingAs($admin)
-            ->getJson('/api/admin/reports?status=OPEN')
+            ->getJson('/api/v1/admin/reports?status=OPEN')
             ->assertOk()
             ->assertJsonPath('data.0.id', (string) $reportId)
             ->assertJsonPath('data.0.target.type', 'BOOKING');
 
         $this->actingAs($admin)
-            ->getJson("/api/admin/reports/{$reportId}")
+            ->getJson("/api/v1/admin/reports/{$reportId}")
             ->assertOk()
             ->assertJsonPath('data.status', 'OPEN')
             ->assertJsonMissingPath('data.booking_snapshot')
@@ -318,15 +318,15 @@ class ReportWorkflowTest extends TestCase
 
         // Reporter không được xem evidence qua route admin.
         $this->actingAs($fixture['owner'])
-            ->getJson("/api/admin/reports/{$reportId}/evidence")
+            ->getJson("/api/v1/admin/reports/{$reportId}/evidence")
             ->assertForbidden();
 
         // Admin chỉ xem evidence sau khi đưa report vào xử lý.
         $this->actingAs($admin)
-            ->getJson("/api/admin/reports/{$reportId}/evidence")
+            ->getJson("/api/v1/admin/reports/{$reportId}/evidence")
             ->assertForbidden();
 
-        $this->actingAs($admin)->postJson("/api/admin/reports/{$reportId}/status", [
+        $this->actingAs($admin)->postJson("/api/v1/admin/reports/{$reportId}/status", [
             'status' => 'IN_REVIEW',
             'reason' => 'Review booking evidence.',
         ])->assertOk();
@@ -335,7 +335,7 @@ class ReportWorkflowTest extends TestCase
 
         $this->actingAs($admin)
             ->withHeader('X-Request-ID', $requestId)
-            ->getJson("/api/admin/reports/{$reportId}/evidence")
+            ->getJson("/api/v1/admin/reports/{$reportId}/evidence")
             ->assertOk()
             ->assertHeader('X-Request-ID', $requestId)
             ->assertJsonPath('data.type', 'BOOKING')
@@ -355,13 +355,13 @@ class ReportWorkflowTest extends TestCase
         $this->assertSame($requestId, $audit->request_id);
         $this->assertStringNotContainsString($privateText, (string) $audit->metadata_json);
 
-        $this->actingAs($admin)->postJson("/api/admin/reports/{$reportId}/status", [
+        $this->actingAs($admin)->postJson("/api/v1/admin/reports/{$reportId}/status", [
             'status' => 'DISMISSED',
             'reason' => 'No booking action was required for this evidence-access test.',
         ])->assertOk();
 
         $this->actingAs($admin)
-            ->getJson("/api/admin/reports/{$reportId}/history")
+            ->getJson("/api/v1/admin/reports/{$reportId}/history")
             ->assertOk()
             ->assertJsonCount(3, 'data')
             ->assertJsonPath('data.0.to_status', 'OPEN')
@@ -382,9 +382,9 @@ class ReportWorkflowTest extends TestCase
 
         $listingId = $fixture['active_listing_id'];
 
-        $this->getJson("/api/listings/{$listingId}")->assertOk();
+        $this->getJson("/api/v1/listings/{$listingId}")->assertOk();
 
-        $created = $this->actingAs($fixture['owner'])->postJson('/api/reports', [
+        $created = $this->actingAs($fixture['owner'])->postJson('/api/v1/reports', [
             'listing_id' => $listingId,
             'reason_code' => 'SAFETY_CONCERN',
             'description' => 'Please check this listing.',
@@ -393,12 +393,12 @@ class ReportWorkflowTest extends TestCase
         $reportId = $created->json('data.id');
         $admin = $this->admin();
 
-        $this->actingAs($admin)->postJson("/api/admin/reports/{$reportId}/status", [
+        $this->actingAs($admin)->postJson("/api/v1/admin/reports/{$reportId}/status", [
             'status' => 'IN_REVIEW',
             'reason' => 'Review listing report.',
         ])->assertOk();
 
-        $this->actingAs($admin)->postJson("/api/admin/reports/{$reportId}/moderation", [
+        $this->actingAs($admin)->postJson("/api/v1/admin/reports/{$reportId}/moderation", [
             'action' => 'HIDE',
             'reason' => 'Temporarily hide while reviewing.',
         ])->assertOk();
@@ -408,9 +408,9 @@ class ReportWorkflowTest extends TestCase
             'status' => 'SUSPENDED',
             'suspension_source' => 'ADMIN',
         ]);
-        $this->getJson("/api/listings/{$listingId}")->assertNotFound();
+        $this->getJson("/api/v1/listings/{$listingId}")->assertNotFound();
 
-        $this->actingAs($admin)->postJson("/api/admin/reports/{$reportId}/moderation", [
+        $this->actingAs($admin)->postJson("/api/v1/admin/reports/{$reportId}/moderation", [
             'action' => 'RESTORE',
             'reason' => 'Listing passed review.',
         ])->assertOk();
@@ -420,15 +420,15 @@ class ReportWorkflowTest extends TestCase
             'status' => 'ACTIVE',
             'suspension_source' => null,
         ]);
-        $this->getJson("/api/listings/{$listingId}")->assertOk();
+        $this->getJson("/api/v1/listings/{$listingId}")->assertOk();
 
-        $this->actingAs($admin)->postJson("/api/admin/reports/{$reportId}/status", [
+        $this->actingAs($admin)->postJson("/api/v1/admin/reports/{$reportId}/status", [
             'status' => 'DISMISSED',
             'reason' => 'Report was not substantiated.',
         ])->assertOk()->assertJsonPath('data.status', 'DISMISSED');
 
         $this->actingAs($admin)
-            ->getJson("/api/admin/reports/{$reportId}/history")
+            ->getJson("/api/v1/admin/reports/{$reportId}/history")
             ->assertOk()
             ->assertJsonCount(3, 'data')
             ->assertJsonPath('data.0.to_status', 'OPEN')
@@ -456,7 +456,7 @@ class ReportWorkflowTest extends TestCase
         $privateText = $fixture['payload']['instructions'];
 
         // Tạo report riêng cho booking để admin xem evidence giới hạn.
-        $bookingReport = $this->actingAs($fixture['owner'])->postJson('/api/reports', [
+        $bookingReport = $this->actingAs($fixture['owner'])->postJson('/api/v1/reports', [
             'booking_id' => $booking->id,
             'reason_code' => 'SERVICE_DISPUTE',
             'description' => 'Please review this booking.',
@@ -465,7 +465,7 @@ class ReportWorkflowTest extends TestCase
         $bookingReportId = $bookingReport->json('data.id');
 
         // Tạo report listing để kiểm tra moderation và public visibility.
-        $listingReport = $this->actingAs($fixture['owner'])->postJson('/api/reports', [
+        $listingReport = $this->actingAs($fixture['owner'])->postJson('/api/v1/reports', [
             'listing_id' => $fixture['active_listing_id'],
             'reason_code' => 'SAFETY_CONCERN',
             'description' => 'Please review this listing.',
@@ -476,14 +476,14 @@ class ReportWorkflowTest extends TestCase
 
         // Admin thấy cả hai report trong queue.
         $this->actingAs($admin)
-            ->getJson('/api/admin/reports?status=OPEN')
+            ->getJson('/api/v1/admin/reports?status=OPEN')
             ->assertOk()
             ->assertJsonFragment(['id' => (string) $bookingReportId])
             ->assertJsonFragment(['id' => (string) $listingReportId]);
 
         // Chi tiết report không trả snapshot riêng tư của booking.
         $this->actingAs($admin)
-            ->getJson("/api/admin/reports/{$bookingReportId}")
+            ->getJson("/api/v1/admin/reports/{$bookingReportId}")
             ->assertOk()
             ->assertJsonPath('data.target.type', 'BOOKING')
             ->assertJsonMissingPath('data.booking_snapshot')
@@ -492,7 +492,7 @@ class ReportWorkflowTest extends TestCase
         // Đưa cả hai report vào IN_REVIEW.
         foreach ([$bookingReportId, $listingReportId] as $reportId) {
             $this->actingAs($admin)
-                ->postJson("/api/admin/reports/{$reportId}/status", [
+                ->postJson("/api/v1/admin/reports/{$reportId}/status", [
                     'status' => 'IN_REVIEW',
                     'reason' => 'Admin started reviewing.',
                 ])
@@ -502,7 +502,7 @@ class ReportWorkflowTest extends TestCase
 
         // Evidence bị chặn trước khi xét duyệt và được phép sau IN_REVIEW.
         $this->actingAs($admin)
-            ->getJson("/api/admin/reports/{$bookingReportId}/evidence")
+            ->getJson("/api/v1/admin/reports/{$bookingReportId}/evidence")
             ->assertOk()
             ->assertJsonPath('data.type', 'BOOKING')
             ->assertJsonPath('data.id', (string) $booking->id)
@@ -511,10 +511,10 @@ class ReportWorkflowTest extends TestCase
             ->assertJsonMissingPath('data.pet_snapshot');
 
         // Ẩn listing: listing biến mất khỏi API công khai.
-        $this->getJson("/api/listings/{$fixture['active_listing_id']}")->assertOk();
+        $this->getJson("/api/v1/listings/{$fixture['active_listing_id']}")->assertOk();
 
         $this->actingAs($admin)
-            ->postJson("/api/admin/reports/{$listingReportId}/moderation", [
+            ->postJson("/api/v1/admin/reports/{$listingReportId}/moderation", [
                 'action' => 'HIDE',
                 'reason' => 'Hide while reviewing.',
             ])
@@ -525,11 +525,11 @@ class ReportWorkflowTest extends TestCase
             'status' => 'SUSPENDED',
             'suspension_source' => 'ADMIN',
         ]);
-        $this->getJson("/api/listings/{$fixture['active_listing_id']}")->assertNotFound();
+        $this->getJson("/api/v1/listings/{$fixture['active_listing_id']}")->assertNotFound();
 
         // Khôi phục listing: listing xuất hiện lại trên API công khai.
         $this->actingAs($admin)
-            ->postJson("/api/admin/reports/{$listingReportId}/moderation", [
+            ->postJson("/api/v1/admin/reports/{$listingReportId}/moderation", [
                 'action' => 'RESTORE',
                 'reason' => 'Listing passed review.',
             ])
@@ -540,11 +540,11 @@ class ReportWorkflowTest extends TestCase
             'status' => 'ACTIVE',
             'suspension_source' => null,
         ]);
-        $this->getJson("/api/listings/{$fixture['active_listing_id']}")->assertOk();
+        $this->getJson("/api/v1/listings/{$fixture['active_listing_id']}")->assertOk();
 
         // Đóng report theo hai kết quả khác nhau.
         $this->actingAs($admin)
-            ->postJson("/api/admin/reports/{$bookingReportId}/status", [
+            ->postJson("/api/v1/admin/reports/{$bookingReportId}/status", [
                 'status' => 'DISMISSED',
                 'reason' => 'No booking action was required in this workflow test.',
             ])
@@ -552,7 +552,7 @@ class ReportWorkflowTest extends TestCase
             ->assertJsonPath('data.status', 'DISMISSED');
 
         $this->actingAs($admin)
-            ->postJson("/api/admin/reports/{$listingReportId}/status", [
+            ->postJson("/api/v1/admin/reports/{$listingReportId}/status", [
                 'status' => 'DISMISSED',
                 'reason' => 'Listing report was not substantiated.',
             ])
@@ -561,7 +561,7 @@ class ReportWorkflowTest extends TestCase
 
         // Lịch sử report booking.
         $this->actingAs($admin)
-            ->getJson("/api/admin/reports/{$bookingReportId}/history")
+            ->getJson("/api/v1/admin/reports/{$bookingReportId}/history")
             ->assertOk()
             ->assertJsonCount(3, 'data')
             ->assertJsonPath('data.0.to_status', 'OPEN')
@@ -570,7 +570,7 @@ class ReportWorkflowTest extends TestCase
 
         // Lịch sử report listing và hai moderation action.
         $this->actingAs($admin)
-            ->getJson("/api/admin/reports/{$listingReportId}/history")
+            ->getJson("/api/v1/admin/reports/{$listingReportId}/history")
             ->assertOk()
             ->assertJsonCount(3, 'data')
             ->assertJsonPath('data.0.to_status', 'OPEN')

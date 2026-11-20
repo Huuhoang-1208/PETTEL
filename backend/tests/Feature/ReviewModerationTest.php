@@ -20,7 +20,7 @@ class ReviewModerationTest extends TestCase
     {
         $fixture = $this->fixture();
         $listingId = $fixture['booking']->listing_id;
-        $url = "/api/listings/{$listingId}";
+        $url = "/api/v1/listings/{$listingId}";
 
         // A report alone does not hide the review.
         $this->getJson($url.'/reviews')->assertOk()
@@ -40,7 +40,7 @@ class ReviewModerationTest extends TestCase
         $this->getJson($url)->assertOk()
             ->assertJsonPath('data.rating_average', null)
             ->assertJsonPath('data.review_count', 0);
-        $this->getJson('/api/listings')->assertOk()
+        $this->getJson('/api/v1/listings')->assertOk()
             ->assertJsonPath('data.0.rating_average', null)
             ->assertJsonPath('data.0.review_count', 0);
 
@@ -78,7 +78,7 @@ class ReviewModerationTest extends TestCase
     {
         $fixture = $this->fixture();
         $action = app(SetReviewVisibility::class);
-        $reviewsUrl = "/api/listings/{$fixture['booking']->listing_id}/reviews";
+        $reviewsUrl = "/api/v1/listings/{$fixture['booking']->listing_id}/reviews";
 
         $this->getJson($reviewsUrl)->assertOk()->assertJsonCount(1, 'data');
 
@@ -218,7 +218,7 @@ class ReviewModerationTest extends TestCase
         $fixture = $this->fixture();
         DB::table('reviews')->where('id', $fixture['review_id'])->update(['is_demo' => true]);
         $action = app(SetReviewVisibility::class);
-        $url = "/api/listings/{$fixture['booking']->listing_id}/reviews";
+        $url = "/api/v1/listings/{$fixture['booking']->listing_id}/reviews";
 
         $action->handle($fixture['admin'], $fixture['report_id'], 'HIDDEN', 'Hide demo');
         $this->getJson($url)->assertOk()->assertJsonCount(0, 'data');
@@ -247,7 +247,7 @@ class ReviewModerationTest extends TestCase
         $fixture = BookingFixture::requested($this);
         $booking = $fixture['booking'];
         $booking->update(['status' => 'COMPLETED']);
-        $response = $this->postJson("/api/bookings/{$booking->id}/reviews", [
+        $response = $this->postJson("/api/v1/bookings/{$booking->id}/reviews", [
             'rating' => 5,
             'body' => 'Review moderation test',
         ])->assertCreated();

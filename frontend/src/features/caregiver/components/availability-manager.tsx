@@ -32,7 +32,7 @@ export function AvailabilityManager({ listings }: { listings: ManagedListing[] }
   const [page, setPage] = useState(1);
   const [selectedListingId, setSelectedListingId] = useState(String(listings[0]?.id ?? ""));
   const listing = listings.find((item) => String(item.id) === selectedListingId) ?? listings[0];
-  const slots = useApi<Page<Slot>>(listing ? `/api/caregiver/listings/${listing.id}/availability-slots?page=${page}&per_page=50` : null);
+  const slots = useApi<Page<Slot>>(listing ? `/api/v1/caregiver/listings/${listing.id}/availability-slots?page=${page}&per_page=50` : null);
   const [error, setError] = useState<unknown>();
   const [busy, setBusy] = useState(false);
   const [drafts, setDrafts] = useState<AvailabilityDraft[]>([emptyDraft(1)]);
@@ -57,7 +57,7 @@ export function AvailabilityManager({ listings }: { listings: ManagedListing[] }
     setBusy(true);
     setError(undefined);
     try {
-      await write("delete", `/api/caregiver/listings/${listing.id}/availability-slots/${slot.id}`);
+      await write("delete", `/api/v1/caregiver/listings/${listing.id}/availability-slots/${slot.id}`);
       slots.reload();
     } catch (failure) {
       setError(failure);
@@ -75,7 +75,7 @@ export function AvailabilityManager({ listings }: { listings: ManagedListing[] }
     try {
       for (const draft of drafts) {
         try {
-          await write("post", `/api/caregiver/listings/${listing.id}/availability-slots`, {
+          await write("post", `/api/v1/caregiver/listings/${listing.id}/availability-slots`, {
             start_at: vietnamISO(draft.start),
             end_at: vietnamISO(draft.end),
           });

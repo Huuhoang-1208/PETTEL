@@ -50,7 +50,7 @@ class BookingAcceptanceConcurrencyTest extends TestCase
             }
             $response = $this->actingAs($fixture['owner'])
                 ->withHeader('Idempotency-Key', 'concurrent-accept-second')
-                ->postJson('/api/bookings', $payload)->assertCreated();
+                ->postJson('/api/v1/bookings', $payload)->assertCreated();
             $second = Booking::query()->findOrFail($response->json('id'));
         }
         $beforeSecond = $second->getAttributes();
@@ -94,7 +94,7 @@ class BookingAcceptanceConcurrencyTest extends TestCase
 require getcwd().'/vendor/autoload.php';
 $app = require getcwd().'/bootstrap/app.php';
 $kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
-$request = \Illuminate\Http\Request::create('/api/bookings/'.$argv[2].'/accept', 'POST', [], [], [], [
+$request = \Illuminate\Http\Request::create('/api/v1/bookings/'.$argv[2].'/accept', 'POST', [], [], [], [
     'CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json',
 ], '{}');
 $app->instance('request', $request);

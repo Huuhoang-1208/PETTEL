@@ -48,7 +48,7 @@ class ListingLifecycleController extends Controller
 
     public function show(Request $request, string $id): ListingResource
     {
-        $listing = $this->listing($request, $id, $request->is('api/admin/*'));
+        $listing = $this->listing($request, $id, $request->is('api/v1/admin/*'));
         app(ListingInput::class)->query($request, [], []);
 
         return ListingResource::make($this->managementQuery(Listing::query())->whereKey($listing->id)->firstOrFail());
@@ -107,7 +107,7 @@ class ListingLifecycleController extends Controller
 
     public function suspend(Request $request, string $id, ListingWorkflow $workflow): ListingResource
     {
-        $adminRoute = $request->is('api/admin/*');
+        $adminRoute = $request->is('api/v1/admin/*');
         $this->listing($request, $id, $adminRoute);
         $reason = $this->reason($request);
 
@@ -133,7 +133,7 @@ class ListingLifecycleController extends Controller
 
     public function restore(Request $request, string $id, ListingWorkflow $workflow): ListingResource
     {
-        $adminRoute = $request->is('api/admin/*');
+        $adminRoute = $request->is('api/v1/admin/*');
         $listing = $this->listing($request, $id, $adminRoute);
         if (! $adminRoute && $listing->status === 'SUSPENDED' && $listing->suspension_source !== 'CAREGIVER') {
             ListingError::fail(403, 'FORBIDDEN', 'This listing requires administrator review.');
@@ -158,7 +158,7 @@ class ListingLifecycleController extends Controller
 
     public function archive(Request $request, string $id, ListingWorkflow $workflow): ListingResource
     {
-        $adminRoute = $request->is('api/admin/*');
+        $adminRoute = $request->is('api/v1/admin/*');
         $this->listing($request, $id, $adminRoute);
         $reason = $this->reason($request);
 

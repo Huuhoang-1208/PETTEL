@@ -19,7 +19,7 @@ export function SiteHeader() {
   const [logoutError, setLogoutError] = useState<unknown>();
   const [loggingOut, setLoggingOut] = useState(false);
   const isCaregiver = user?.roles?.some((role) => role.role === "CAREGIVER") ?? false;
-  const notifications = useApi<NotificationPage>(user ? "/api/notifications?per_page=1" : null, 30000);
+  const notifications = useApi<NotificationPage>(user ? "/api/v1/notifications?per_page=1" : null, 30000);
   const hasUnreadNotifications = (notifications.data?.unread_count ?? 0) > 0;
   const links = [
     { href: "/", label: "Khám phá", active: pathname === "/" },

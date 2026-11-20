@@ -88,12 +88,12 @@ function AdminConsole() {
   const [busyListing, setBusyListing] = useState<string | null>(null);
   const [actionError, setActionError] = useState<unknown>();
 
-  const pendingListings = useApi<Page<Listing>>(isStaff ? "/api/admin/listings?status=PENDING_REVIEW&per_page=3" : null, 60000);
-  const activeListings = useApi<Page<Listing>>(isStaff ? "/api/admin/listings?status=ACTIVE&per_page=1" : null, 60000);
-  const pendingChanges = useApi<Page<Change>>(isStaff ? "/api/admin/listing-change-requests?status=PENDING_REVIEW&per_page=50" : null, 15000);
-  const completionReviews = useApi<BookingOperations>(isStaff ? "/api/admin/booking-completion-reviews" : null, 60000);
-  const cancellations = useApi<{ data: CancellationOperation[] }>(isStaff ? "/api/admin/booking-cancellations" : null, 60000);
-  const openReports = useApi<Page<AdminReport>>(isStaff ? "/api/admin/reports?status=OPEN&per_page=3" : null, 60000);
+  const pendingListings = useApi<Page<Listing>>(isStaff ? "/api/v1/admin/listings?status=PENDING_REVIEW&per_page=3" : null, 60000);
+  const activeListings = useApi<Page<Listing>>(isStaff ? "/api/v1/admin/listings?status=ACTIVE&per_page=1" : null, 60000);
+  const pendingChanges = useApi<Page<Change>>(isStaff ? "/api/v1/admin/listing-change-requests?status=PENDING_REVIEW&per_page=50" : null, 15000);
+  const completionReviews = useApi<BookingOperations>(isStaff ? "/api/v1/admin/booking-completion-reviews" : null, 60000);
+  const cancellations = useApi<{ data: CancellationOperation[] }>(isStaff ? "/api/v1/admin/booking-cancellations" : null, 60000);
+  const openReports = useApi<Page<AdminReport>>(isStaff ? "/api/v1/admin/reports?status=OPEN&per_page=3" : null, 60000);
 
   const filteredListings = useMemo(() => {
     const query = search.trim().toLocaleLowerCase("vi");
@@ -125,7 +125,7 @@ function AdminConsole() {
     setBusyListing(listing.id);
     setActionError(undefined);
     try {
-      await write("post", `/api/admin/listings/${listing.id}/${action}`, reason ? { reason } : undefined);
+      await write("post", `/api/v1/admin/listings/${listing.id}/${action}`, reason ? { reason } : undefined);
       setReasonByListing((current) => ({ ...current, [listing.id]: "" }));
       pendingListings.reload();
       pendingChanges.reload();

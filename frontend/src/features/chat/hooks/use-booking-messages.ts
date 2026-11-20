@@ -31,7 +31,7 @@ export function useBookingMessages(bookingId: string, kind: "bookings" | "inquir
 
       try {
         const { data } = await api.get<Page<Message>>(
-          `/api/${kind}/${bookingId}/messages?per_page=50`,
+          `/api/v1/${kind}/${bookingId}/messages?per_page=50`,
         );
 
         if (active && version === requestVersion) {
@@ -64,7 +64,7 @@ export function useBookingMessages(bookingId: string, kind: "bookings" | "inquir
         authorizer: (channel: { name: string }) => ({
           authorize: (socketId: string, callback: ChannelAuthorizationCallback) => {
             api
-              .post<ChannelAuthorizationResponse>("/api/broadcasting/auth", {
+              .post<ChannelAuthorizationResponse>("/api/v1/broadcasting/auth", {
                 socket_id: socketId,
                 channel_name: channel.name,
               })

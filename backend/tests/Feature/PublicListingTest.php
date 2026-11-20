@@ -19,11 +19,11 @@ class PublicListingTest extends TestCase
         $fixture = ListingFixture::make();
         $id = (string) $fixture['active_listing_id'];
 
-        $list = $this->getJson('/api/listings')->assertOk()
+        $list = $this->getJson('/api/v1/listings')->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $id)
             ->assertJsonStructure(['data', 'links', 'meta']);
-        $detail = $this->getJson("/api/listings/{$id}")->assertOk();
+        $detail = $this->getJson("/api/v1/listings/{$id}")->assertOk();
 
         $listItem = $list->json('data.0');
         $this->assertSame([], $listItem['match_reasons']);
@@ -132,22 +132,22 @@ class PublicListingTest extends TestCase
 
         foreach ([$fixture['owner'], $fixture['caregiver'], $admin] as $actor) {
             $this->actingAs($actor)
-                ->getJson("/api/listings/{$fixture['draft_listing_id']}")
+                ->getJson("/api/v1/listings/{$fixture['draft_listing_id']}")
                 ->assertNotFound()->assertJsonPath('error.code', 'NOT_FOUND');
         }
     }
 
     public function test_unknown_id_returns_the_same_not_found_error(): void
     {
-        $this->getJson('/api/listings/999999')->assertNotFound()
+        $this->getJson('/api/v1/listings/999999')->assertNotFound()
             ->assertJsonPath('error.code', 'NOT_FOUND')
             ->assertJsonPath('error.message', 'Listing not found.');
     }
 
     private function assertNotPublic(string $id): void
     {
-        $this->getJson('/api/listings')->assertOk()->assertJsonCount(0, 'data');
-        $this->getJson("/api/listings/{$id}")->assertNotFound()
+        $this->getJson('/api/v1/listings')->assertOk()->assertJsonCount(0, 'data');
+        $this->getJson("/api/v1/listings/{$id}")->assertNotFound()
             ->assertJsonPath('error.code', 'NOT_FOUND')
             ->assertJsonPath('error.message', 'Listing not found.');
     }

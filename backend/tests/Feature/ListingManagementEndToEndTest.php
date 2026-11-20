@@ -34,13 +34,13 @@ class ListingManagementEndToEndTest extends TestCase
             ],
         ];
 
-        $this->actingAs($fixture['owner'])->postJson('/api/caregiver/listings', $payload)->assertForbidden();
-        $this->actingAs($caregiver)->postJson('/api/caregiver/listings', [
+        $this->actingAs($fixture['owner'])->postJson('/api/v1/caregiver/listings', $payload)->assertForbidden();
+        $this->actingAs($caregiver)->postJson('/api/v1/caregiver/listings', [
             ...$payload,
             'price_unit' => 'NIGHT',
         ])->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
 
-        $created = $this->actingAs($caregiver)->postJson('/api/caregiver/listings', $payload)
+        $created = $this->actingAs($caregiver)->postJson('/api/v1/caregiver/listings', $payload)
             ->assertCreated()->assertJsonPath('data.status', 'DRAFT');
         $listingId = (string) $created->json('data.id');
         $this->assertDatabaseHas('listings', [
@@ -50,15 +50,15 @@ class ListingManagementEndToEndTest extends TestCase
         ]);
 
         $invalidUpload = UploadedFile::fake()->createWithContent('invalid.png', 'not an image');
-        $this->actingAs($caregiver, 'web')->postJson('/api/caregiver/media', ['file' => $invalidUpload])->assertUnprocessable()
+        $this->actingAs($caregiver, 'web')->postJson('/api/v1/caregiver/media', ['file' => $invalidUpload])->assertUnprocessable()
             ->assertJsonPath('error.code', 'VALIDATION_ERROR');
         $this->assertDatabaseCount('media_objects', 0);
 
-        $upload = $this->postJson('/api/caregiver/media', [
+        $upload = $this->postJson('/api/v1/caregiver/media', [
             'file' => UploadedFile::fake()->image('e2e-listing.png', 120, 90),
         ])->assertCreated();
         $mediaId = (string) $upload->json('data.id');
-        $this->putJson('/api/caregiver/listings/'.$listingId.'/media', [
+        $this->putJson('/api/v1/caregiver/listings/'.$listingId.'/media', [
             'media' => [['media_object_id' => $mediaId, 'sort_order' => 1]],
         ])->assertOk();
 
@@ -66,23 +66,23 @@ class ListingManagementEndToEndTest extends TestCase
         $end = $start->copy()->addHours(2);
         $startText = $start->format('Y-m-d\TH:i:s.u\Z');
         $endText = $end->format('Y-m-d\TH:i:s.u\Z');
-        $this->postJson('/api/caregiver/listings/'.$listingId.'/availability-slots', [
+        $this->postJson('/api/v1/caregiver/listings/'.$listingId.'/availability-slots', [
             'start_at' => $startText,
             'end_at' => $endText,
         ])->assertCreated();
-        $this->postJson('/api/caregiver/listings/'.$listingId.'/availability-slots', [
+        $this->postJson('/api/v1/caregiver/listings/'.$listingId.'/availability-slots', [
             'start_at' => $endText,
             'end_at' => $startText,
         ])->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
 
-        $initialSearch = '/api/listings?'.http_build_query(['q' => 'E2E Listing Management Initial']);
+        $initialSearch = '/api/v1/listings?'.http_build_query(['q' => 'E2E Listing Management Initial']);
         $this->getJson($initialSearch)->assertOk()->assertJsonCount(0, 'data');
-        $this->get('/api/listings/'.$listingId.'/media/'.$mediaId.'/content')->assertNotFound();
+        $this->get('/api/v1/listings/'.$listingId.'/media/'.$mediaId.'/content')->assertNotFound();
 
-        $this->postJson('/api/caregiver/listings/'.$listingId.'/submit')->assertOk()
+        $this->postJson('/api/v1/caregiver/listings/'.$listingId.'/submit')->assertOk()
             ->assertJsonPath('data.status', 'PENDING_REVIEW');
-        $this->postJson('/api/admin/listings/'.$listingId.'/approve')->assertForbidden();
-        $approved = $this->actingAs($admin)->postJson('/api/admin/listings/'.$listingId.'/approve')
+        $this->postJson('/api/v1/admin/listings/'.$listingId.'/approve')->assertForbidden();
+        $approved = $this->actingAs($admin)->postJson('/api/v1/admin/listings/'.$listingId.'/approve')
             ->assertOk()->assertJsonPath('data.status', 'ACTIVE');
         $version = $approved->json('data.version');
         $this->assertDatabaseHas('media_objects', [
@@ -96,7 +96,7 @@ class ListingManagementEndToEndTest extends TestCase
             'action' => 'LISTING_APPROVED',
         ]);
 
-        $approvedSearch = '/api/listings?'.http_build_query([
+        $approvedSearch = '/api/v1/listings?'.http_build_query([
             'q' => 'E2E Listing Management Initial',
             'start_at' => $startText,
             'end_at' => $endText,
@@ -106,49 +106,49 @@ class ListingManagementEndToEndTest extends TestCase
             ->assertJsonPath('data.0.id', $listingId)
             ->assertJsonPath('data.0.price_total_vnd', 90000)
             ->assertJsonPath('data.0.media.0.media_object_id', $mediaId);
-        $this->getJson('/api/listings/'.$listingId)->assertOk()
+        $this->getJson('/api/v1/listings/'.$listingId)->assertOk()
             ->assertJsonPath('data.id', $listingId)
             ->assertJsonPath('data.media.0.media_object_id', $mediaId);
-        $this->get('/api/listings/'.$listingId.'/media/'.$mediaId.'/content')->assertOk()
+        $this->get('/api/v1/listings/'.$listingId.'/media/'.$mediaId.'/content')->assertOk()
             ->assertHeader('Content-Type', 'image/png');
 
-        $change = $this->actingAs($caregiver)->postJson('/api/caregiver/listings/'.$listingId.'/change-requests', [
+        $change = $this->actingAs($caregiver)->postJson('/api/v1/caregiver/listings/'.$listingId.'/change-requests', [
             'base_listing_version' => $version,
             'changes' => ['title' => 'E2E Listing Management Updated'],
         ])->assertCreated()->assertJsonPath('data.status', 'PENDING_REVIEW');
-        $this->getJson('/api/listings/'.$listingId)->assertOk()
+        $this->getJson('/api/v1/listings/'.$listingId)->assertOk()
             ->assertJsonPath('data.title', 'E2E Listing Management Initial');
         $this->actingAs($admin)->postJson(
-            '/api/admin/listings/'.$listingId.'/change-requests/'.$change->json('data.id').'/approve',
+            '/api/v1/admin/listings/'.$listingId.'/change-requests/'.$change->json('data.id').'/approve',
         )->assertOk()->assertJsonPath('data.status', 'APPROVED');
 
-        $updatedSearch = '/api/listings?'.http_build_query(['q' => 'E2E Listing Management Updated']);
+        $updatedSearch = '/api/v1/listings?'.http_build_query(['q' => 'E2E Listing Management Updated']);
         $this->getJson($updatedSearch)->assertOk()->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.title', 'E2E Listing Management Updated');
-        $this->getJson('/api/listings?'.http_build_query(['q' => 'E2E Listing Management Initial']))
+        $this->getJson('/api/v1/listings?'.http_build_query(['q' => 'E2E Listing Management Initial']))
             ->assertOk()->assertJsonCount(0, 'data');
 
-        $this->actingAs($admin, 'web')->postJson('/api/admin/listings/'.$listingId.'/approve')->assertConflict()
+        $this->actingAs($admin, 'web')->postJson('/api/v1/admin/listings/'.$listingId.'/approve')->assertConflict()
             ->assertJsonPath('error.code', 'INVALID_STATE');
         $this->assertDatabaseHas('listings', ['id' => $listingId, 'status' => 'ACTIVE']);
 
-        $this->actingAs($admin, 'web')->postJson('/api/admin/listings/'.$listingId.'/suspend', [
+        $this->actingAs($admin, 'web')->postJson('/api/v1/admin/listings/'.$listingId.'/suspend', [
             'reason' => 'E2E suspension visibility check.',
         ])->assertOk()->assertJsonPath('data.status', 'SUSPENDED');
         $this->getJson($updatedSearch)->assertOk()->assertJsonCount(0, 'data');
-        $this->get('/api/listings/'.$listingId.'/media/'.$mediaId.'/content')->assertNotFound();
-        $this->actingAs($caregiver)->postJson('/api/caregiver/listings/'.$listingId.'/restore')
+        $this->get('/api/v1/listings/'.$listingId.'/media/'.$mediaId.'/content')->assertNotFound();
+        $this->actingAs($caregiver)->postJson('/api/v1/caregiver/listings/'.$listingId.'/restore')
             ->assertForbidden()->assertJsonPath('error.code', 'FORBIDDEN');
-        $this->actingAs($admin)->postJson('/api/admin/listings/'.$listingId.'/restore', [
+        $this->actingAs($admin)->postJson('/api/v1/admin/listings/'.$listingId.'/restore', [
             'reason' => 'E2E restore visibility check.',
         ])->assertOk()->assertJsonPath('data.status', 'ACTIVE');
         $this->getJson($updatedSearch)->assertOk()->assertJsonCount(1, 'data');
 
-        $this->actingAs($caregiver)->postJson('/api/caregiver/listings/'.$listingId.'/archive', [
+        $this->actingAs($caregiver)->postJson('/api/v1/caregiver/listings/'.$listingId.'/archive', [
             'reason' => 'E2E caregiver archive.',
         ])->assertOk()->assertJsonPath('data.status', 'ARCHIVED');
         $this->getJson($updatedSearch)->assertOk()->assertJsonCount(0, 'data');
-        $this->getJson('/api/listings/'.$listingId)->assertNotFound();
+        $this->getJson('/api/v1/listings/'.$listingId)->assertNotFound();
         $this->assertDatabaseHas('audit_logs', [
             'resource_type' => 'LISTING',
             'resource_id' => $listingId,

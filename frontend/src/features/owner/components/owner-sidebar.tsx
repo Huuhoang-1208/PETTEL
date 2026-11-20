@@ -10,7 +10,7 @@ export function OwnerSidebar({ profile, name, email }: { profile?: OwnerProfile;
   return <aside className={styles.sidebar}>
     <div className={styles.cover} />
     <div className={styles.sidebarContent}>
-      <div className={styles.avatar}>{profile?.avatar_media_id ? <img src={apiUrl(`/api/owner-profile/media/${profile.avatar_media_id}/content`)} alt={`Ảnh đại diện ${name}`} /> : <span>{initials || <PettelIcon name="user" />}</span>}</div>
+      <div className={styles.avatar}>{profile?.avatar_media_id ? <img src={apiUrl(`/api/v1/owner-profile/media/${profile.avatar_media_id}/content`)} alt={`Ảnh đại diện ${name}`} /> : <span>{initials || <PettelIcon name="user" />}</span>}</div>
       <h2>{name}</h2><p className={styles.email}><PettelIcon name="mail" />{email}</p>
       <p className={styles.member}><PettelIcon name="pin" />{profile?.created_at ? `Thành viên từ ${new Date(profile.created_at).toLocaleDateString("vi-VN", { month: "2-digit", year: "numeric" })}` : "Thành viên PETTEL"}{profile?.area_code && ` • ${areas[profile.area_code]}`}</p>
       <section className={styles.greeting}><h3><PettelIcon name="message" /> Lời chào từ chủ nuôi</h3><p>{profile?.bio || "Chào mừng đến với hồ sơ của tôi! Tôi luôn mong các bé được chăm sóc chu đáo và yêu thương như một thành viên trong gia đình."}</p></section>

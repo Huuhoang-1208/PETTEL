@@ -219,7 +219,7 @@ class BookingReleaseProcessingTest extends TestCase
         ]);
 
         $this->actingAs($fixture['owner'])
-            ->postJson("/api/bookings/{$booking->id}/confirm-completion")
+            ->postJson("/api/v1/bookings/{$booking->id}/confirm-completion")
             ->assertAccepted();
 
         return [

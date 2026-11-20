@@ -22,7 +22,7 @@ class BookingMessageTest extends TestCase
     {
         $fixture = BookingFixture::requested($this);
         $booking = $fixture['booking'];
-        $url = "/api/bookings/{$booking->id}/messages";
+        $url = "/api/v1/bookings/{$booking->id}/messages";
         $this->travelTo(CarbonImmutable::parse('2026-11-06 12:00:00.200000', 'UTC'));
 
         $first = $this->postJson($url, ['body' => "  Ca\u{0301}  "])
@@ -62,7 +62,7 @@ class BookingMessageTest extends TestCase
     public function test_outsiders_receive_the_same_not_found_error_for_read_and_send(): void
     {
         $fixture = BookingFixture::requested($this);
-        $url = "/api/bookings/{$fixture['booking']->id}/messages";
+        $url = "/api/v1/bookings/{$fixture['booking']->id}/messages";
         $this->actingAs($fixture['foreign_pet']->owner);
 
         $this->getJson($url.'?per_page=invalid')
@@ -70,7 +70,7 @@ class BookingMessageTest extends TestCase
             ->assertJsonPath('error.code', 'NOT_FOUND')
             ->assertJsonPath('error.message', 'Booking not found.');
         $this->postJson($url, [])->assertNotFound()->assertJsonPath('error.code', 'NOT_FOUND');
-        $this->getJson('/api/bookings/0/messages')
+        $this->getJson('/api/v1/bookings/0/messages')
             ->assertNotFound()
             ->assertJsonPath('error.message', 'Booking not found.');
         $this->assertDatabaseCount('messages', 0);
@@ -80,7 +80,7 @@ class BookingMessageTest extends TestCase
     {
         $fixture = BookingFixture::requested($this);
         $booking = $fixture['booking'];
-        $url = "/api/bookings/{$booking->id}/messages";
+        $url = "/api/v1/bookings/{$booking->id}/messages";
         $now = CarbonImmutable::parse('2026-11-06 12:00:00', 'UTC');
         $this->travelTo($now);
         $booking->update(['status' => 'COMPLETED']);
@@ -112,7 +112,7 @@ class BookingMessageTest extends TestCase
         $disk = Storage::fake('local');
         $fixture = BookingFixture::requested($this);
         $booking = $fixture['booking'];
-        $url = "/api/bookings/{$booking->id}/messages";
+        $url = "/api/v1/bookings/{$booking->id}/messages";
         $png = UploadedFile::fake()->image('photo.png', 12, 12);
         $jpeg = UploadedFile::fake()->image('photo.jpg', 12, 12);
 
@@ -147,7 +147,7 @@ class BookingMessageTest extends TestCase
 
         $other = BookingFixture::requested($this);
         $this->getJson($attachment['url'])->assertNotFound()->assertJsonPath('error.code', 'NOT_FOUND');
-        $otherMessageUrl = "/api/bookings/{$other['booking']->id}/messages/{$sent->json('data.id')}/attachment";
+        $otherMessageUrl = "/api/v1/bookings/{$other['booking']->id}/messages/{$sent->json('data.id')}/attachment";
         $this->getJson($otherMessageUrl)->assertNotFound();
         $this->actingAs($fixture['owner'])->getJson($url."/{$sent->json('data.id')}/attachment/{$reply->json('data.attachments.0.id')}")
             ->assertNotFound();
@@ -172,35 +172,35 @@ class BookingMessageTest extends TestCase
     {
         Storage::fake('local');
         $fixture = BookingFixture::requested($this);
-        $url = "/api/bookings/{$fixture['booking']->id}/messages";
+        $url = "/api/v1/bookings/{$fixture['booking']->id}/messages";
         $mediaId = $this->actingAs($fixture['caregiver'])->post($url, [
             'attachments' => [UploadedFile::fake()->image('chat.png', 12, 12)],
         ], ['Accept' => 'application/json'])->assertCreated()->json('data.attachments.0.id');
         $items = [['media_object_id' => $mediaId, 'sort_order' => 1]];
         $activeListing = $fixture['active_listing_id'];
 
-        $this->postJson('/api/pets', ['name' => 'New pet', 'species' => 'DOG', 'photo_media_id' => $mediaId])
+        $this->postJson('/api/v1/pets', ['name' => 'New pet', 'species' => 'DOG', 'photo_media_id' => $mediaId])
             ->assertUnprocessable()->assertJsonValidationErrors('photo_media_id');
-        $this->putJson("/api/caregiver/listings/{$fixture['draft_listing_id']}/media", ['media' => $items])
+        $this->putJson("/api/v1/caregiver/listings/{$fixture['draft_listing_id']}/media", ['media' => $items])
             ->assertUnprocessable();
-        $this->postJson("/api/caregiver/listings/{$activeListing}/change-requests", [
+        $this->postJson("/api/v1/caregiver/listings/{$activeListing}/change-requests", [
             'base_listing_version' => 1,
             'changes' => ['media' => $items],
         ])->assertUnprocessable()->assertJsonPath('error.details.media.0', 'Images must be ready, owned by this caregiver, and unused by private content.');
-        $this->getJson("/api/caregiver/media/{$mediaId}/content")->assertNotFound();
+        $this->getJson("/api/v1/caregiver/media/{$mediaId}/content")->assertNotFound();
         $this->assertDatabaseCount('listing_media', 0);
 
         DB::table('listing_media')->insert(['listing_id' => $activeListing, 'media_object_id' => $mediaId, 'sort_order' => 1]);
         DB::table('media_objects')->where('id', $mediaId)->update(['visibility' => 'PUBLIC_ELIGIBLE']);
-        $this->getJson("/api/listings/{$activeListing}/media/{$mediaId}/content")->assertNotFound();
-        $this->getJson("/api/listings/{$activeListing}")->assertOk()->assertJsonCount(0, 'data.media');
+        $this->getJson("/api/v1/listings/{$activeListing}/media/{$mediaId}/content")->assertNotFound();
+        $this->getJson("/api/v1/listings/{$activeListing}")->assertOk()->assertJsonCount(0, 'data.media');
     }
 
     public function test_images_validate_actual_content_count_and_combined_byte_limit(): void
     {
         $disk = Storage::fake('local');
         $fixture = BookingFixture::requested($this);
-        $url = "/api/bookings/{$fixture['booking']->id}/messages";
+        $url = "/api/v1/bookings/{$fixture['booking']->id}/messages";
         $headers = ['Accept' => 'application/json'];
         $this->post($url, [
             'body' => 'Invalid image',
@@ -242,7 +242,7 @@ class BookingMessageTest extends TestCase
         $mock->shouldReceive('delete')->twice()->andReturnUsing(fn (string $path): bool => $disk->delete($path));
         Storage::shouldReceive('disk')->once()->with('local')->andReturn($mock);
 
-        $this->post("/api/bookings/{$fixture['booking']->id}/messages", [
+        $this->post("/api/v1/bookings/{$fixture['booking']->id}/messages", [
             'attachments' => [UploadedFile::fake()->image('first.png', 12, 12), UploadedFile::fake()->image('second.png', 12, 12)],
         ], ['Accept' => 'application/json'])->assertInternalServerError()->assertJsonPath('error.code', 'MEDIA_UPLOAD_FAILED');
 
@@ -262,7 +262,7 @@ class BookingMessageTest extends TestCase
             }
         });
 
-        $this->post("/api/bookings/{$fixture['booking']->id}/messages", [
+        $this->post("/api/v1/bookings/{$fixture['booking']->id}/messages", [
             'body' => 'Private message',
             'attachments' => [UploadedFile::fake()->image('first.png', 12, 12), UploadedFile::fake()->image('second.png', 12, 12)],
         ], ['Accept' => 'application/json'])->assertInternalServerError()

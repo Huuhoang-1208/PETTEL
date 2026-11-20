@@ -10,7 +10,7 @@ export function useHomeSearch() {
   const router = useRouter();
   const { user } = useSession();
   const hasPetsRole = user?.roles?.some((role) => role.role === "OWNER");
-  const pets = useApi<Page<Pet>>(hasPetsRole ? "/api/pets" : null);
+  const pets = useApi<Page<Pet>>(hasPetsRole ? "/api/v1/pets" : null);
   const activePets = pets.data?.data.filter((pet) => pet.status === "ACTIVE") ?? [];
   const [area, setArea] = useState("DN_CENTER");
   const [service, setService] = useState("BOARDING");

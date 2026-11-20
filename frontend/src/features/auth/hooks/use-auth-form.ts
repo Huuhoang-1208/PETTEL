@@ -61,7 +61,7 @@ export function useAuthForm() {
         return;
       }
       refresh();
-      const isStaffLogin = mode === "login" && (await api.get<User>("/api/user")).data.roles?.some(
+      const isStaffLogin = mode === "login" && (await api.get<User>("/api/v1/user")).data.roles?.some(
         (assignedRole) => assignedRole.role === "ADMIN" || assignedRole.role === "SUPPORT",
       );
       const next = isStaffLogin ? "/admin" : query.get("next") ?? (role === "CAREGIVER" ? "/caregiver/manage" : "/");

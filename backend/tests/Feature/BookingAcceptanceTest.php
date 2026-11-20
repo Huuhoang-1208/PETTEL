@@ -21,7 +21,7 @@ class BookingAcceptanceTest extends TestCase
         $booking = $fixture['booking'];
         $before = $booking->getAttributes();
         $due = CarbonImmutable::now('UTC')->addMinutes(15)->format('Y-m-d\TH:i:s.u\Z');
-        $url = "/api/bookings/{$booking->id}/accept";
+        $url = "/api/v1/bookings/{$booking->id}/accept";
 
         $this->actingAs($fixture['caregiver'])->postJson($url)
             ->assertOk()->assertJsonPath('status', 'AWAITING_PAYMENT')
@@ -48,9 +48,9 @@ class BookingAcceptanceTest extends TestCase
 
     public function test_route_checks_auth_ownership_and_listing_state(): void
     {
-        $this->postJson('/api/bookings/0/accept')->assertUnauthorized();
+        $this->postJson('/api/v1/bookings/0/accept')->assertUnauthorized();
         $fixture = BookingFixture::requested($this);
-        $url = "/api/bookings/{$fixture['booking']->id}/accept";
+        $url = "/api/v1/bookings/{$fixture['booking']->id}/accept";
         $this->actingAs($fixture['owner'])->postJson($url)->assertForbidden();
         $other = BookingFixture::make()['caregiver'];
         $this->actingAs($other)->postJson($url)->assertNotFound()
@@ -77,7 +77,7 @@ class BookingAcceptanceTest extends TestCase
 
         try {
             $this->actingAs($fixture['caregiver'])
-                ->postJson("/api/bookings/{$booking->id}/accept");
+                ->postJson("/api/v1/bookings/{$booking->id}/accept");
             $this->fail('Expected event failure.');
         } catch (RuntimeException $exception) {
             $this->assertSame('Simulated accept event failure', $exception->getMessage());
@@ -99,7 +99,7 @@ class BookingAcceptanceTest extends TestCase
         });
 
         $this->actingAs($fixture['caregiver'])
-            ->postJson("/api/bookings/{$booking->id}/accept")
+            ->postJson("/api/v1/bookings/{$booking->id}/accept")
             ->assertConflict()->assertJsonPath('error.code', 'REQUEST_EXPIRED');
         $this->assertSame($before, $booking->fresh()->getAttributes());
         $this->assertDatabaseCount('booking_status_events', 1);

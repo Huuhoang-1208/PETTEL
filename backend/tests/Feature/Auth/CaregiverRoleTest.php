@@ -22,8 +22,8 @@ class CaregiverRoleTest extends TestCase
         ]);
         $this->actingAs($user, 'web');
 
-        $this->postJson('/api/user/roles/caregiver')->assertNoContent();
-        $this->postJson('/api/user/roles/caregiver')->assertNoContent();
+        $this->postJson('/api/v1/user/roles/caregiver')->assertNoContent();
+        $this->postJson('/api/v1/user/roles/caregiver')->assertNoContent();
 
         $this->assertDatabaseHas('user_roles', [
             'user_id' => $user->id,
@@ -38,7 +38,7 @@ class CaregiverRoleTest extends TestCase
 
     public function test_guest_cannot_enable_caregiver(): void
     {
-        $this->postJson('/api/user/roles/caregiver')->assertUnauthorized();
+        $this->postJson('/api/v1/user/roles/caregiver')->assertUnauthorized();
     }
 
     public function test_owner_without_admin_role_gets_forbidden_on_admin_route(): void
@@ -50,10 +50,10 @@ class CaregiverRoleTest extends TestCase
             'assigned_at' => now(),
         ]);
         Route::middleware(['auth:sanctum', 'account.active', 'role:ADMIN'])
-            ->get('/api/admin-probe', fn () => response()->noContent());
+            ->get('/api/v1/admin-probe', fn () => response()->noContent());
 
         $this->actingAs($user, 'web')
-            ->getJson('/api/admin-probe')
+            ->getJson('/api/v1/admin-probe')
             ->assertForbidden();
     }
 
@@ -62,7 +62,7 @@ class CaregiverRoleTest extends TestCase
         $user = User::factory()->create(['status' => 'DELETION_PENDING']);
         $this->actingAs($user, 'web');
 
-        $this->postJson('/api/user/roles/caregiver')->assertForbidden();
+        $this->postJson('/api/v1/user/roles/caregiver')->assertForbidden();
 
         $this->assertDatabaseMissing('user_roles', [
             'user_id' => $user->id,

@@ -16,7 +16,7 @@ class CaregiverListingTest extends TestCase
     {
         $user = $this->caregiver();
 
-        $created = $this->actingAs($user)->postJson('/api/caregiver/listings', $this->payload());
+        $created = $this->actingAs($user)->postJson('/api/v1/caregiver/listings', $this->payload());
         $created->assertCreated()->assertJsonPath('data.status', 'DRAFT')
             ->assertJsonPath('data.capacity', 1)->assertJsonPath('data.version', 1)
             ->assertJsonPath('data.published_at', null)
@@ -29,18 +29,18 @@ class CaregiverListingTest extends TestCase
             'caregiver_profile_id' => $user->caregiverProfile->id,
         ]);
 
-        $this->getJson('/api/caregiver/listings')->assertOk()->assertJsonCount(1, 'data')
+        $this->getJson('/api/v1/caregiver/listings')->assertOk()->assertJsonCount(1, 'data')
             ->assertJsonStructure(['data', 'links', 'meta']);
-        $this->getJson("/api/caregiver/listings/{$id}")->assertOk();
-        $this->patchJson("/api/caregiver/listings/{$id}", ['title' => 'Updated'])
+        $this->getJson("/api/v1/caregiver/listings/{$id}")->assertOk();
+        $this->patchJson("/api/v1/caregiver/listings/{$id}", ['title' => 'Updated'])
             ->assertOk()->assertJsonPath('data.title', 'Updated')
             ->assertJsonPath('data.price_unit', 'NIGHT');
-        $this->deleteJson("/api/caregiver/listings/{$id}")->assertNoContent();
+        $this->deleteJson("/api/v1/caregiver/listings/{$id}")->assertNoContent();
         $this->assertSoftDeleted('listings', ['id' => $id]);
-        $this->getJson("/api/caregiver/listings/{$id}")->assertNotFound();
-        $this->patchJson("/api/caregiver/listings/{$id}", ['title' => 'Again'])->assertNotFound();
-        $this->deleteJson("/api/caregiver/listings/{$id}")->assertNotFound();
-        $this->getJson('/api/caregiver/listings')->assertJsonCount(0, 'data');
+        $this->getJson("/api/v1/caregiver/listings/{$id}")->assertNotFound();
+        $this->patchJson("/api/v1/caregiver/listings/{$id}", ['title' => 'Again'])->assertNotFound();
+        $this->deleteJson("/api/v1/caregiver/listings/{$id}")->assertNotFound();
+        $this->getJson('/api/v1/caregiver/listings')->assertJsonCount(0, 'data');
     }
 
     public function test_other_caregivers_cannot_read_update_or_delete_a_listing(): void
@@ -50,14 +50,14 @@ class CaregiverListingTest extends TestCase
         $own = $this->draft($owner);
         $foreign = $this->draft($other);
 
-        $this->actingAs($owner)->getJson('/api/caregiver/listings')
+        $this->actingAs($owner)->getJson('/api/v1/caregiver/listings')
             ->assertOk()->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', (string) $own->id);
 
         foreach (['DRAFT', 'ACTIVE'] as $status) {
             $foreign->status = $status;
             $foreign->save();
-            $url = "/api/caregiver/listings/{$foreign->id}";
+            $url = "/api/v1/caregiver/listings/{$foreign->id}";
             $this->getJson($url)->assertNotFound();
             $this->patchJson($url, ['title' => 'Stolen'])->assertNotFound();
             $this->patchJson($url, ['unknown_field' => 'invalid'])->assertNotFound();
@@ -80,7 +80,7 @@ class CaregiverListingTest extends TestCase
             $listing->status = $status;
             $listing->suspension_source = $status === 'SUSPENDED' ? 'ADMIN' : null;
             $listing->save();
-            $url = "/api/caregiver/listings/{$listing->id}";
+            $url = "/api/v1/caregiver/listings/{$listing->id}";
 
             $this->getJson($url)->assertOk()->assertJsonPath('data.status', $status);
             $this->patchJson($url, ['title' => 'Changed'])->assertConflict()
@@ -94,7 +94,7 @@ class CaregiverListingTest extends TestCase
             ]);
         }
 
-        $this->getJson('/api/caregiver/listings')->assertJsonCount(0, 'data');
+        $this->getJson('/api/v1/caregiver/listings')->assertJsonCount(0, 'data');
     }
 
     public function test_client_cannot_write_system_fields_even_with_null_values(): void
@@ -102,10 +102,10 @@ class CaregiverListingTest extends TestCase
         $user = $this->caregiver();
         $listing = $this->draft($user);
         $this->actingAs($user);
-        $url = "/api/caregiver/listings/{$listing->id}";
+        $url = "/api/v1/caregiver/listings/{$listing->id}";
 
         foreach (['id', 'user_id', 'caregiver_profile_id', 'status', 'capacity', 'version', 'suspension_source', 'published_at', 'created_at', 'updated_at', 'deleted_at'] as $field) {
-            $this->postJson('/api/caregiver/listings', $this->payload() + [$field => null])
+            $this->postJson('/api/v1/caregiver/listings', $this->payload() + [$field => null])
                 ->assertUnprocessable()->assertJsonStructure(['error' => ['details' => [$field]]]);
             $this->patchJson($url, [$field => null])->assertUnprocessable();
         }
@@ -124,41 +124,41 @@ class CaregiverListingTest extends TestCase
     {
         $user = $this->caregiver();
         $listing = $this->draft($user);
-        $this->actingAs($user)->patchJson("/api/caregiver/listings/{$listing->id}", ['unexpected' => 'value'])
+        $this->actingAs($user)->patchJson("/api/v1/caregiver/listings/{$listing->id}", ['unexpected' => 'value'])
             ->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
-        $this->patchJson("/api/caregiver/listings/{$listing->id}?unexpected=1", ['title' => 'Valid title'])
+        $this->patchJson("/api/v1/caregiver/listings/{$listing->id}?unexpected=1", ['title' => 'Valid title'])
             ->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
         $this->assertDatabaseHas('listings', ['id' => $listing->id, 'title' => 'Cat boarding', 'version' => 1]);
     }
 
     public function test_routes_require_role_active_account_and_an_existing_profile(): void
     {
-        $this->getJson('/api/caregiver/listings')->assertUnauthorized();
+        $this->getJson('/api/v1/caregiver/listings')->assertUnauthorized();
         $user = $this->caregiver();
         DB::table('user_roles')->where('user_id', $user->id)->delete();
-        $this->actingAs($user)->postJson('/api/caregiver/listings', $this->payload())
+        $this->actingAs($user)->postJson('/api/v1/caregiver/listings', $this->payload())
             ->assertForbidden();
 
         foreach (['DELETION_PENDING', 'DEACTIVATED'] as $status) {
             $inactive = $this->caregiver();
             $inactive->status = $status;
             $inactive->save();
-            $this->actingAs($inactive)->getJson('/api/caregiver/listings')->assertForbidden();
+            $this->actingAs($inactive)->getJson('/api/v1/caregiver/listings')->assertForbidden();
         }
 
         $missing = $this->caregiver(false);
-        $this->actingAs($missing)->postJson('/api/caregiver/listings', $this->payload())
+        $this->actingAs($missing)->postJson('/api/v1/caregiver/listings', $this->payload())
             ->assertConflict()->assertJsonPath('error.code', 'INVALID_STATE');
-        $this->getJson('/api/caregiver/listings')->assertOk()->assertJsonCount(0, 'data');
+        $this->getJson('/api/v1/caregiver/listings')->assertOk()->assertJsonCount(0, 'data');
 
         $deleted = $this->caregiver();
         $listing = $this->draft($deleted);
         $deleted->caregiverProfile()->firstOrFail()->delete();
-        $this->actingAs($deleted)->getJson('/api/caregiver/listings')->assertJsonCount(0, 'data');
-        $this->getJson("/api/caregiver/listings/{$listing->id}")->assertNotFound();
-        $this->patchJson("/api/caregiver/listings/{$listing->id}", ['title' => 'No'])->assertNotFound();
-        $this->deleteJson("/api/caregiver/listings/{$listing->id}")->assertNotFound();
-        $this->postJson('/api/caregiver/listings', $this->payload())->assertConflict();
+        $this->actingAs($deleted)->getJson('/api/v1/caregiver/listings')->assertJsonCount(0, 'data');
+        $this->getJson("/api/v1/caregiver/listings/{$listing->id}")->assertNotFound();
+        $this->patchJson("/api/v1/caregiver/listings/{$listing->id}", ['title' => 'No'])->assertNotFound();
+        $this->deleteJson("/api/v1/caregiver/listings/{$listing->id}")->assertNotFound();
+        $this->postJson('/api/v1/caregiver/listings', $this->payload())->assertConflict();
     }
 
     public function test_partial_updates_validate_the_resulting_service_pair_and_json(): void
@@ -166,7 +166,7 @@ class CaregiverListingTest extends TestCase
         $user = $this->caregiver();
         $listing = $this->draft($user);
         $this->actingAs($user);
-        $url = "/api/caregiver/listings/{$listing->id}";
+        $url = "/api/v1/caregiver/listings/{$listing->id}";
 
         $this->patchJson($url, ['service_type' => 'DAYCARE'])->assertUnprocessable();
         $this->patchJson($url, ['price_unit' => 'HOUR'])->assertUnprocessable();

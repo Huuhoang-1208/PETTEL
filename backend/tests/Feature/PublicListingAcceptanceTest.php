@@ -53,7 +53,7 @@ class PublicListingAcceptanceTest extends TestCase
         $busy = $this->copyListing($base);
 
         $busyResponse = $this->withHeader('Idempotency-Key', 'acceptance-busy')
-            ->postJson('/api/bookings', [
+            ->postJson('/api/v1/bookings', [
                 ...$fixture['payload'],
                 'listing_id' => (string) $busy->id,
             ])->assertCreated();
@@ -137,7 +137,7 @@ class PublicListingAcceptanceTest extends TestCase
 
         $created = $this->actingAs($fixture['owner'])
             ->withHeader('Idempotency-Key', 'acceptance-privacy')
-            ->postJson('/api/bookings', [
+            ->postJson('/api/v1/bookings', [
                 ...$fixture['payload'],
                 'instructions' => $instructionSecret,
             ])->assertCreated();
@@ -158,7 +158,7 @@ class PublicListingAcceptanceTest extends TestCase
 
         $id = (string) $fixture['active_listing_id'];
 
-        $list = $this->getJson('/api/listings')
+        $list = $this->getJson('/api/v1/listings')
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $id);
@@ -169,7 +169,7 @@ class PublicListingAcceptanceTest extends TestCase
             ->assertJsonPath('data.0.id', $id)
             ->assertJsonPath('data.0.price_total_vnd', 150000);
 
-        $detail = $this->getJson("/api/listings/{$id}")
+        $detail = $this->getJson("/api/v1/listings/{$id}")
             ->assertOk()
             ->assertJsonPath('data.id', $id);
 
@@ -241,7 +241,7 @@ class PublicListingAcceptanceTest extends TestCase
         }
 
         foreach ([$petSecret, $instructionSecret] as $secret) {
-            $this->getJson('/api/listings?'.http_build_query(['q' => $secret]))
+            $this->getJson('/api/v1/listings?'.http_build_query(['q' => $secret]))
                 ->assertOk()
                 ->assertJsonCount(0, 'data')
                 ->assertJsonPath('meta.total', 0);
@@ -304,7 +304,7 @@ class PublicListingAcceptanceTest extends TestCase
 
     private function url(array $fixture, array $filters = []): string
     {
-        return '/api/listings?'.http_build_query(array_replace([
+        return '/api/v1/listings?'.http_build_query(array_replace([
             'start_at' => $fixture['payload']['start_at'],
             'end_at' => $fixture['payload']['end_at'],
         ], $filters));

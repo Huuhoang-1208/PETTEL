@@ -20,7 +20,7 @@ class SmartMatchTest extends TestCase
         $fixture['pet']->update(['diet_notes' => 'private-care-note-token']);
 
         $response = $this->actingAs($fixture['owner'])
-            ->getJson('/api/listings?'.http_build_query([
+            ->getJson('/api/v1/listings?'.http_build_query([
                 'pet_id' => (string) $fixture['pet']->id,
                 'species' => 'DOG',
                 'size' => 'SMALL',
@@ -48,7 +48,7 @@ class SmartMatchTest extends TestCase
     {
         $fixture = ListingFixture::make();
 
-        $this->getJson('/api/listings?species=DOG&size=SMALL')
+        $this->getJson('/api/v1/listings?species=DOG&size=SMALL')
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', (string) $fixture['active_listing_id'])
@@ -59,7 +59,7 @@ class SmartMatchTest extends TestCase
     {
         $fixture = BookingFixture::make();
 
-        $this->getJson('/api/listings?pet_id='.$fixture['pet']->id)
+        $this->getJson('/api/v1/listings?pet_id='.$fixture['pet']->id)
             ->assertUnauthorized()
             ->assertJsonPath('error.code', 'UNAUTHENTICATED');
 
@@ -71,7 +71,7 @@ class SmartMatchTest extends TestCase
         ]);
 
         $this->actingAs($caregiver)
-            ->getJson('/api/listings?pet_id='.$fixture['pet']->id)
+            ->getJson('/api/v1/listings?pet_id='.$fixture['pet']->id)
             ->assertForbidden()
             ->assertJsonPath('error.code', 'FORBIDDEN');
     }
@@ -81,13 +81,13 @@ class SmartMatchTest extends TestCase
         $fixture = BookingFixture::make();
 
         $this->actingAs($fixture['owner'])
-            ->getJson('/api/listings?pet_id='.$fixture['foreign_pet']->id)
+            ->getJson('/api/v1/listings?pet_id='.$fixture['foreign_pet']->id)
             ->assertNotFound()
             ->assertJsonPath('error.code', 'NOT_FOUND');
 
         $fixture['pet']->delete();
 
-        $this->getJson('/api/listings?pet_id='.$fixture['pet']->id)
+        $this->getJson('/api/v1/listings?pet_id='.$fixture['pet']->id)
             ->assertNotFound()
             ->assertJsonPath('error.code', 'NOT_FOUND');
     }
@@ -98,18 +98,18 @@ class SmartMatchTest extends TestCase
 
         $fixture['owner']->forceFill(['status' => 'SUSPENDED'])->save();
         $this->actingAs($fixture['owner'])
-            ->getJson('/api/listings?pet_id='.$fixture['pet']->id)
+            ->getJson('/api/v1/listings?pet_id='.$fixture['pet']->id)
             ->assertForbidden()
             ->assertJsonPath('error.code', 'FORBIDDEN');
 
         $fixture['owner']->forceFill(['status' => 'ACTIVE'])->save();
         $fixture['pet']->forceFill(['status' => 'ARCHIVED'])->save();
-        $this->getJson('/api/listings?pet_id='.$fixture['pet']->id)
+        $this->getJson('/api/v1/listings?pet_id='.$fixture['pet']->id)
             ->assertConflict()
             ->assertJsonPath('error.code', 'INVALID_STATE');
 
         $fixture['pet']->forceFill(['status' => 'ACTIVE', 'size' => null])->save();
-        $this->getJson('/api/listings?pet_id='.$fixture['pet']->id)
+        $this->getJson('/api/v1/listings?pet_id='.$fixture['pet']->id)
             ->assertUnprocessable()
             ->assertJsonPath('error.code', 'VALIDATION_ERROR')
             ->assertJsonPath('error.details.pet_id.0', 'Update the pet size before using Smart Match.');
@@ -120,7 +120,7 @@ class SmartMatchTest extends TestCase
         $fixture = BookingFixture::make();
 
         $this->actingAs($fixture['owner'])
-            ->getJson('/api/listings?'.http_build_query([
+            ->getJson('/api/v1/listings?'.http_build_query([
                 'pet_id' => (string) $fixture['pet']->id,
                 'species' => 'CAT',
             ]))
@@ -128,7 +128,7 @@ class SmartMatchTest extends TestCase
             ->assertJsonPath('error.code', 'VALIDATION_ERROR')
             ->assertJsonPath('error.details.species.0', 'Species must match the selected pet.');
 
-        $this->getJson('/api/listings?'.http_build_query([
+        $this->getJson('/api/v1/listings?'.http_build_query([
             'pet_id' => (string) $fixture['pet']->id,
             'size' => 'LARGE',
         ]))
@@ -148,7 +148,7 @@ class SmartMatchTest extends TestCase
         ]);
 
         $this->actingAs($fixture['owner'])
-            ->getJson('/api/listings?pet_id='.$fixture['pet']->id)
+            ->getJson('/api/v1/listings?pet_id='.$fixture['pet']->id)
             ->assertOk()
             ->assertJsonCount(0, 'data')
             ->assertJsonPath('match_summary.code', 'NO_MATCHING_LISTINGS')
@@ -170,7 +170,7 @@ class SmartMatchTest extends TestCase
             $listing->forceFill(['acceptance_rules_json' => $rules])->save();
 
             $this->actingAs($fixture['owner'])
-                ->getJson('/api/listings?pet_id='.$fixture['pet']->id)
+                ->getJson('/api/v1/listings?pet_id='.$fixture['pet']->id)
                 ->assertOk()
                 ->assertJsonCount(0, 'data')
                 ->assertJsonPath('match_summary.code', 'NO_MATCHING_LISTINGS');
@@ -197,7 +197,7 @@ class SmartMatchTest extends TestCase
         $ownListing->save();
 
         $this->actingAs($owner)
-            ->getJson('/api/listings?pet_id='.$fixture['pet']->id)
+            ->getJson('/api/v1/listings?pet_id='.$fixture['pet']->id)
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', (string) $fixture['active_listing_id']);
@@ -205,7 +205,7 @@ class SmartMatchTest extends TestCase
 
     public function test_pet_filter_is_not_accepted_until_smart_match_is_authorized(): void
     {
-        $this->getJson('/api/listings?pet_id=0')
+        $this->getJson('/api/v1/listings?pet_id=0')
             ->assertUnprocessable()
             ->assertJsonPath('error.code', 'VALIDATION_ERROR')
             ->assertJsonStructure(['error' => ['details' => ['pet_id']]]);

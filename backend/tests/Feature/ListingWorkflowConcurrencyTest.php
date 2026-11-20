@@ -22,9 +22,9 @@ class ListingWorkflowConcurrencyTest extends TestCase
         $payload = ['base_listing_version' => 1, 'changes' => ['title' => 'Concurrent proposal']];
         $responses = $this->race(
             (string) $fixture['caregiver']->id,
-            "/api/caregiver/listings/{$listingId}/change-requests",
+            "/api/v1/caregiver/listings/{$listingId}/change-requests",
             'POST', $payload,
-            "/api/caregiver/listings/{$listingId}/change-requests", 'POST', $payload,
+            "/api/v1/caregiver/listings/{$listingId}/change-requests", 'POST', $payload,
         );
 
         $this->assertSame([201, 409], $this->sortedStatuses($responses));
@@ -37,11 +37,11 @@ class ListingWorkflowConcurrencyTest extends TestCase
     {
         $fixture = ListingFixture::make();
         $listingId = $fixture['active_listing_id'];
-        $pending = $this->actingAs($fixture['caregiver'])->postJson("/api/caregiver/listings/{$listingId}/change-requests", [
+        $pending = $this->actingAs($fixture['caregiver'])->postJson("/api/v1/caregiver/listings/{$listingId}/change-requests", [
             'base_listing_version' => 1, 'changes' => ['title' => 'Review once'],
         ])->assertCreated();
         $admin = $this->admin();
-        $path = "/api/admin/listings/{$listingId}/change-requests/{$pending->json('data.id')}/approve";
+        $path = "/api/v1/admin/listings/{$listingId}/change-requests/{$pending->json('data.id')}/approve";
         $responses = $this->race((string) $admin->id, $path, 'POST', [], $path, 'POST', []);
 
         $this->assertSame([200, 409], $this->sortedStatuses($responses));
@@ -60,7 +60,7 @@ class ListingWorkflowConcurrencyTest extends TestCase
             'start_at' => $start->format('Y-m-d\TH:i:s.u\Z'),
             'end_at' => $start->copy()->addHour()->format('Y-m-d\TH:i:s.u\Z'),
         ];
-        $path = "/api/caregiver/listings/{$listingId}/availability-slots";
+        $path = "/api/v1/caregiver/listings/{$listingId}/availability-slots";
         $responses = $this->race((string) $fixture['caregiver']->id, $path, 'POST', $payload, $path, 'POST', $payload);
 
         $this->assertSame([201, 409], $this->sortedStatuses($responses));
@@ -76,8 +76,8 @@ class ListingWorkflowConcurrencyTest extends TestCase
         $start = now('UTC')->addDays(30);
         $responses = $this->race(
             (string) $fixture['caregiver']->id,
-            "/api/bookings/{$fixture['booking']->id}/accept", 'POST', [],
-            "/api/caregiver/listings/{$fixture['active_listing_id']}/availability-slots/{$slot->id}", 'PATCH', [
+            "/api/v1/bookings/{$fixture['booking']->id}/accept", 'POST', [],
+            "/api/v1/caregiver/listings/{$fixture['active_listing_id']}/availability-slots/{$slot->id}", 'PATCH', [
                 'start_at' => $start->format('Y-m-d\TH:i:s.u\Z'),
                 'end_at' => $start->copy()->addHour()->format('Y-m-d\TH:i:s.u\Z'),
             ],
@@ -97,11 +97,11 @@ class ListingWorkflowConcurrencyTest extends TestCase
         $start = now('UTC')->addDays(30);
         $responses = $this->race(
             (string) $fixture['caregiver']->id,
-            "/api/caregiver/listings/{$fixture['active_listing_id']}/availability-slots/{$slot->id}", 'PATCH', [
+            "/api/v1/caregiver/listings/{$fixture['active_listing_id']}/availability-slots/{$slot->id}", 'PATCH', [
                 'start_at' => $start->format('Y-m-d\TH:i:s.u\Z'),
                 'end_at' => $start->copy()->addHour()->format('Y-m-d\TH:i:s.u\Z'),
             ],
-            "/api/bookings/{$fixture['booking']->id}/accept", 'POST', [],
+            "/api/v1/bookings/{$fixture['booking']->id}/accept", 'POST', [],
         );
 
         $this->assertSame([200, 409], $this->sortedStatuses($responses));
@@ -114,10 +114,10 @@ class ListingWorkflowConcurrencyTest extends TestCase
     public function test_accept_and_suspend_follow_listing_lock_order_in_both_winner_orders(): void
     {
         $first = BookingFixture::requested($this);
-        $suspendPath = "/api/caregiver/listings/{$first['active_listing_id']}/suspend";
+        $suspendPath = "/api/v1/caregiver/listings/{$first['active_listing_id']}/suspend";
         $responses = $this->race(
             (string) $first['caregiver']->id,
-            "/api/bookings/{$first['booking']->id}/accept", 'POST', [],
+            "/api/v1/bookings/{$first['booking']->id}/accept", 'POST', [],
             $suspendPath, 'POST', ['reason' => 'Pause services.'],
         );
         $this->assertSame([200, 200], $this->sortedStatuses($responses));
@@ -125,11 +125,11 @@ class ListingWorkflowConcurrencyTest extends TestCase
         $this->assertDatabaseHas('bookings', ['id' => $first['booking']->id, 'status' => 'AWAITING_PAYMENT']);
 
         $second = BookingFixture::requested($this);
-        $suspendPath = "/api/caregiver/listings/{$second['active_listing_id']}/suspend";
+        $suspendPath = "/api/v1/caregiver/listings/{$second['active_listing_id']}/suspend";
         $responses = $this->race(
             (string) $second['caregiver']->id,
             $suspendPath, 'POST', ['reason' => 'Pause services.'],
-            "/api/bookings/{$second['booking']->id}/accept", 'POST', [],
+            "/api/v1/bookings/{$second['booking']->id}/accept", 'POST', [],
         );
         $this->assertSame([200, 409], $this->sortedStatuses($responses));
         $this->assertSame('INVALID_STATE', $this->errorCode($responses, 409));

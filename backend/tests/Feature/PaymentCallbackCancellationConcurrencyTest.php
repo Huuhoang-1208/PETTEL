@@ -35,7 +35,7 @@ class PaymentCallbackCancellationConcurrencyTest extends TestCase
 
         $attemptResponse = $this->actingAs($fixture['owner'])
             ->withHeader('Idempotency-Key', 'payment-concurrent-callback-cancel')
-            ->postJson('/api/bookings/'.$booking->id.'/sandbox-payments')
+            ->postJson('/api/v1/bookings/'.$booking->id.'/sandbox-payments')
             ->assertCreated();
         $attempt = PaymentAttempt::query()->findOrFail($attemptResponse->json('data.id'));
         $initialStatusEventCount = DB::table('booking_status_events')->count();
@@ -101,7 +101,7 @@ $bookingId = $argv[2];
 $ownerId = $argv[3];
 $payload = json_decode(base64_decode($argv[4]), true, 512, JSON_THROW_ON_ERROR);
 $signature = $argv[5];
-$path = $mode === 'callback' ? '/api/sandbox/payment-callback' : '/api/bookings/'.$bookingId.'/cancel';
+$path = $mode === 'callback' ? '/api/v1/sandbox/payment-callback' : '/api/v1/bookings/'.$bookingId.'/cancel';
 $headers = ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json'];
 $body = '{}';
 if ($mode === 'callback') {

@@ -11,7 +11,7 @@ import { useState, type FormEvent } from "react";
 export function CareFeed({ booking }: { booking: Booking }) {
   const [page, setPage] = useState(1);
   const feed = useApi<Page<CareUpdate>>(
-    `/api/bookings/${booking.id}/care-updates?page=${page}&per_page=20`,
+    `/api/v1/bookings/${booking.id}/care-updates?page=${page}&per_page=20`,
     30000,
   );
   const [error, setError] = useState<unknown>();
@@ -25,7 +25,7 @@ export function CareFeed({ booking }: { booking: Booking }) {
     setBusy(true);
     setError(undefined);
     try {
-      await write("post", `/api/bookings/${booking.id}/care-updates`, data);
+      await write("post", `/api/v1/bookings/${booking.id}/care-updates`, data);
       form.reset();
       feed.reload();
     } catch (failure) {

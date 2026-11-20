@@ -39,7 +39,7 @@ class BookingReportDecisionTest extends TestCase
 
         $first = $this->actingAs($admin)
             ->withHeader('X-Request-ID', $requestId)
-            ->postJson("/api/admin/reports/{$reportId}/booking-decision", [
+            ->postJson("/api/v1/admin/reports/{$reportId}/booking-decision", [
                 'decision' => 'COMPLETE',
                 'reason' => 'Evidence supports completion.',
             ])
@@ -60,7 +60,7 @@ class BookingReportDecisionTest extends TestCase
         ]);
 
         // Repeating the decision reuses the existing operation.
-        $this->postJson("/api/admin/reports/{$reportId}/booking-decision", [
+        $this->postJson("/api/v1/admin/reports/{$reportId}/booking-decision", [
             'decision' => 'COMPLETE',
             'reason' => 'Evidence supports completion.',
         ])
@@ -139,7 +139,7 @@ class BookingReportDecisionTest extends TestCase
         $this->app->instance(PaymentCancellationGateway::class, $gateway);
 
         $first = $this->actingAs($admin)
-            ->postJson("/api/admin/reports/{$reportId}/booking-decision", [
+            ->postJson("/api/v1/admin/reports/{$reportId}/booking-decision", [
                 'decision' => 'CANCEL_REFUND',
                 'reason' => 'Care records support cancelling this booking.',
             ])
@@ -160,7 +160,7 @@ class BookingReportDecisionTest extends TestCase
             'status' => 'PENDING',
         ]);
 
-        $this->postJson("/api/admin/reports/{$reportId}/booking-decision", [
+        $this->postJson("/api/v1/admin/reports/{$reportId}/booking-decision", [
             'decision' => 'CANCEL_REFUND',
             'reason' => 'Care records support cancelling this booking.',
         ])
@@ -245,7 +245,7 @@ class BookingReportDecisionTest extends TestCase
         $this->app->instance(PaymentCancellationGateway::class, $gateway);
 
         $decision = $this->actingAs($admin)
-            ->postJson("/api/admin/reports/{$reportId}/booking-decision", [
+            ->postJson("/api/v1/admin/reports/{$reportId}/booking-decision", [
                 'decision' => 'CANCEL_REFUND',
                 'reason' => 'Care records support cancelling this booking.',
             ])
@@ -278,27 +278,27 @@ class BookingReportDecisionTest extends TestCase
     {
         $inProgressFixture = $this->bookingReportFixture('IN_PROGRESS');
         $inProgressDecision = $this->actingAs($inProgressFixture['admin'])
-            ->postJson('/api/admin/reports/'.$inProgressFixture['report_id'].'/booking-decision', [
+            ->postJson('/api/v1/admin/reports/'.$inProgressFixture['report_id'].'/booking-decision', [
                 'decision' => 'CANCEL_REFUND',
                 'reason' => 'Review supports refund cancellation.',
             ])
             ->assertAccepted();
 
         $this->actingAs($inProgressFixture['caregiver'])
-            ->postJson('/api/bookings/'.$inProgressFixture['booking']->id.'/request-completion')
+            ->postJson('/api/v1/bookings/'.$inProgressFixture['booking']->id.'/request-completion')
             ->assertStatus(409)
             ->assertJsonPath('error.code', 'CANCELLATION_IN_PROGRESS');
 
         $awaitingFixture = $this->bookingReportFixture('AWAITING_CONFIRMATION');
         $this->actingAs($awaitingFixture['admin'])
-            ->postJson('/api/admin/reports/'.$awaitingFixture['report_id'].'/booking-decision', [
+            ->postJson('/api/v1/admin/reports/'.$awaitingFixture['report_id'].'/booking-decision', [
                 'decision' => 'CANCEL_REFUND',
                 'reason' => 'Review supports refund cancellation.',
             ])
             ->assertAccepted();
 
         $this->actingAs($awaitingFixture['owner'])
-            ->postJson('/api/bookings/'.$awaitingFixture['booking']->id.'/confirm-completion')
+            ->postJson('/api/v1/bookings/'.$awaitingFixture['booking']->id.'/confirm-completion')
             ->assertStatus(409)
             ->assertJsonPath('error.code', 'CANCELLATION_IN_PROGRESS');
     }
@@ -315,7 +315,7 @@ class BookingReportDecisionTest extends TestCase
             ->count();
 
         $this->actingAs($admin)
-            ->postJson("/api/admin/reports/{$reportId}/status", [
+            ->postJson("/api/v1/admin/reports/{$reportId}/status", [
                 'status' => 'RESOLVED',
                 'reason' => 'Attempt generic resolution.',
             ])
@@ -326,7 +326,7 @@ class BookingReportDecisionTest extends TestCase
             ->where('id', $reportId)->value('status'));
 
         $this->actingAs($admin)
-            ->postJson("/api/admin/reports/{$reportId}/status", [
+            ->postJson("/api/v1/admin/reports/{$reportId}/status", [
                 'status' => 'DISMISSED',
                 'reason' => 'The report was not substantiated.',
             ])
@@ -341,7 +341,7 @@ class BookingReportDecisionTest extends TestCase
 
         // Dismissal removes the hold, so the owner can resume the normal completion flow.
         $this->actingAs($fixture['owner'])
-            ->postJson("/api/bookings/{$booking->id}/confirm-completion")
+            ->postJson("/api/v1/bookings/{$booking->id}/confirm-completion")
             ->assertAccepted();
 
         $this->assertSame('AWAITING_CONFIRMATION', $booking->fresh()->status);
@@ -382,7 +382,7 @@ class BookingReportDecisionTest extends TestCase
             'version' => 4,
         ]);
 
-        $report = $this->actingAs($fixture['owner'])->postJson('/api/reports', [
+        $report = $this->actingAs($fixture['owner'])->postJson('/api/v1/reports', [
             'booking_id' => $booking->id,
             'reason_code' => 'SERVICE_DISPUTE',
             'description' => 'Test booking report.',
@@ -391,7 +391,7 @@ class BookingReportDecisionTest extends TestCase
         $admin = $this->admin();
 
         $this->actingAs($admin)->postJson(
-            '/api/admin/reports/'.$report->json('data.id').'/status',
+            '/api/v1/admin/reports/'.$report->json('data.id').'/status',
             [
                 'status' => 'IN_REVIEW',
                 'reason' => 'Begin review.',

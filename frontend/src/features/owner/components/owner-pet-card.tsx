@@ -8,7 +8,7 @@ import styles from "../owner-profile.module.css";
 
 export function OwnerPetCard({ pet, bookings, onEdit }: { pet: Pet; bookings: Booking[]; onEdit: (pet: Pet) => void }) {
   const upcoming = bookings.find((booking) => booking.pet_id === pet.id && ["REQUESTED", "AWAITING_PAYMENT", "CONFIRMED", "IN_PROGRESS"].includes(booking.status));
-  const image = pet.photo_media_id ? apiUrl(`/api/pets/media/${pet.photo_media_id}/content`) : pet.species === "DOG" ? "/images/pet_sitter_poodle.png" : "/images/home_with_cats.png";
+  const image = pet.photo_media_id ? apiUrl(`/api/v1/pets/media/${pet.photo_media_id}/content`) : pet.species === "DOG" ? "/images/pet_sitter_poodle.png" : "/images/home_with_cats.png";
   return <article className={styles.petCard}>
     <div className={styles.petPhoto}><img src={image} alt={pet.photo_media_id ? `Ảnh ${pet.name}` : `Ảnh minh họa ${species[pet.species]}`} /><span><PettelIcon name={pet.species === "DOG" ? "dog" : pet.species === "CAT" ? "cat" : "paw"} />{species[pet.species]} cưng</span></div>
     <div className={styles.petTitle}><h3>{pet.name}</h3>{pet.breed && <span>{pet.breed}</span>}</div>

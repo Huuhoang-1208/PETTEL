@@ -27,7 +27,7 @@ class BookingAcceptanceBusinessTest extends TestCase
         $before = $booking->getAttributes();
         $events = $this->eventsFor($booking);
 
-        $this->actingAs($other)->postJson("/api/bookings/{$booking->id}/{$action}")
+        $this->actingAs($other)->postJson("/api/v1/bookings/{$booking->id}/{$action}")
             ->assertNotFound()->assertJsonPath('error.code', 'NOT_FOUND');
 
         $this->assertBookingUnchanged($booking, $before, $events);
@@ -50,7 +50,7 @@ class BookingAcceptanceBusinessTest extends TestCase
         $before = $booking->getAttributes();
         $events = $this->eventsFor($booking);
 
-        $this->actingAs($fixture['caregiver'])->postJson("/api/bookings/{$booking->id}/accept")
+        $this->actingAs($fixture['caregiver'])->postJson("/api/v1/bookings/{$booking->id}/accept")
             ->assertConflict()->assertJsonPath('error.code', 'INVALID_STATE');
 
         $this->assertBookingUnchanged($booking, $before, $events);
@@ -77,7 +77,7 @@ class BookingAcceptanceBusinessTest extends TestCase
         $before = $booking->getAttributes();
         $events = $this->eventsFor($booking);
 
-        $this->actingAs($fixture['caregiver'])->postJson("/api/bookings/{$booking->id}/accept")
+        $this->actingAs($fixture['caregiver'])->postJson("/api/v1/bookings/{$booking->id}/accept")
             ->assertConflict()->assertJsonPath('error.code', 'INVALID_STATE');
 
         $this->assertBookingUnchanged($booking, $before, $events);
@@ -95,9 +95,9 @@ class BookingAcceptanceBusinessTest extends TestCase
         $this->assertSame('REQUESTED', $second->fresh()->status);
         $this->assertDatabaseCount('bookings', 2);
 
-        $this->actingAs($fixture['caregiver'])->postJson("/api/bookings/{$first->id}/accept")
+        $this->actingAs($fixture['caregiver'])->postJson("/api/v1/bookings/{$first->id}/accept")
             ->assertOk()->assertJsonPath('status', 'AWAITING_PAYMENT');
-        $this->postJson("/api/bookings/{$second->id}/accept")
+        $this->postJson("/api/v1/bookings/{$second->id}/accept")
             ->assertConflict()->assertJsonPath('error.code', 'AVAILABILITY_CONFLICT');
 
         $this->assertBookingUnchanged($second, $before, $events);
@@ -132,7 +132,7 @@ class BookingAcceptanceBusinessTest extends TestCase
 
         $this->actingAs($fixture['caregiver']);
         foreach ([$first, $second] as $booking) {
-            $this->postJson("/api/bookings/{$booking->id}/accept")
+            $this->postJson("/api/v1/bookings/{$booking->id}/accept")
                 ->assertOk()->assertJsonPath('status', 'AWAITING_PAYMENT');
             $this->assertNotNull($booking->fresh()->payment_due_at);
         }
@@ -149,7 +149,7 @@ class BookingAcceptanceBusinessTest extends TestCase
 
         $this->actingAs($fixture['caregiver']);
         foreach ([$first, $second] as $booking) {
-            $this->postJson("/api/bookings/{$booking->id}/accept")
+            $this->postJson("/api/v1/bookings/{$booking->id}/accept")
                 ->assertOk()->assertJsonPath('status', 'AWAITING_PAYMENT');
         }
         $this->assertDatabaseCount('booking_status_events', 4);
@@ -159,7 +159,7 @@ class BookingAcceptanceBusinessTest extends TestCase
     {
         $response = $this->actingAs($fixture['owner'])
             ->withHeader('Idempotency-Key', 'business-second-booking')
-            ->postJson('/api/bookings', array_replace($fixture['payload'], $overrides))
+            ->postJson('/api/v1/bookings', array_replace($fixture['payload'], $overrides))
             ->assertCreated();
 
         return Booking::query()->findOrFail($response->json('id'));
