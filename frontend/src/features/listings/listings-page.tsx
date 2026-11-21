@@ -73,8 +73,13 @@ export function ListingsPage() {
           </h1>
           {query.get("pet_id") && (
             <div className="listing-smart-results-note">
-              <strong><span aria-hidden="true">✦</span> Smart Match đang ưu tiên hồ sơ bé</strong>
-              <p>Kết quả được sắp xếp theo loài, kích thước và kinh nghiệm chăm sóc phù hợp; thời gian, khu vực và không gian đã chọn cũng được áp dụng.</p>
+              <strong>
+                <span aria-hidden="true">✦</span> Smart Match đang ưu tiên hồ sơ bé
+              </strong>
+              <p>
+                Kết quả được sắp xếp theo loài, kích thước và kinh nghiệm chăm sóc phù hợp; thời
+                gian, khu vực và không gian đã chọn cũng được áp dụng.
+              </p>
             </div>
           )}
           {resource.loading && <p role="status">Đang tìm dịch vụ...</p>}
@@ -88,7 +93,14 @@ export function ListingsPage() {
           )}
         </section>
         <aside className="app-map">
-          <img src="/images/danang_map.png" alt="Bản đồ minh họa Đà Nẵng" />
+          <img
+            src="/images/danang_map.png"
+            alt="Bản đồ minh họa Đà Nẵng"
+            width={800}
+            height={1000}
+            loading="lazy"
+            decoding="async"
+          />
         </aside>
         {resource.data && (
           <nav className="listing-pagination" aria-label="Phân trang dịch vụ">

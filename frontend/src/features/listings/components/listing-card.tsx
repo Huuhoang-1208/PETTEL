@@ -1,6 +1,6 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- Preserve existing image rendering. */
+import { ListingPhoto } from "@/components/ui/listing-photo";
 import { type Listing } from "@/lib/api/types";
 import { areas, services, species } from "@/lib/constants";
 import { apiUrl, money } from "@/lib/format";
@@ -33,13 +33,17 @@ export function ListingCard({ item }: { item: Listing }) {
   return (
     <Link className="listing-card" key={item.id} href={`/detail?id=${item.id}`}>
       <div className="listing-card__image">
-        <img
+        <ListingPhoto
+          sizes="(max-width: 700px) 100vw, 300px"
           src={
             demoPhoto ??
-            (item.media?.[0] ? apiUrl(item.media[0].thumbnail_url) : "/images/pet_hotel_building.png")
+            (item.media?.[0]
+              ? apiUrl(item.media[0].thumbnail_url)
+              : "/images/pet_hotel_building.png")
           }
           alt={demoPhoto ? sitterName : item.media?.[0] ? item.title : "Ảnh minh họa dịch vụ"}
         />
+        {demo?.is_demo && <span className="listing-card__demo">Hồ sơ demo</span>}
         {demo?.confidence_score != null && (
           <span className="listing-card__score">Score {demo.confidence_score}</span>
         )}
@@ -53,7 +57,9 @@ export function ListingCard({ item }: { item: Listing }) {
           <h2 className="listing-card__name">
             {sitterName}
             {demo?.trust_level === "pro" && (
-              <span className="listing-card__pro"><PettelIcon name="award" /> PETTEL Pro</span>
+              <span className="listing-card__pro">
+                <PettelIcon name="award" /> PETTEL Pro
+              </span>
             )}
           </h2>
           <span className="listing-card__favorite" aria-hidden="true">
@@ -73,7 +79,9 @@ export function ListingCard({ item }: { item: Listing }) {
           </p>
           {item.smart_match && (
             <div className="listing-card__smart-match" aria-label="Lý do được Smart Match gợi ý">
-              <strong><span aria-hidden="true">✦</span> Gợi ý phù hợp với bé</strong>
+              <strong>
+                <span aria-hidden="true">✦</span> Gợi ý phù hợp với bé
+              </strong>
               <div>
                 {item.smart_match.reasons.map((reason) => (
                   <span key={reason}>{smartMatchLabels[reason] ?? reason}</span>

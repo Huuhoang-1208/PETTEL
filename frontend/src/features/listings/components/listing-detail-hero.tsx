@@ -27,8 +27,9 @@ export function ListingDetailHero({ listing }: { listing: Listing }) {
   const demoPhoto = caregiver?.demo?.photo_file
     ? `/images/pet-sitters/${encodeURIComponent(caregiver.demo.photo_file)}`
     : null;
-  const photos = Array.from({ length: 5 }, (_, index) =>
-    media[index] ?? (index === 0 && demoPhoto ? demoPhoto : demoGallery[index]),
+  const photos = Array.from(
+    { length: 5 },
+    (_, index) => media[index] ?? (index === 0 && demoPhoto ? demoPhoto : demoGallery[index]),
   );
   const verifiedSteps = caregiver?.demo?.verified_details
     ? Object.values(caregiver.demo.verified_details).filter(Boolean).length
@@ -75,7 +76,9 @@ export function ListingDetailHero({ listing }: { listing: Listing }) {
         <div>
           <div className={styles.badges}>
             {caregiver?.demo?.trust_level === "pro" && (
-              <span className={styles.pro}><PettelIcon name="award" /> PETTEL PRO ELITE</span>
+              <span className={styles.pro}>
+                <PettelIcon name="award" /> PETTEL PRO ELITE
+              </span>
             )}
             <span className={styles.verified}>
               <PettelIcon name="shield" /> Đã xác thực {verifiedSteps} bước
@@ -91,7 +94,11 @@ export function ListingDetailHero({ listing }: { listing: Listing }) {
           <PettelIcon name="star" />
           <strong>{listing.rating_average?.toFixed(1) ?? "Mới"}</strong>
           <span />
-          <small><b>{listing.review_count}</b> đánh giá<br />94% gửi lại ≥ 3 lần</small>
+          <small>
+            <b>{listing.review_count}</b> đánh giá
+            <br />
+            94% gửi lại ≥ 3 lần
+          </small>
         </div>
       </div>
 
@@ -106,6 +113,10 @@ export function ListingDetailHero({ listing }: { listing: Listing }) {
           >
             <img
               src={photo}
+              width={900}
+              height={600}
+              loading={index === 0 ? "eager" : "lazy"}
+              decoding="async"
               alt={`${listing.title} – ảnh ${index + 1}`}
               onError={(event) => {
                 event.currentTarget.onerror = null;
@@ -119,7 +130,11 @@ export function ListingDetailHero({ listing }: { listing: Listing }) {
           <PettelIcon name="camera" /> Xem tất cả {Math.max(photos.length, media.length)} ảnh & clip
         </button>
       </div>
-      {notice && <p className={styles.notice} role="status">{notice}</p>}
+      {notice && (
+        <p className={styles.notice} role="status">
+          {notice}
+        </p>
+      )}
       {showGallery && (
         <div className={styles.lightbox} role="dialog" aria-modal="true" aria-label="Ảnh dịch vụ">
           <button className={styles.close} type="button" onClick={() => setShowGallery(false)}>
@@ -130,6 +145,10 @@ export function ListingDetailHero({ listing }: { listing: Listing }) {
               <img
                 key={`${photo}-large-${index}`}
                 src={photo}
+                width={1200}
+                height={800}
+                loading="lazy"
+                decoding="async"
                 alt={`${listing.title} – ảnh ${index + 1}`}
                 onError={(event) => {
                   event.currentTarget.onerror = null;

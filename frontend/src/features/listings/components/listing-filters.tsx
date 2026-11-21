@@ -334,16 +334,6 @@ export function ListingFilters({
               </div>
             </fieldset>
 
-            <div className="listing-advanced-actions">
-              <Link href="/services">Xóa tất cả</Link>
-              <button
-                className="app-button"
-                type="submit"
-                disabled={smartMatchMode && (!selectedPet || !selectedPet.species || !selectedPet.size)}
-              >
-                {smartMatchMode ? "Tìm Sitter phù hợp" : "Áp dụng"}
-              </button>
-            </div>
           </div>
         )}
       </form>

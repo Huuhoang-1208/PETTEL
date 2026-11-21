@@ -18,7 +18,9 @@ class ListingSuspensionSourceMigrationTest extends TestCase
             throw new RuntimeException('This migration test requires the isolated pettel_test database.');
         }
 
-        Artisan::call('migrate:fresh', ['--seed' => true, '--force' => true]);
+        // BookingFixture supplies the rows under test; catalog image seeding is
+        // unrelated to this migration and consumes memory during full coverage runs.
+        Artisan::call('migrate:fresh', ['--force' => true]);
         $fixture = BookingFixture::make();
         $listingId = $fixture['active_listing_id'];
         $activeListingId = $fixture['draft_listing_id'];
@@ -39,12 +41,15 @@ class ListingSuspensionSourceMigrationTest extends TestCase
         ]);
         $bookingId = DB::table('bookings')->where('request_idempotency_key', 'migration-preserves-booking')->value('id');
 
-        $this->assertSame(0, Artisan::call('migrate:rollback', ['--step' => 1, '--force' => true]));
+        // Exercise this migration explicitly: newer migrations must not change
+        // which schema upgrade this regression test rolls back and reapplies.
+        $migration = require database_path('migrations/2026_11_02_000001_add_listing_suspension_source.php');
+        $migration->down();
         $this->assertFalse(Schema::hasColumn('listings', 'suspension_source'));
         DB::table('listings')->where('id', $listingId)->update(['status' => 'SUSPENDED']);
         DB::table('listings')->where('id', $activeListingId)->update(['status' => 'ACTIVE']);
 
-        $this->assertSame(0, Artisan::call('migrate', ['--force' => true]));
+        $migration->up();
         $this->assertDatabaseHas('listings', ['id' => $listingId, 'status' => 'SUSPENDED', 'suspension_source' => 'ADMIN']);
         $this->assertDatabaseHas('listings', ['id' => $activeListingId, 'status' => 'ACTIVE', 'suspension_source' => null]);
         $this->assertDatabaseHas('bookings', ['id' => $bookingId, 'status' => 'CONFIRMED']);
@@ -63,11 +68,11 @@ class ListingSuspensionSourceMigrationTest extends TestCase
             $this->assertDatabaseHas('listings', ['id' => $listingId, 'status' => 'SUSPENDED', 'suspension_source' => 'ADMIN']);
         }
 
-        $this->assertSame(0, Artisan::call('migrate:rollback', ['--step' => 1, '--force' => true]));
+        $migration->down();
         $this->assertDatabaseHas('listings', ['id' => $listingId, 'status' => 'SUSPENDED']);
         $this->assertDatabaseHas('listings', ['id' => $activeListingId, 'status' => 'ACTIVE']);
         $this->assertDatabaseHas('bookings', ['id' => $bookingId, 'status' => 'CONFIRMED']);
-        $this->assertSame(0, Artisan::call('migrate', ['--force' => true]));
+        $migration->up();
         $this->assertDatabaseHas('listings', ['id' => $listingId, 'status' => 'SUSPENDED', 'suspension_source' => 'ADMIN']);
         $this->assertDatabaseHas('listings', ['id' => $activeListingId, 'status' => 'ACTIVE', 'suspension_source' => null]);
     }
