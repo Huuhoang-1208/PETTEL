@@ -440,6 +440,17 @@ button:disabled {
   stroke-linejoin: round;
   stroke-width: 1.7;
 }
+.listing-card__demo {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #fff;
+  color: #36545a;
+  font-size: 12px;
+}
+
 .listing-advanced-panel {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -693,32 +704,6 @@ button:disabled {
   height: 18px;
   margin: 0;
   accent-color: #00afbd;
-}
-.listing-advanced-actions {
-  display: flex;
-  grid-column: 1 / -1;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 12px;
-  padding-top: 14px;
-  border-top: 1px solid #e8e8ed;
-}
-.listing-advanced-actions a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 42px;
-  padding: 0 20px;
-  border: 1px solid #dfe1e7;
-  border-radius: 10px;
-  color: #222b39;
-  text-decoration: none;
-}
-.listing-advanced-actions .app-button {
-  min-width: 115px;
-  min-height: 42px;
-  border-radius: 10px;
-  background: #00b5c4;
-  border-color: #00b5c4;
 }
 .listing-card__smart-match {
   display: grid;
@@ -1415,13 +1400,5 @@ button:disabled {
   }
   .listing-price-separator {
     display: none;
-  }
-  .listing-advanced-actions {
-    justify-content: stretch;
-  }
-  .listing-advanced-actions a,
-  .listing-advanced-actions .app-button {
-    flex: 1;
-    justify-content: center;
   }
 }

@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element -- Listing photos are served by the backend media endpoint. */
+import { ListingPhoto } from "@/components/ui/listing-photo";
 import { type Listing } from "@/lib/api/types";
 import { areas, services, species } from "@/lib/constants";
 import { apiUrl, money } from "@/lib/format";
@@ -15,14 +15,18 @@ export function HomeListingCard({ item }: { item: Listing }) {
   return (
     <Link className={styles.card} href={`/detail?id=${item.id}`}>
       <div className={styles.photo}>
-        <img
-          src={demoPhoto ?? (photo ? apiUrl(photo.thumbnail_url) : "/images/pet_hotel_building.png")}
+        <ListingPhoto
+          sizes="(max-width: 700px) 100vw, (max-width: 1000px) 50vw, 33vw"
+          src={
+            demoPhoto ?? (photo ? apiUrl(photo.thumbnail_url) : "/images/pet_hotel_building.png")
+          }
           alt={
             photo ? (item.caregiver?.display_name ?? item.title) : "Không gian chăm sóc thú cưng"
           }
         />
         <span className={styles.verified}>
-          <PettelIcon name="shield" /> Đã xác minh
+          <PettelIcon name="shield" />{" "}
+          {item.caregiver?.demo?.is_demo ? "Hồ sơ demo" : "Dịch vụ đã duyệt"}
         </span>
         <span className={styles.favorite} aria-hidden="true">
           <PettelIcon name="heart" />

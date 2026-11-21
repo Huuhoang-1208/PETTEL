@@ -6,6 +6,30 @@ Nền tảng tìm và đặt dịch vụ chăm sóc thú cưng tại Đà Nẵng
 
 Backend có xác thực Breeze/Sanctum, vai trò OWNER/CAREGIVER/ADMIN, các workflow nghiệp vụ P0, Filament cho quản trị, Scramble cho OpenAPI và Pulse cho quan sát. Docker có MySQL, Redis, worker và scheduler; môi trường test dùng MySQL riêng. Có tài khoản, pet và caregiver profile minh họa. Frontend Next.js trong `frontend/` đã kết nối các luồng tài khoản, tìm dịch vụ, thú cưng, đặt lịch, thanh toán sandbox, chat, chăm sóc và duyệt dịch vụ. Xem [hướng dẫn frontend](frontend/README.md) và [danh mục tích hợp](docs/frontend-backend-integration.md).
 
+Giao diện Next.js/React đã được giảng viên chấp thuận theo xác nhận của nhóm. Bản demo hỗ trợ lưu trú qua đêm và chăm sóc ban ngày; thanh toán sandbox không chuyển tiền thật. Hồ sơ/đánh giá mẫu được phân biệt với giao dịch thật. Chưa cung cấp bảo hiểm, xác minh sinh trắc học hay GPS trực tiếp; dịch vụ đi dạo/ghé thăm là hướng mở rộng.
+
+## Tính năng và hình ảnh
+
+| Vai trò | Chức năng chính |
+| --- | --- |
+| Khách / chủ nuôi | Tìm và lọc dịch vụ, đăng ký/đăng nhập, hồ sơ pet, Smart Match, đặt lịch, thanh toán mô phỏng, chat, nhật ký chăm sóc, đánh giá và báo cáo |
+| Người chăm | Hồ sơ caregiver, tạo dịch vụ, lịch khả dụng, nhận/từ chối đơn, cập nhật chăm sóc và trao đổi với chủ nuôi |
+| Quản trị viên | Duyệt dịch vụ/thay đổi, xử lý báo cáo, theo dõi đơn và dashboard quản trị |
+| Tích hợp / vận hành | Google OAuth, Sanctum token abilities, Scramble, Redis queue/cache, Reverb, Telescope/Pulse và cảnh báo Slack |
+
+Screenshot và kết quả kiểm tra được ghi tại [báo cáo kiểm chứng](docs/submission-verification.md).
+
+Kiểm tra local ngày 21/11/2026: **467 backend tests / 5.283 assertions**, line coverage **86,66%**. Pint, PHPStan, TypeScript và production build thành công; ESLint không có lỗi, còn một cảnh báo sẵn có trong luồng OAuth. Xem báo cáo để biết phạm vi và giới hạn kiểm chứng.
+
+## Bằng chứng nộp bài
+
+- [Checklist và kịch bản quay 9 phút 40 giây](docs/submission-checklist.md): bao phủ sáu task của rubric.
+- **Video demo: chưa quay/chưa có link.** Nhóm cần quay MP4 tối thiểu 720p, không quá 10 phút và bổ sung link có quyền xem trước khi nộp.
+- **Google login thật và Slack nhận cảnh báo: còn chờ bằng chứng.** Code/config/test mock không thay thế việc chứng minh kết nối thật.
+- Ví dụ Issue–PR: [Issue #16](https://github.com/Huuhoang-1208/PETTEL/issues/16) → nhánh `be-t03` → [PR #17](https://github.com/Huuhoang-1208/PETTEL/pull/17), merge `e4379f1`. Nguồn đối chiếu: [báo cáo BE-T03](<docs/05 — Implementation Plan/BE-T03 — Báo cáo thực hiện issue #16.md>). Liên kết dựa trên tài liệu bàn giao và lịch sử Git local; kiểm tra lại quyền truy cập/trạng thái trên GitHub khi quay.
+- [Backend và frontend CI](https://github.com/Huuhoang-1208/PETTEL/actions): bổ sung run URL của commit nộp cuối; không dùng kết quả local thay cho GitHub CI.
+- Mỗi thành viên cần hoàn tất Self-Report của cả 5 sprint theo brief.
+
 ## Chạy dịch vụ nền
 
 Yêu cầu Docker Desktop đang chạy Linux containers (hoặc Docker Engine trên Linux) và Docker Compose v2 trở lên. Runtime trong image là PHP 8.3, MySQL 8.4 và Redis 7. Các lệnh dưới đây chạy bằng PowerShell tại thư mục gốc repo; không cần dùng PHP/Composer trên máy host.
@@ -160,13 +184,27 @@ Chạy tại gốc repo:
 docker compose -p pettel-test -f compose.test.yaml run --build --rm test
 ```
 
-Runner dừng ngay khi một bước lỗi và thực hiện lần lượt:
+Runner thực hiện lần lượt:
 
 1. Tạo `.env` rỗng trong container test và xóa config cache.
-2. Pint kiểm tra định dạng và PHPStan phân tích tĩnh (`composer ci:check`).
-3. `migrate:fresh --seed` trên database `pettel_test`.
-4. Seed lần hai để kiểm tra khả năng chạy lặp.
-5. Chạy PHPUnit; `DemoSeederTest` kiểm tra số bản ghi, vai trò và bảo toàn mật khẩu sau khi seed lại.
+2. `migrate:fresh --seed` trên database `pettel_test`, rồi seed lần hai để kiểm tra khả năng chạy lặp.
+3. Chạy PHPUnit với cả `Unit`, `Feature`, `Integration`; ghi coverage HTML/XML vào `artifacts/coverage/`.
+4. Pint kiểm tra định dạng và PHPStan phân tích tĩnh (`composer ci:check`). Bước này vẫn chạy nếu PHPUnit thất bại; runner trả lỗi nếu test hoặc kiểm tra tĩnh thất bại.
+
+`DemoSeederTest` kiểm tra số bản ghi, vai trò và bảo toàn mật khẩu sau khi seed lại. Test migration ở suite Integration kiểm tra đúng migration suspension-source, không phụ thuộc migration nào được thêm sau đó.
+
+Frontend có Vitest + React Testing Library (DOM mô phỏng), chạy cùng lint/typecheck/build trong CI:
+
+```powershell
+cd frontend
+npm ci
+npm test
+npm run lint -- src tests
+npm run typecheck
+npm run build
+```
+
+Các test kiểm tra CSRF trước request ghi, idempotency key và lỗi validation. Đây là unit tests, không thay thế E2E với backend thật. Ảnh catalog local được tối ưu bằng Next Image; thumbnail API dùng WebP, kích thước cố định và lazy loading. Media cần cookie vẫn được tải trực tiếp để giữ phân quyền.
 
 Luôn dùng file Compose và project test riêng như lệnh trên. `db-test` dùng MySQL 8.4, database/tài khoản `pettel_test` và dữ liệu tạm trên `tmpfs`; không gắn volume demo hay mở cổng database ra host. Cache/session/mail dùng `array`, queue dùng `sync`. PHPUnit ép cấu hình test; `Tests\TestCase` kiểm tra môi trường, driver, database và tài khoản trước khi chạy các trait migration. Không chạy `migrate:fresh` trên service `backend` của demo.
 
