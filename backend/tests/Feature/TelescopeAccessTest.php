@@ -40,4 +40,43 @@ class TelescopeAccessTest extends TestCase
         $this->assertFalse(Gate::forUser($owner)->allows('viewTelescope'));
         $this->assertFalse(Gate::forUser($inactiveAdmin)->allows('viewTelescope'));
     }
+
+    public function test_only_active_admin_can_open_telescope_dashboard(): void
+    {
+        $owner = User::factory()->create();
+        DB::table('user_roles')->insert([
+            'user_id' => $owner->id,
+            'role' => 'OWNER',
+            'assigned_at' => now(),
+        ]);
+
+        $inactiveAdmin = User::factory()->create();
+        $inactiveAdmin->forceFill(['status' => 'SUSPENDED'])->save();
+        DB::table('user_roles')->insert([
+            'user_id' => $inactiveAdmin->id,
+            'role' => 'ADMIN',
+            'assigned_at' => now(),
+        ]);
+
+        $admin = User::factory()->create();
+        DB::table('user_roles')->insert([
+            'user_id' => $admin->id,
+            'role' => 'ADMIN',
+            'assigned_at' => now(),
+        ]);
+
+        $this->get('/telescope')->assertForbidden();
+
+        $this->actingAs($owner, 'web')
+            ->get('/telescope')
+            ->assertForbidden();
+
+        $this->actingAs($inactiveAdmin, 'web')
+            ->get('/telescope')
+            ->assertForbidden();
+
+        $this->actingAs($admin, 'web')
+            ->get('/telescope')
+            ->assertOk();
+    }
 }

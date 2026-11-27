@@ -48,7 +48,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PaymentReleaseGateway::class, SandboxPaymentReleaseGateway::class);
 
         if (
-            $this->app->environment('local')
+            in_array($this->app->environment(), ['local', 'testing'], true)
             && class_exists(TelescopeServiceProvider::class)
         ) {
             $this->app->register(TelescopeServiceProvider::class);
