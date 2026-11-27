@@ -10,6 +10,11 @@ export function AuthForm({ auth }: { auth: AuthFormState }) {
   const { mode, role, setRole, error, busy, sent, changeMode, submit } = auth;
   const registering = mode === "register";
   const forgot = mode === "forgot-password";
+  const backendUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080").replace(
+    /\/$/,
+    "",
+  );
+  const googleRedirectUrl = `${backendUrl}/auth/google/redirect`;
   return (
     <section className={styles.formPanel} aria-label="Tài khoản PETTEL">
       <div className={styles.formContent}>
@@ -46,19 +51,15 @@ export function AuthForm({ auth }: { auth: AuthFormState }) {
           <>
             <AuthRoleSelector role={role} onChange={setRole} disabled={busy} />
             <div className={styles.socialOptions}>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => {
-                  const backendUrl = (
-                    process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"
-                  ).replace(/\/$/, "");
-                  window.location.href = `${backendUrl}/auth/google/redirect`;
-                }}
+              <a
+                href={googleRedirectUrl}
+                aria-disabled={busy}
+                tabIndex={busy ? -1 : undefined}
+                onClick={busy ? (event) => event.preventDefault() : undefined}
               >
                 <span className={styles.googleMark}>G</span>
                 Tiếp tục bằng tài khoản Google
-              </button>
+              </a>
               <div>
                 <button type="button" disabled>
                   <PettelIcon name="user" />

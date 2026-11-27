@@ -53,7 +53,7 @@ export function ListingFilters({
     <div className="listing-filter-shell">
       <form className="listing-filter-form" onSubmit={search}>
         <input type="hidden" name="service_type" value={serviceType} />
-        <div className="listing-filter-toolbar">
+        <div className="listing-filter-toolbar mx-auto flex min-w-0 max-w-[1440px] items-center gap-[9px] overflow-x-auto [scrollbar-width:thin]">
           <button
             className="listing-filter-chip"
             type="button"
