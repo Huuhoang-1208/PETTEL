@@ -129,7 +129,8 @@
   display: grid;
   gap: 8px;
 }
-.socialOptions button {
+.socialOptions button,
+.socialOptions a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -141,7 +142,18 @@
   color: #516077;
   font: inherit;
   font-size: 11px;
+}
+.socialOptions button:disabled {
   cursor: not-allowed;
+}
+.socialOptions a {
+  cursor: pointer;
+  text-decoration: none;
+}
+.socialOptions a[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.6;
+  pointer-events: none;
 }
 .socialOptions > div {
   display: grid;

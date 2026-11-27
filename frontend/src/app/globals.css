@@ -2,24 +2,26 @@
    PETTEL Design System
    Pet Care Service Platform
    ============================ */
+@layer theme, base, legacy, components, utilities;
 
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap");
+@import "tailwindcss";
 
-@import "../styles/header.css";
-@import "../styles/application.css";
-@import "../styles/base.css";
-@import "../styles/legacy/navigation.css";
-@import "../styles/legacy/discovery-filters.css";
-@import "../styles/legacy/discovery-results.css";
-@import "../styles/legacy/detail.css";
-@import "../styles/legacy/reviews-and-location.css";
-@import "../styles/legacy/responsive.css";
-@import "../styles/legacy/trust.css";
-@import "../styles/legacy/booking-modals.css";
-@import "../styles/legacy/smart-match.css";
-@import "../styles/legacy/chat.css";
-@import "../styles/legacy/video-call.css";
-@import "../styles/legacy/livecam.css";
-@import "../styles/legacy/pets.css";
-@import "../styles/legacy/responsive-features.css";
-@import "../styles/legacy/icon-colors.css";
+@import "../styles/header.css" layer(legacy);
+@import "../styles/application.css" layer(legacy);
+@import "../styles/base.css" layer(legacy);
+@import "../styles/legacy/navigation.css" layer(legacy);
+@import "../styles/legacy/discovery-filters.css" layer(legacy);
+@import "../styles/legacy/discovery-results.css" layer(legacy);
+@import "../styles/legacy/detail.css" layer(legacy);
+@import "../styles/legacy/reviews-and-location.css" layer(legacy);
+@import "../styles/legacy/responsive.css" layer(legacy);
+@import "../styles/legacy/trust.css" layer(legacy);
+@import "../styles/legacy/booking-modals.css" layer(legacy);
+@import "../styles/legacy/smart-match.css" layer(legacy);
+@import "../styles/legacy/chat.css" layer(legacy);
+@import "../styles/legacy/video-call.css" layer(legacy);
+@import "../styles/legacy/livecam.css" layer(legacy);
+@import "../styles/legacy/pets.css" layer(legacy);
+@import "../styles/legacy/responsive-features.css" layer(legacy);
+@import "../styles/legacy/icon-colors.css" layer(legacy);
