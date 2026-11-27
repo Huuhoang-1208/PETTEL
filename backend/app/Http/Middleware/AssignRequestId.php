@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\ApiErrorResponse;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Context;
@@ -13,6 +14,10 @@ class AssignRequestId
 {
     public function handle(Request $request, Closure $next): Response
     {
+        if (! $request->is('api/*')) {
+            return $next($request);
+        }
+
         $headerId = $request->header('X-Request-ID');
 
         $requestId = is_string($headerId) && Str::isUuid($headerId)
@@ -28,6 +33,10 @@ class AssignRequestId
         try {
             $response = $next($request);
             $response->headers->set('X-Request-ID', $requestId);
+
+            if ($response->isClientError() || $response->isServerError()) {
+                $response = ApiErrorResponse::normalize($response, $requestId);
+            }
 
             return $response;
         } finally {

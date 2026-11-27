@@ -10,7 +10,9 @@ import { useSearchParams } from "next/navigation";
 
 export function ListingDetailPage() {
   const id = useSearchParams().get("id");
-  const listing = useApi<{ data: Listing }>(id && /^\d+$/.test(id) ? `/api/v1/listings/${id}` : null);
+  const listing = useApi<{ data: Listing }>(
+    id && /^\d+$/.test(id) ? `/api/v1/listings/${id}` : null,
+  );
   return (
     <>
       <SiteHeader />

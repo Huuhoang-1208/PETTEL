@@ -62,8 +62,31 @@ export function ListingEditor({
   return (
     <>
       <header className={styles.editorHeader}>
-        <div><span className={styles.editorEyebrow}><PettelIcon name="home" /> PETTEL SITTER</span><h2>{live ? "Đề xuất chỉnh sửa dịch vụ" : listing ? "Chỉnh sửa bản nháp" : "Tạo dịch vụ mới"}</h2><p>{live ? "Thay đổi sẽ được gửi PETTEL xem xét trước khi áp dụng." : "Mô tả rõ dịch vụ để khách hàng dễ chọn hơn."}</p></div>
-        <button className={styles.closeButton} type="button" onClick={onClose} aria-label="Đóng cửa sổ">×</button>
+        <div>
+          <span className={styles.editorEyebrow}>
+            <PettelIcon name="home" /> PETTEL SITTER
+          </span>
+          <h2>
+            {live
+              ? "Đề xuất chỉnh sửa dịch vụ"
+              : listing
+                ? "Chỉnh sửa bản nháp"
+                : "Tạo dịch vụ mới"}
+          </h2>
+          <p>
+            {live
+              ? "Thay đổi sẽ được gửi PETTEL xem xét trước khi áp dụng."
+              : "Mô tả rõ dịch vụ để khách hàng dễ chọn hơn."}
+          </p>
+        </div>
+        <button
+          className={styles.closeButton}
+          type="button"
+          onClick={onClose}
+          aria-label="Đóng cửa sổ"
+        >
+          ×
+        </button>
       </header>
       <ApiError error={error} />
       <form className={`${styles.editorForm} app-form`} onSubmit={submit}>
@@ -147,7 +170,12 @@ export function ListingEditor({
           <button disabled={busy} className={styles.primaryButton}>
             {live ? "Gửi đề xuất duyệt" : "Lưu bản nháp"}
           </button>
-          <button type="button" disabled={busy} className={styles.secondaryButton} onClick={onClose}>
+          <button
+            type="button"
+            disabled={busy}
+            className={styles.secondaryButton}
+            onClick={onClose}
+          >
             Đóng
           </button>
         </div>

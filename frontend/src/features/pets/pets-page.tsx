@@ -14,13 +14,17 @@ export function PetsPage() {
       <SiteHeader />
       {loading ? (
         <main className={styles.page}>
-          <p className={styles.loading} role="status">Đang tải hồ sơ thú cưng…</p>
+          <p className={styles.loading} role="status">
+            Đang tải hồ sơ thú cưng…
+          </p>
         </main>
       ) : user ? (
         <main className={styles.page}>
           <PetManager />
         </main>
-      ) : <GuestPetProfile />}
+      ) : (
+        <GuestPetProfile />
+      )}
     </>
   );
 }

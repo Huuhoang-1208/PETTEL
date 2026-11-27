@@ -166,54 +166,60 @@ export function ListingFilters({
               </span>
             </div>
 
-            {!smartMatchMode && <fieldset className="listing-option-group listing-option-group--species">
-              <legend>Loại thú cưng</legend>
-              <div className="listing-choice-list">
-                <label>
-                  <input
-                    type="radio"
-                    name="species"
-                    value=""
-                    defaultChecked={!query.get("species")}
-                  />
-                  Tất cả
-                </label>
-                {Object.entries(species).map(([value, label]) => (
-                  <label key={value}>
+            {!smartMatchMode && (
+              <fieldset className="listing-option-group listing-option-group--species">
+                <legend>Loại thú cưng</legend>
+                <div className="listing-choice-list">
+                  <label>
                     <input
                       type="radio"
                       name="species"
-                      value={value}
-                      defaultChecked={query.get("species") === value}
+                      value=""
+                      defaultChecked={!query.get("species")}
                     />
-                    {label}
+                    Tất cả
                   </label>
-                ))}
-              </div>
-            </fieldset>}
+                  {Object.entries(species).map(([value, label]) => (
+                    <label key={value}>
+                      <input
+                        type="radio"
+                        name="species"
+                        value={value}
+                        defaultChecked={query.get("species") === value}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            )}
 
-            {!smartMatchMode && <fieldset className="listing-option-group listing-option-group--size">
-              <legend>Kích thước</legend>
-              <div className="listing-choice-list">
-                <label>
-                  <input type="radio" name="size" value="" defaultChecked={!query.get("size")} />
-                  Tất cả
-                </label>
-                {Object.entries(sizes).map(([value, label]) => (
-                  <label key={value}>
-                    <input
-                      type="radio"
-                      name="size"
-                      value={value}
-                      defaultChecked={query.get("size") === value}
-                    />
-                    {label}
+            {!smartMatchMode && (
+              <fieldset className="listing-option-group listing-option-group--size">
+                <legend>Kích thước</legend>
+                <div className="listing-choice-list">
+                  <label>
+                    <input type="radio" name="size" value="" defaultChecked={!query.get("size")} />
+                    Tất cả
                   </label>
-                ))}
-              </div>
-            </fieldset>}
+                  {Object.entries(sizes).map(([value, label]) => (
+                    <label key={value}>
+                      <input
+                        type="radio"
+                        name="size"
+                        value={value}
+                        defaultChecked={query.get("size") === value}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            )}
 
-            <label className={`listing-smart-select listing-smart-select--pet ${smartMatchMode ? "is-smart-match" : ""}`}>
+            <label
+              className={`listing-smart-select listing-smart-select--pet ${smartMatchMode ? "is-smart-match" : ""}`}
+            >
               {smartMatchMode ? "Chọn hồ sơ thú cưng" : "Smart Match theo thú cưng"}
               <select
                 id="listing-smart-match"
@@ -234,46 +240,72 @@ export function ListingFilters({
             {smartMatchMode && selectedPet && (
               <article className="listing-smart-pet-card">
                 <div className="listing-smart-pet-card__identity">
-                  <span className="listing-smart-pet-card__paw" aria-hidden="true">🐾</span>
+                  <span className="listing-smart-pet-card__paw" aria-hidden="true">
+                    🐾
+                  </span>
                   <div>
                     <span className="listing-smart-pet-card__eyebrow">HỒ SƠ BÉ ĐƯỢC CHỌN</span>
                     <h3>{selectedPet.name}</h3>
                     <p>
                       {species[selectedPet.species as keyof typeof species] ?? selectedPet.species}
-                      {selectedPet.size ? ` · ${sizes[selectedPet.size as keyof typeof sizes] ?? selectedPet.size}` : " · Chưa có kích thước"}
+                      {selectedPet.size
+                        ? ` · ${sizes[selectedPet.size as keyof typeof sizes] ?? selectedPet.size}`
+                        : " · Chưa có kích thước"}
                       {selectedPet.age_note ? ` · ${selectedPet.age_note}` : ""}
                     </p>
                   </div>
                 </div>
                 <div className="listing-smart-pet-card__details">
-                  {selectedPet.behavior_tags?.map((tag) => <span key={tag}>{behaviorLabels[tag] ?? tag}</span>)}
-                  {selectedPet.care_support_tags?.map((tag) => <span key={tag}>{careSupportLabels[tag] ?? tag}</span>)}
-                  {selectedPet.food_allergies || selectedPet.foods_to_avoid ? <span>Có lưu ý dị ứng / thức ăn cần tránh</span> : null}
-                  {!selectedPet.behavior_tags?.length && !selectedPet.care_support_tags?.length && !selectedPet.food_allergies && !selectedPet.foods_to_avoid && !selectedPet.diet_notes ? (
+                  {selectedPet.behavior_tags?.map((tag) => (
+                    <span key={tag}>{behaviorLabels[tag] ?? tag}</span>
+                  ))}
+                  {selectedPet.care_support_tags?.map((tag) => (
+                    <span key={tag}>{careSupportLabels[tag] ?? tag}</span>
+                  ))}
+                  {selectedPet.food_allergies || selectedPet.foods_to_avoid ? (
+                    <span>Có lưu ý dị ứng / thức ăn cần tránh</span>
+                  ) : null}
+                  {!selectedPet.behavior_tags?.length &&
+                  !selectedPet.care_support_tags?.length &&
+                  !selectedPet.food_allergies &&
+                  !selectedPet.foods_to_avoid &&
+                  !selectedPet.diet_notes ? (
                     <span>Thêm tính cách hoặc lưu ý chăm sóc để kết quả gợi ý sát hơn.</span>
                   ) : null}
                 </div>
                 <p className="listing-smart-pet-card__privacy">
-                  Thông tin sức khỏe và chế độ ăn không hiển thị công khai; chỉ chia sẻ với Sitter khi bạn chọn dịch vụ hoặc đặt lịch.
+                  Thông tin sức khỏe và chế độ ăn không hiển thị công khai; chỉ chia sẻ với Sitter
+                  khi bạn chọn dịch vụ hoặc đặt lịch.
                 </p>
               </article>
             )}
 
             {smartMatchMode && !selectedPet && (
               <p className="listing-smart-empty">
-                {user
-                  ? pets.loading
-                    ? "Đang tải hồ sơ thú cưng của bạn..."
-                    : activePets.length
-                      ? "Chọn một bé để PETTEL bắt đầu tìm Sitter phù hợp."
-                      : <>Bạn chưa có hồ sơ thú cưng đang hoạt động. <Link href="/pet-profile">Tạo hồ sơ bé</Link> trước khi dùng Smart Match.</>
-                  : <>Vui lòng <Link href="/login">đăng nhập</Link> và tạo hồ sơ thú cưng để dùng Smart Match.</>}
+                {user ? (
+                  pets.loading ? (
+                    "Đang tải hồ sơ thú cưng của bạn..."
+                  ) : activePets.length ? (
+                    "Chọn một bé để PETTEL bắt đầu tìm Sitter phù hợp."
+                  ) : (
+                    <>
+                      Bạn chưa có hồ sơ thú cưng đang hoạt động.{" "}
+                      <Link href="/pet-profile">Tạo hồ sơ bé</Link> trước khi dùng Smart Match.
+                    </>
+                  )
+                ) : (
+                  <>
+                    Vui lòng <Link href="/login">đăng nhập</Link> và tạo hồ sơ thú cưng để dùng
+                    Smart Match.
+                  </>
+                )}
               </p>
             )}
 
             {smartMatchMode && selectedPet && (!selectedPet.species || !selectedPet.size) && (
               <p className="listing-smart-empty">
-                Hồ sơ bé còn thiếu loài hoặc kích thước. Hãy cập nhật trong <Link href="/pet-profile">Hồ sơ thú cưng</Link> để Smart Match lọc chính xác.
+                Hồ sơ bé còn thiếu loài hoặc kích thước. Hãy cập nhật trong{" "}
+                <Link href="/pet-profile">Hồ sơ thú cưng</Link> để Smart Match lọc chính xác.
               </p>
             )}
 
@@ -285,7 +317,9 @@ export function ListingFilters({
                   <option value="INDOOR">Trong nhà, không có sân</option>
                   <option value="INDOOR_YARD">Trong nhà, có sân</option>
                 </select>
-                <small>Câu trả lời này giúp PETTEL ưu tiên không gian phù hợp với thói quen của bé.</small>
+                <small>
+                  Câu trả lời này giúp PETTEL ưu tiên không gian phù hợp với thói quen của bé.
+                </small>
               </label>
             )}
 
@@ -308,7 +342,9 @@ export function ListingFilters({
               />
             </label>
             <fieldset className="listing-price-group">
-              <legend>Ngân sách dự kiến <span>VND</span></legend>
+              <legend>
+                Ngân sách dự kiến <span>VND</span>
+              </legend>
               <div className="listing-price-fields">
                 <label>
                   <span>Từ</span>
@@ -320,7 +356,9 @@ export function ListingFilters({
                     defaultValue={query.get("min_price_vnd") ?? ""}
                   />
                 </label>
-                <span className="listing-price-separator" aria-hidden="true">—</span>
+                <span className="listing-price-separator" aria-hidden="true">
+                  —
+                </span>
                 <label>
                   <span>Đến</span>
                   <input
@@ -333,7 +371,6 @@ export function ListingFilters({
                 </label>
               </div>
             </fieldset>
-
           </div>
         )}
       </form>

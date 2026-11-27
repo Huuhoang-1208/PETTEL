@@ -98,13 +98,7 @@ function FooterLinkColumn({
       <ul>
         {links.map((link) => (
           <li key={link.label}>
-            {link.href ? (
-              <Link href={link.href}>{link.label}</Link>
-            ) : (
-              <span>
-                {link.label} 
-              </span>
-            )}
+            {link.href ? <Link href={link.href}>{link.label}</Link> : <span>{link.label}</span>}
           </li>
         ))}
       </ul>

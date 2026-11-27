@@ -45,7 +45,9 @@ export function ListingLocationCard({ listing }: { listing: Listing }) {
         <span className={`${styles.nearby} ${styles.vet}`}>
           <i /> Cơ sở thú y lân cận
         </span>
-        <span className={styles.disclaimer}>Vị trí hiển thị ở mức khu vực; địa chỉ cụ thể do sitter xác nhận.</span>
+        <span className={styles.disclaimer}>
+          Vị trí hiển thị ở mức khu vực; địa chỉ cụ thể do sitter xác nhận.
+        </span>
       </div>
     </section>
   );

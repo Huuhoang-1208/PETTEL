@@ -75,15 +75,21 @@ export function useBookingMessages(bookingId: string, kind: "bookings" | "inquir
       });
 
       disconnect = () => echo.disconnect();
-      const connection = (echo.connector as unknown as {
-        pusher: { connection: { bind: (event: string, callback: () => void) => void } };
-      }).pusher.connection;
+      const connection = (
+        echo.connector as unknown as {
+          pusher: { connection: { bind: (event: string, callback: () => void) => void } };
+        }
+      ).pusher.connection;
       connection.bind("connected", () => {
         realtimeConnected = true;
         void refreshMessages();
       });
-      connection.bind("disconnected", () => { realtimeConnected = false; });
-      connection.bind("unavailable", () => { realtimeConnected = false; });
+      connection.bind("disconnected", () => {
+        realtimeConnected = false;
+      });
+      connection.bind("unavailable", () => {
+        realtimeConnected = false;
+      });
 
       echo
         .private(`${kind}.${bookingId}`)
@@ -91,7 +97,10 @@ export function useBookingMessages(bookingId: string, kind: "bookings" | "inquir
           realtimeConnected = true;
           void refreshMessages();
         })
-        .listen(kind === "bookings" ? ".booking.message.sent" : ".inquiry.message.sent", () => void refreshMessages())
+        .listen(
+          kind === "bookings" ? ".booking.message.sent" : ".inquiry.message.sent",
+          () => void refreshMessages(),
+        )
         .error(() => {
           realtimeConnected = false;
           void refreshMessages();

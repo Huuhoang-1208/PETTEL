@@ -6,7 +6,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 
-export function RequireSession({ children, next = "/", redirectToLogin = false }: { children: ReactNode; next?: string; redirectToLogin?: boolean }) {
+export function RequireSession({
+  children,
+  next = "/",
+  redirectToLogin = false,
+}: {
+  children: ReactNode;
+  next?: string;
+  redirectToLogin?: boolean;
+}) {
   const { user, loading, error, refresh } = useSession();
   const router = useRouter();
 

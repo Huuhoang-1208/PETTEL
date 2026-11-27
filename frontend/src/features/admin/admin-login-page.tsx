@@ -35,7 +35,9 @@ export function AdminLoginPage() {
         password: String(form.get("password")),
       });
       const { data: signedInUser } = await api.get<User>("/api/v1/user");
-      const staff = signedInUser.roles?.some((role) => role.role === "ADMIN" || role.role === "SUPPORT");
+      const staff = signedInUser.roles?.some(
+        (role) => role.role === "ADMIN" || role.role === "SUPPORT",
+      );
 
       if (!staff) {
         await write("post", "/logout");
@@ -53,29 +55,77 @@ export function AdminLoginPage() {
     }
   }
 
-  const alreadyStaff = user?.roles?.some((role) => role.role === "ADMIN" || role.role === "SUPPORT");
+  const alreadyStaff = user?.roles?.some(
+    (role) => role.role === "ADMIN" || role.role === "SUPPORT",
+  );
 
   return (
     <main className={styles.page}>
       <div className={styles.glow} />
       <section className={styles.card} aria-labelledby="admin-login-heading">
         <Link className={styles.brand} href="/" aria-label="PETTEL Trang chủ">
-          <span className={styles.brandMark}><PettelIcon name="paw" /></span>
-          <span><strong>PETTEL</strong><small>ADMIN PORTAL</small></span>
+          <span className={styles.brandMark}>
+            <PettelIcon name="paw" />
+          </span>
+          <span>
+            <strong>PETTEL</strong>
+            <small>ADMIN PORTAL</small>
+          </span>
         </Link>
-        <div className={styles.icon}><PettelIcon name="shield" /></div>
+        <div className={styles.icon}>
+          <PettelIcon name="shield" />
+        </div>
         <p className={styles.eyebrow}>CỔNG DÀNH CHO ĐỘI NGŨ NỘI BỘ</p>
         <h1 id="admin-login-heading">Đăng nhập quản trị</h1>
-        <p className={styles.intro}>Sử dụng tài khoản ADMIN hoặc SUPPORT để tiếp tục vào khu vực vận hành PETTEL.</p>
-        {error && <p className={styles.error} role="alert">{error}</p>}
-        {loading && !alreadyStaff ? <p className={styles.status}>Đang kiểm tra phiên đăng nhập…</p> : null}
+        <p className={styles.intro}>
+          Sử dụng tài khoản ADMIN hoặc SUPPORT để tiếp tục vào khu vực vận hành PETTEL.
+        </p>
+        {error && (
+          <p className={styles.error} role="alert">
+            {error}
+          </p>
+        )}
+        {loading && !alreadyStaff ? (
+          <p className={styles.status}>Đang kiểm tra phiên đăng nhập…</p>
+        ) : null}
         <form className={styles.form} onSubmit={(event) => void submit(event)}>
-          <label>Email công việc<input name="email" type="email" autoComplete="username" placeholder="staff@pettel.vn" required disabled={busy} /></label>
-          <label>Mật khẩu<input name="password" type="password" autoComplete="current-password" placeholder="Nhập mật khẩu" required disabled={busy} /></label>
-          <button type="submit" disabled={busy || Boolean(alreadyStaff)}>{busy ? "Đang xác thực…" : "Đăng nhập vào Admin Portal"}<PettelIcon name="arrow" /></button>
+          <label>
+            Email công việc
+            <input
+              name="email"
+              type="email"
+              autoComplete="username"
+              placeholder="staff@pettel.vn"
+              required
+              disabled={busy}
+            />
+          </label>
+          <label>
+            Mật khẩu
+            <input
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              placeholder="Nhập mật khẩu"
+              required
+              disabled={busy}
+            />
+          </label>
+          <button type="submit" disabled={busy || Boolean(alreadyStaff)}>
+            {busy ? "Đang xác thực…" : "Đăng nhập vào Admin Portal"}
+            <PettelIcon name="arrow" />
+          </button>
         </form>
-        <div className={styles.accessNote}><PettelIcon name="shield" /><span>Quyền truy cập được xác định theo role của tài khoản. SUPPORT chỉ xem dữ liệu; thao tác quản trị dành cho ADMIN.</span></div>
-        <Link className={styles.returnLink} href="/login">← Quay lại đăng nhập PETTEL</Link>
+        <div className={styles.accessNote}>
+          <PettelIcon name="shield" />
+          <span>
+            Quyền truy cập được xác định theo role của tài khoản. SUPPORT chỉ xem dữ liệu; thao tác
+            quản trị dành cho ADMIN.
+          </span>
+        </div>
+        <Link className={styles.returnLink} href="/login">
+          ← Quay lại đăng nhập PETTEL
+        </Link>
       </section>
       <p className={styles.footer}>PETTEL · Cổng quản trị nội bộ</p>
     </main>

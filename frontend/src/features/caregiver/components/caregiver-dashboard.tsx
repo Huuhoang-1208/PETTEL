@@ -22,12 +22,17 @@ export function CaregiverDashboard() {
 
   if (!enabled)
     return (
-      <SitterOnboardingWizard userName={user?.name ?? ""} userEmail={user?.email ?? ""} onComplete={finishOnboarding} />
+      <SitterOnboardingWizard
+        userName={user?.name ?? ""}
+        userEmail={user?.email ?? ""}
+        onComplete={finishOnboarding}
+      />
     );
 
   if (profile.loading) return <p>Đang kiểm tra hồ sơ Sitter...</p>;
 
-  const profileMissing = axios.isAxiosError(profile.error) && profile.error.response?.status === 404;
+  const profileMissing =
+    axios.isAxiosError(profile.error) && profile.error.response?.status === 404;
   if (profileMissing)
     return (
       <SitterOnboardingWizard
@@ -37,7 +42,15 @@ export function CaregiverDashboard() {
       />
     );
 
-  if (profile.error) return <><ApiError error={profile.error} /><button type="button" onClick={profile.reload}>Thử tải lại</button></>;
+  if (profile.error)
+    return (
+      <>
+        <ApiError error={profile.error} />
+        <button type="button" onClick={profile.reload}>
+          Thử tải lại
+        </button>
+      </>
+    );
 
   return <SitterManagementDashboard profile={profile.data!.data} />;
 }

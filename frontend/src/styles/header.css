@@ -150,7 +150,9 @@
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 .pettel-login-link svg {
   width: 17px;

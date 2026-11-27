@@ -14,11 +14,13 @@ import { type Listing } from "@/lib/api/types";
 import { sizes, species } from "@/lib/constants";
 
 export function ListingDetail({ listing }: { listing: Listing }) {
-  const introduction = listing.caregiver?.demo?.introduction ?? listing.caregiver?.bio ?? listing.description;
+  const introduction =
+    listing.caregiver?.demo?.introduction ?? listing.caregiver?.bio ?? listing.description;
   const principles = listing.caregiver?.care_principles?.length
     ? listing.caregiver.care_principles
-    : listing.caregiver?.demo?.care_principles ?? [];
-  const experienceYears = listing.caregiver?.experience_years ?? listing.caregiver?.demo?.experience_years;
+    : (listing.caregiver?.demo?.care_principles ?? []);
+  const experienceYears =
+    listing.caregiver?.experience_years ?? listing.caregiver?.demo?.experience_years;
   const petRequirementLabels: Record<string, string> = {
     REQUIRE_VACCINATION: "Chỉ nhận bé đã tiêm phòng đầy đủ",
     ACCEPTS_MEDICATION: "Có thể chăm sóc bé cần uống thuốc",
@@ -38,7 +40,9 @@ export function ListingDetail({ listing }: { listing: Listing }) {
           <ListingCaregiverTrust listing={listing} />
 
           <section className="app-card listing-detail-panel">
-            <h2>Về {listing.caregiver?.display_name ?? "người chăm sóc"} &amp; Triết lý chăm sóc</h2>
+            <h2>
+              Về {listing.caregiver?.display_name ?? "người chăm sóc"} &amp; Triết lý chăm sóc
+            </h2>
             <p className="app-description">{introduction}</p>
             {experienceYears !== null && experienceYears !== undefined ? (
               <p className="listing-detail-experience">
@@ -54,14 +58,17 @@ export function ListingDetail({ listing }: { listing: Listing }) {
                 {listing.acceptance_rules_json.species.map((value) => species[value]).join(" · ")}
               </p>
               <p>
-                Kích thước: {listing.acceptance_rules_json.sizes.map((value) => sizes[value]).join(" · ")}
+                Kích thước:{" "}
+                {listing.acceptance_rules_json.sizes.map((value) => sizes[value]).join(" · ")}
               </p>
             </div>
             {petRequirements.length > 0 && (
               <>
                 <h3>Yêu cầu &amp; khả năng nhận thú cưng</h3>
                 <ul className="listing-pet-requirements">
-                  {petRequirements.map((requirement) => <li key={requirement}>{requirement}</li>)}
+                  {petRequirements.map((requirement) => (
+                    <li key={requirement}>{requirement}</li>
+                  ))}
                 </ul>
               </>
             )}
@@ -72,7 +79,9 @@ export function ListingDetail({ listing }: { listing: Listing }) {
                   {principles.slice(0, 3).map((principle, index) => (
                     <article key={`${principle.title}-${index}`}>
                       <strong>
-                        <PettelIcon name={index === 0 ? "clock" : index === 1 ? "walk" : "camera"} />
+                        <PettelIcon
+                          name={index === 0 ? "clock" : index === 1 ? "walk" : "camera"}
+                        />
                         {index + 1}. {principle.title}
                       </strong>
                       <p>{principle.description}</p>

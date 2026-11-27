@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Http\Middleware\AssignRequestId;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Context;
@@ -40,7 +39,7 @@ class QueueContextPropagationTest extends TestCase
         }
 
         // Route chỉ tồn tại trong test để tạo luồng request → dispatch.
-        Route::post('/_tests/queue-context', function (Request $request) {
+        Route::post('/api/v1/_tests/queue-context', function (Request $request) {
             QueueContextProbeJob::dispatch(
                 (int) $request->input('failures_before_success', 0),
             );
@@ -48,7 +47,7 @@ class QueueContextPropagationTest extends TestCase
             return response()->json([
                 'request_id' => $request->attributes->get('request_id'),
             ]);
-        })->middleware(AssignRequestId::class);
+        });
     }
 
     protected function tearDown(): void
@@ -66,7 +65,7 @@ class QueueContextPropagationTest extends TestCase
         $privateMarker = 'PRIVATE-EVIDENCE-SENTINEL';
 
         $this->withHeader('X-Request-ID', $requestId)
-            ->postJson('/_tests/queue-context', [
+            ->postJson('/api/v1/_tests/queue-context', [
                 'failures_before_success' => 1,
                 'private_marker' => $privateMarker,
             ])
@@ -81,9 +80,9 @@ class QueueContextPropagationTest extends TestCase
 
         // Lần đầu lỗi giả lập, lần thứ hai retry thành công.
         $this->workOneJob();
-        $this->assertDatabaseCount('jobs', 1);
+        $this->assertSame(1, $this->probeJobCount());
         $this->workOneJob();
-        $this->assertDatabaseCount('jobs', 0);
+        $this->assertSame(0, $this->probeJobCount());
 
         $log = (string) file_get_contents($this->logPath);
 
@@ -120,7 +119,7 @@ class QueueContextPropagationTest extends TestCase
         $privateMarker = 'PRIVATE-EVIDENCE-SENTINEL';
 
         $this->withHeader('X-Request-ID', $requestId)
-            ->postJson('/_tests/queue-context', [
+            ->postJson('/api/v1/_tests/queue-context', [
                 'failures_before_success' => 99,
                 'private_marker' => $privateMarker,
             ])
@@ -150,7 +149,7 @@ class QueueContextPropagationTest extends TestCase
         $this->artisan("queue:retry {$failedJobUuid}")
             ->assertExitCode(0);
 
-        $this->assertDatabaseCount('jobs', 1);
+        $this->assertSame(1, $this->probeJobCount());
         $this->assertDatabaseCount('failed_jobs', 0);
     }
 
@@ -158,5 +157,15 @@ class QueueContextPropagationTest extends TestCase
     {
         $this->artisan('queue:work database --once --tries=2 --sleep=0')
             ->assertExitCode(0);
+    }
+
+    private function probeJobCount(string $table = 'jobs'): int
+    {
+        return DB::table($table)->pluck('payload')->filter(static function ($payload): bool {
+            $decoded = json_decode((string) $payload, true);
+
+            return is_array($decoded)
+                && ($decoded['displayName'] ?? null) === QueueContextProbeJob::class;
+        })->count();
     }
 }

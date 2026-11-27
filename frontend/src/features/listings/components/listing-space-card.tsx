@@ -3,11 +3,23 @@ import { type Listing } from "@/lib/api/types";
 import styles from "./listing-space-card.module.css";
 
 const fallbackAmenities = [
-  { title: "Không gian chăm sóc", description: "Trao đổi với sitter để xem ảnh và xác nhận bố trí thực tế." },
-  { title: "Tiện nghi cho thú cưng", description: "Hỏi sitter về các tiện nghi đang có trong hồ sơ." },
-  { title: "Khu vực sinh hoạt", description: "Thống nhất khu vực bé sẽ sử dụng trong thời gian lưu trú." },
+  {
+    title: "Không gian chăm sóc",
+    description: "Trao đổi với sitter để xem ảnh và xác nhận bố trí thực tế.",
+  },
+  {
+    title: "Tiện nghi cho thú cưng",
+    description: "Hỏi sitter về các tiện nghi đang có trong hồ sơ.",
+  },
+  {
+    title: "Khu vực sinh hoạt",
+    description: "Thống nhất khu vực bé sẽ sử dụng trong thời gian lưu trú.",
+  },
   { title: "Đồ dùng và thức ăn", description: "Gia đình có thể gửi đồ dùng quen thuộc của bé." },
-  { title: "Vệ sinh không gian", description: "Trao đổi lịch vệ sinh khu vực chăm sóc với sitter." },
+  {
+    title: "Vệ sinh không gian",
+    description: "Trao đổi lịch vệ sinh khu vực chăm sóc với sitter.",
+  },
   { title: "Hỗ trợ thú y lân cận", description: "Nhắn sitter để xác nhận cơ sở thú y gần nhất." },
 ];
 

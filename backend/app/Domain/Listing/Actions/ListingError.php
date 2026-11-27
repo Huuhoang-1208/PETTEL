@@ -10,11 +10,19 @@ class ListingError
     /** @param array<string, mixed> $details */
     public static function fail(int $status, string $code, string $message, array $details = []): never
     {
-        throw new HttpResponseException(response()->json(['error' => [
-            'code' => $code,
-            'message' => $message,
-            'details' => $details,
-            'request_id' => (string) Str::uuid(),
-        ]], $status));
+        $requestId = request()->attributes->get('request_id');
+
+        if (! is_string($requestId) || ! Str::isUuid($requestId)) {
+            $requestId = (string) Str::uuid();
+        }
+
+        throw new HttpResponseException(response()->json([
+            'error' => [
+                'code' => $code,
+                'message' => $message,
+                'details' => $details,
+                'request_id' => $requestId,
+            ],
+        ], $status));
     }
 }

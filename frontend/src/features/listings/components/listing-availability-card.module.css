@@ -284,7 +284,9 @@
     gap: 3px;
   }
 
-  .detailsHeading span { text-align: left; }
+  .detailsHeading span {
+    text-align: left;
+  }
 
   .calendar {
     padding: 12px 9px;
