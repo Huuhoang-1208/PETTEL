@@ -83,7 +83,9 @@ class PetProfileTest extends TestCase
             'birth_date' => now()->addDay()->toDateString(),
             'diet_notes' => str_repeat('x', 2001),
         ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['species', 'birth_date', 'diet_notes']);
+            ->assertJsonStructure([
+                'error' => ['details' => ['species', 'birth_date', 'diet_notes']],
+            ]);
 
         $this->assertDatabaseCount('pets', 1);
     }
@@ -105,14 +107,18 @@ class PetProfileTest extends TestCase
             'name' => 'Luna',
             'species' => 'CAT',
             'photo_media_id' => $foreignMedia,
-        ])->assertUnprocessable()->assertJsonValidationErrors('photo_media_id');
+        ])->assertUnprocessable()->assertJsonStructure([
+            'error' => ['details' => ['photo_media_id']],
+        ]);
 
         $pendingMedia = $this->mediaFor($owner, 'PENDING_DELETE');
         $this->postJson('/api/v1/pets', [
             'name' => 'Pending photo',
             'species' => 'DOG',
             'photo_media_id' => $pendingMedia,
-        ])->assertUnprocessable()->assertJsonValidationErrors('photo_media_id');
+        ])->assertUnprocessable()->assertJsonStructure([
+            'error' => ['details' => ['photo_media_id']],
+        ]);
     }
 
     public function test_booking_snapshot_is_a_versioned_allowlist_of_pet_care_data(): void

@@ -43,7 +43,7 @@ final class ApiErrorResponse
 
         $error = [
             'code' => $isServerError
-                ? 'INTERNAL_SERVER_ERROR'
+                ? ($existingError['code'] ?? 'INTERNAL_SERVER_ERROR')
                 : ($existingError['code'] ?? $defaultCode),
             // Với lỗi 5xx, không trả message nội bộ hoặc nội dung exception cho client.
             'message' => $isServerError

@@ -180,7 +180,9 @@ class BookingMessageTest extends TestCase
         $activeListing = $fixture['active_listing_id'];
 
         $this->postJson('/api/v1/pets', ['name' => 'New pet', 'species' => 'DOG', 'photo_media_id' => $mediaId])
-            ->assertUnprocessable()->assertJsonValidationErrors('photo_media_id');
+            ->assertUnprocessable()->assertJsonStructure([
+                'error' => ['details' => ['photo_media_id']],
+            ]);
         $this->putJson("/api/v1/caregiver/listings/{$fixture['draft_listing_id']}/media", ['media' => $items])
             ->assertUnprocessable();
         $this->postJson("/api/v1/caregiver/listings/{$activeListing}/change-requests", [
@@ -205,10 +207,16 @@ class BookingMessageTest extends TestCase
         $this->post($url, [
             'body' => 'Invalid image',
             'attachments' => [UploadedFile::fake()->createWithContent('photo.png', '<?php echo "executable";')],
-        ], $headers)->assertUnprocessable()->assertJsonValidationErrors('attachments.0');
+        ], $headers)->assertUnprocessable()->assertJsonStructure([
+            'error' => ['details' => ['attachments.0']],
+        ]);
         $this->post($url, ['attachments' => array_fill(0, 6, UploadedFile::fake()->image('photo.png', 12, 12))], $headers)
-            ->assertUnprocessable()->assertJsonValidationErrors('attachments');
-        $this->postJson($url, ['attachments' => []])->assertUnprocessable()->assertJsonValidationErrors('body');
+            ->assertUnprocessable()->assertJsonStructure([
+                'error' => ['details' => ['attachments']],
+            ]);
+        $this->postJson($url, ['attachments' => []])->assertUnprocessable()->assertJsonStructure([
+            'error' => ['details' => ['body']],
+        ]);
 
         $first = UploadedFile::fake()->image('first.png', 12, 12);
         $second = UploadedFile::fake()->image('second.png', 12, 12);
@@ -220,7 +228,9 @@ class BookingMessageTest extends TestCase
         file_put_contents($second->getPathname(), "\0", FILE_APPEND);
         clearstatcache(true, $second->getPathname());
         $this->post($url, ['attachments' => [$first, $second]], $headers)
-            ->assertUnprocessable()->assertJsonValidationErrors('attachments');
+            ->assertUnprocessable()->assertJsonStructure([
+                'error' => ['details' => ['attachments']],
+            ]);
 
         $this->assertDatabaseCount('messages', 1);
         $this->assertDatabaseCount('media_objects', 2);

@@ -76,6 +76,8 @@ RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/fra
 
 FROM backend AS test
 
+RUN printf 'memory_limit=512M\n' > /usr/local/etc/php/conf.d/zz-test-memory.ini
+
 RUN pecl install pcov \
     && docker-php-ext-enable pcov
 
