@@ -8,11 +8,14 @@ use App\Http\Middleware\EnsureApiTokenHasRouteAbility;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\RecordPerformanceQueryMetrics;
 use App\Http\Middleware\ResetSanctumRequestGuard;
+use App\Support\ApiErrorResponse;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
+use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -29,13 +32,13 @@ return Application::configure(basePath: dirname(__DIR__))
         ],
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(AssignRequestId::class);
         $middleware->api(prepend: [
             EnsureFrontendRequestsAreStateful::class,
         ]);
 
         $middleware->api(append: [
             RecordPerformanceQueryMetrics::class,
-            AssignRequestId::class,
             ResetSanctumRequestGuard::class,
         ]);
 
@@ -53,4 +56,41 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Khi Laravel tự ghi log exception, lấy ID từ request hiện tại.
+        $exceptions->context(function (): array {
+            $request = request();
+            $requestId = $request->attributes->get('request_id');
+
+            if (! $request->is('api/*') || ! is_string($requestId)) {
+                return [];
+            }
+
+            return ['request_id' => $requestId];
+        });
+
+        // Chuẩn hóa cả lỗi exception được render ngoài middleware thông thường,
+        // chẳng hạn lỗi route API không tồn tại.
+        $exceptions->respond(function (Response $response): Response {
+            $request = request();
+
+            if (! $request->is('api/*')) {
+                return $response;
+            }
+
+            $requestId = $request->attributes->get('request_id');
+
+            if (! is_string($requestId) || ! Str::isUuid($requestId)) {
+                $requestId = (string) Str::uuid();
+                $request->attributes->set('request_id', $requestId);
+            }
+
+            $response->headers->set('X-Request-ID', $requestId);
+
+            if ($response->isClientError() || $response->isServerError()) {
+                return ApiErrorResponse::normalize($response, $requestId);
+            }
+
+            return $response;
+        });
     })->create();
