@@ -19,7 +19,10 @@ export function SiteHeader() {
   const [logoutError, setLogoutError] = useState<unknown>();
   const [loggingOut, setLoggingOut] = useState(false);
   const isCaregiver = user?.roles?.some((role) => role.role === "CAREGIVER") ?? false;
-  const notifications = useApi<NotificationPage>(user ? "/api/v1/notifications?per_page=1" : null, 30000);
+  const notifications = useApi<NotificationPage>(
+    user ? "/api/v1/notifications?per_page=1" : null,
+    30000,
+  );
   const hasUnreadNotifications = (notifications.data?.unread_count ?? 0) > 0;
   const links = [
     { href: "/", label: "Khám phá", active: pathname === "/" },
@@ -135,7 +138,11 @@ export function SiteHeader() {
                 <strong>{user.name}</strong>
                 <span>{user.email}</span>
               </div>
-              <Link href="/owner-profile" onClick={closeMenus} aria-current={pathname === "/owner-profile" ? "page" : undefined}>
+              <Link
+                href="/owner-profile"
+                onClick={closeMenus}
+                aria-current={pathname === "/owner-profile" ? "page" : undefined}
+              >
                 Hồ sơ chủ nuôi
               </Link>
               <Link href="/owner-profile#history" onClick={closeMenus}>
@@ -145,7 +152,11 @@ export function SiteHeader() {
                 Hồ sơ thú cưng
               </Link>
               {isCaregiver ? (
-                <Link href="/caregiver/manage" onClick={closeMenus} aria-current={pathname.startsWith("/caregiver/manage") ? "page" : undefined}>
+                <Link
+                  href="/caregiver/manage"
+                  onClick={closeMenus}
+                  aria-current={pathname.startsWith("/caregiver/manage") ? "page" : undefined}
+                >
                   Quản lý Sitter
                 </Link>
               ) : (
@@ -158,7 +169,11 @@ export function SiteHeader() {
                   Quản trị dịch vụ
                 </Link>
               )}
-              <Link href="/contact-support" onClick={closeMenus} aria-current={pathname === "/contact-support" ? "page" : undefined}>
+              <Link
+                href="/contact-support"
+                onClick={closeMenus}
+                aria-current={pathname === "/contact-support" ? "page" : undefined}
+              >
                 Liên hệ và Hỗ trợ
               </Link>
               <ApiError error={logoutError} />
@@ -168,7 +183,12 @@ export function SiteHeader() {
             </div>
           </details>
         ) : (
-          <Link className="pettel-login-link" href="/login" aria-label="Đăng nhập" onClick={closeMenus}>
+          <Link
+            className="pettel-login-link"
+            href="/login"
+            aria-label="Đăng nhập"
+            onClick={closeMenus}
+          >
             <PettelIcon name="user" />
             <span>Đăng nhập</span>
           </Link>

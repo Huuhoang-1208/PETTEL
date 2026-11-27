@@ -10,7 +10,7 @@
 
 .summary {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(190px, .55fr);
+  grid-template-columns: minmax(0, 1.25fr) minmax(190px, 0.55fr);
   align-items: center;
   gap: 26px;
   padding: 0 0 20px;
@@ -197,7 +197,7 @@
 
 .more:disabled {
   cursor: wait;
-  opacity: .7;
+  opacity: 0.7;
 }
 
 @media (max-width: 620px) {

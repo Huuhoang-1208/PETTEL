@@ -5,10 +5,14 @@ import { useApi } from "@/hooks/use-api";
 import { type Listing, type Page } from "@/lib/api/types";
 import styles from "./listing-pricing-card.module.css";
 
-const pricePresentation: Record<string, { title: string; description: string; icon: "home" | "clock" }> = {
+const pricePresentation: Record<
+  string,
+  { title: string; description: string; icon: "home" | "clock" }
+> = {
   BOARDING: {
     title: "Nội trú qua đêm (Pet Boarding)",
-    description: "Bé nghỉ tại không gian của sitter, có thời gian ăn, nghỉ và cập nhật theo lịch chăm sóc.",
+    description:
+      "Bé nghỉ tại không gian của sitter, có thời gian ăn, nghỉ và cập nhật theo lịch chăm sóc.",
     icon: "home",
   },
   DAYCARE: {
@@ -50,8 +54,13 @@ export function ListingPricingCard({ listing }: { listing: Listing }) {
           const unit = offer.price_unit === "HOUR" ? "giờ" : "ngày (24h)";
 
           return (
-            <article className={`${styles.offer} ${isCurrent ? styles.current : ""}`} key={offer.id}>
-              <span className={`${styles.icon} ${offer.service_type === "DAYCARE" ? styles.daycare : ""}`}>
+            <article
+              className={`${styles.offer} ${isCurrent ? styles.current : ""}`}
+              key={offer.id}
+            >
+              <span
+                className={`${styles.icon} ${offer.service_type === "DAYCARE" ? styles.daycare : ""}`}
+              >
                 <PettelIcon name={presentation.icon} />
               </span>
               <div className={styles.details}>
@@ -89,7 +98,9 @@ export function ListingPricingCard({ listing }: { listing: Listing }) {
       </div>
 
       <div className={styles.addons}>
-        <strong><PettelIcon name="plus" /> Dịch vụ bổ trợ theo yêu cầu:</strong>
+        <strong>
+          <PettelIcon name="plus" /> Dịch vụ bổ trợ theo yêu cầu:
+        </strong>
         <div className={styles.addonList}>
           <span>🚕 Pet Taxi đưa đón tận nơi · báo giá trước</span>
           <span>🛁 Tắm và chải lông · báo giá trước</span>

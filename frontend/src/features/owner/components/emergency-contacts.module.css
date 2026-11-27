@@ -1,32 +1,199 @@
-.card { padding: 23px; border: 1px solid #f0edf7; border-radius: 28px; background: #fff; box-shadow: 0 2px 0 #e7e2f325; }
-.card > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.card h2 { display: flex; align-items: center; gap: 7px; font-size: 17px; font-weight: 750; line-height: 1.4; }
-.emergencyIcon { display: inline-flex; color: #f05468; }
-.emergencyIcon svg { width: 18px; height: 18px; }
-.priority { flex-shrink: 0; padding: 3px 7px; border-radius: 999px; background: #ffe0df; color: #bf3f45; font-size: 8px; font-weight: 650; }
-.intro { margin: 9px 0 15px; color: #8190a5; font-size: 10px; line-height: 1.7; }
-.contact { padding: 13px; margin-bottom: 10px; background: #f5f2ff; }
-.contact h3 { margin: 0 0 6px; color: #008b9d; font-size: 9px; font-weight: 650; }
-.secondary h3 { color: #b67d13; }
-.contactHeading { display: flex; align-items: center; justify-content: space-between; gap: 5px; }
-.contactHeading > span { margin-bottom: 6px; padding: 2px 6px; border-radius: 999px; background: #e0f3f5; color: #33788d; font-size: 8px; }
-.contactLine { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 5px 10px; }
-.contactLine strong { color: #21455e; font-size: 12px; font-weight: 650; overflow-wrap: anywhere; }
-.contactLine a { display: inline-flex; align-items: center; gap: 5px; color: #008a9b; font-size: 11px; white-space: nowrap; }
-.contactLine a svg { width: 12px; height: 12px; }
-.contactLine a:hover { text-decoration: underline; text-underline-offset: 3px; }
-.missing { color: #8c98ab; font-size: 10px; }
-.detail { margin: 5px 0 0; color: #6c809a; font-size: 10px; }
-.address { display: flex; align-items: flex-start; gap: 4px; margin-top: 4px; color: #7d8ea5; font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
-.address svg { width: 12px; height: 12px; margin-top: 1px; }
-.updateButton { display: flex; width: 100%; align-items: center; justify-content: center; gap: 6px; padding: 10px; margin-top: 15px; border: 0; border-radius: 999px; background: #eeecff; color: #008b9e; font: inherit; font-size: 11px; font-weight: 650; }
-.updateButton svg { width: 14px; height: 14px; }
-.updateButton:hover:not(:disabled) { background: #e3e0fa; }
-.saved { display: flex; align-items: center; gap: 5px; margin-top: 10px; color: #188474; font-size: 10px; }
-.saved svg { width: 12px; height: 12px; }
-.fieldset { display: grid; gap: 12px; min-width: 0; padding: 15px; border: 1px solid #eae6f5; border-radius: 15px; }
-.fieldset legend { padding: 0 6px; color: #156078; font-size: 13px; font-weight: 650; }
-.fieldset .checkbox { display: flex; flex-wrap: nowrap; gap: 8px; margin-top: 5px; }
-.fieldset .checkbox input { width: 15px; height: 15px; padding: 0; accent-color: #00a5b3; }
-@media(max-width: 1200px) { .card { padding: 19px; } .card h2 { font-size: 15px; } }
-@media(max-width: 950px) and (min-width: 701px) { .card > header { flex-wrap: wrap; } }
+.card {
+  padding: 23px;
+  border: 1px solid #f0edf7;
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 2px 0 #e7e2f325;
+}
+.card > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.card h2 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 17px;
+  font-weight: 750;
+  line-height: 1.4;
+}
+.emergencyIcon {
+  display: inline-flex;
+  color: #f05468;
+}
+.emergencyIcon svg {
+  width: 18px;
+  height: 18px;
+}
+.priority {
+  flex-shrink: 0;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #ffe0df;
+  color: #bf3f45;
+  font-size: 8px;
+  font-weight: 650;
+}
+.intro {
+  margin: 9px 0 15px;
+  color: #8190a5;
+  font-size: 10px;
+  line-height: 1.7;
+}
+.contact {
+  padding: 13px;
+  margin-bottom: 10px;
+  background: #f5f2ff;
+}
+.contact h3 {
+  margin: 0 0 6px;
+  color: #008b9d;
+  font-size: 9px;
+  font-weight: 650;
+}
+.secondary h3 {
+  color: #b67d13;
+}
+.contactHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+}
+.contactHeading > span {
+  margin-bottom: 6px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #e0f3f5;
+  color: #33788d;
+  font-size: 8px;
+}
+.contactLine {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+}
+.contactLine strong {
+  color: #21455e;
+  font-size: 12px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.contactLine a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #008a9b;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.contactLine a svg {
+  width: 12px;
+  height: 12px;
+}
+.contactLine a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.missing {
+  color: #8c98ab;
+  font-size: 10px;
+}
+.detail {
+  margin: 5px 0 0;
+  color: #6c809a;
+  font-size: 10px;
+}
+.address {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin-top: 4px;
+  color: #7d8ea5;
+  font-size: 10px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.address svg {
+  width: 12px;
+  height: 12px;
+  margin-top: 1px;
+}
+.updateButton {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  margin-top: 15px;
+  border: 0;
+  border-radius: 999px;
+  background: #eeecff;
+  color: #008b9e;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+}
+.updateButton svg {
+  width: 14px;
+  height: 14px;
+}
+.updateButton:hover:not(:disabled) {
+  background: #e3e0fa;
+}
+.saved {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  color: #188474;
+  font-size: 10px;
+}
+.saved svg {
+  width: 12px;
+  height: 12px;
+}
+.fieldset {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid #eae6f5;
+  border-radius: 15px;
+}
+.fieldset legend {
+  padding: 0 6px;
+  color: #156078;
+  font-size: 13px;
+  font-weight: 650;
+}
+.fieldset .checkbox {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  margin-top: 5px;
+}
+.fieldset .checkbox input {
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  accent-color: #00a5b3;
+}
+@media (max-width: 1200px) {
+  .card {
+    padding: 19px;
+  }
+  .card h2 {
+    font-size: 15px;
+  }
+}
+@media (max-width: 950px) and (min-width: 701px) {
+  .card > header {
+    flex-wrap: wrap;
+  }
+}

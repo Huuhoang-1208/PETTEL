@@ -6,24 +6,13 @@ import styles from "./error-pages.module.css";
 
 type RouteError = Error & { digest?: string };
 
-export default function ErrorPage({
-  error,
-  retry,
-}: {
-  error: unknown;
-  retry: () => void;
-}) {
+export default function ErrorPage({ error, retry }: { error: unknown; retry: () => void }) {
   useEffect(() => {
     // Ghi mã nhận diện để đối chiếu log, không gửi nội dung exception ra giao diện.
     const digest =
-      error instanceof Error && "digest" in error
-        ? String((error as RouteError).digest ?? "")
-        : "";
+      error instanceof Error && "digest" in error ? String((error as RouteError).digest ?? "") : "";
 
-    console.error(
-      "[PETTEL] Route rendering failed",
-      digest ? { digest } : {},
-    );
+    console.error("[PETTEL] Route rendering failed", digest ? { digest } : {});
   }, [error]);
 
   return (

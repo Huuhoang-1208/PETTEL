@@ -1,0 +1,6 @@
+PETTEL Task 5(d) — scheduler evidence
+Captured from user-provided output on 2026-11-27.
+Container timestamps are retained as printed by Docker.
+
+2026-11-27 09:50:00 Running ['artisan' monitoring:check-server-resources] 338.50ms DONE
+2026-11-27 09:51:00 Running ['artisan' monitoring:check-server-resources] 418.67ms DONE

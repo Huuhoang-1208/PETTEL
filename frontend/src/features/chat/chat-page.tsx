@@ -12,7 +12,16 @@ export function ChatPage() {
   return (
     <>
       <SiteHeader />
-      <RequireSession next={inquiryId ? `/chat?inquiry=${inquiryId}` : bookingId ? `/chat?booking=${bookingId}` : "/chat"} redirectToLogin>
+      <RequireSession
+        next={
+          inquiryId
+            ? `/chat?inquiry=${inquiryId}`
+            : bookingId
+              ? `/chat?booking=${bookingId}`
+              : "/chat"
+        }
+        redirectToLogin
+      >
         <ChatWorkspace inquiryId={inquiryId} bookingId={bookingId} />
       </RequireSession>
     </>

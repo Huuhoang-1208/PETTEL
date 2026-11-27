@@ -730,7 +730,14 @@ export function ProfileForm() {
           </div>
           <div className={styles.cover}>
             {avatarUrl ? (
-              <Image className={styles.coverAvatar} src={avatarUrl} alt="Ảnh đại diện Sitter" width={72} height={72} unoptimized />
+              <Image
+                className={styles.coverAvatar}
+                src={avatarUrl}
+                alt="Ảnh đại diện Sitter"
+                width={72}
+                height={72}
+                unoptimized
+              />
             ) : (
               <span className={styles.avatar}>
                 <PettelIcon name="user" />

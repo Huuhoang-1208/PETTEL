@@ -1,20 +1,36 @@
 import type { PettelIconName } from "@/components/ui/pettel-icon";
 
-export const pillars: { icon: PettelIconName; title: string; body: string; link: string; href: string; tone: string }[] = [
+export const pillars: {
+  icon: PettelIconName;
+  title: string;
+  body: string;
+  link: string;
+  href: string;
+  tone: string;
+}[] = [
   {
-    icon: "paw", title: "100% Không lồng nhốt", tone: "teal",
+    icon: "paw",
+    title: "100% Không lồng nhốt",
+    tone: "teal",
     body: "Thú cưng được sinh hoạt tự do, nghỉ ngơi trên sofa hoặc giường nệm trong môi trường gia đình ấm cúng và an toàn tuyệt đối của Sitter.",
-    link: "100% Cage-free", href: "#gia-tri",
+    link: "100% Cage-free",
+    href: "#gia-tri",
   },
   {
-    icon: "camera", title: "Minh bạch & An tâm tối đa", tone: "amber",
+    icon: "camera",
+    title: "Minh bạch & An tâm tối đa",
+    tone: "amber",
     body: "Nhận thông báo cập nhật, hình ảnh và video nhật ký đều đặn mỗi ngày. Bạn luôn biết rõ bé ăn gì, đi dạo lúc nào và đang vui chơi ra sao.",
-    link: "Đồng hành cùng người chăm", href: "/chat",
+    link: "Đồng hành cùng người chăm",
+    href: "/chat",
   },
   {
-    icon: "shield", title: "Sitter chuyên môn cao", tone: "violet",
+    icon: "shield",
+    title: "Sitter chuyên môn cao",
+    tone: "violet",
     body: "Mỗi đối tác đều trải qua xác minh danh tính, kiểm tra không gian chăm sóc và đánh giá kỹ năng để mang đến sự chăm sóc tận tâm cho từng bé.",
-    link: "Tìm hiểu về PETTEL Pro", href: "/#ve-pettel",
+    link: "Tìm hiểu về PETTEL Pro",
+    href: "/#ve-pettel",
   },
 ];
 

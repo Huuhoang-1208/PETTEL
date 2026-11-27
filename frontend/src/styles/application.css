@@ -503,8 +503,12 @@ button:disabled {
   font-weight: 700;
   white-space: nowrap;
 }
-.listing-option-group--species { grid-column: span 3; }
-.listing-option-group--size { grid-column: span 3; }
+.listing-option-group--species {
+  grid-column: span 3;
+}
+.listing-option-group--size {
+  grid-column: span 3;
+}
 .listing-smart-select--pet {
   grid-column: span 6;
   padding: 12px 14px 14px;
@@ -599,7 +603,9 @@ button:disabled {
   font-weight: 450;
   line-height: 1.5;
 }
-.listing-date-filter { grid-column: span 3; }
+.listing-date-filter {
+  grid-column: span 3;
+}
 .listing-price-group {
   grid-column: span 6;
   min-width: 0;
@@ -1255,7 +1261,10 @@ button:disabled {
   color: #174d5b;
   font-size: 12px;
 }
-.app-inquiry-context p { margin: 5px 0 0; font-size: 11px; }
+.app-inquiry-context p {
+  margin: 5px 0 0;
+  font-size: 11px;
+}
 .app-attachment {
   font-size: 13px;
   max-width: 180px;

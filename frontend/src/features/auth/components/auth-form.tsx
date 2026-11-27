@@ -50,7 +50,9 @@ export function AuthForm({ auth }: { auth: AuthFormState }) {
                 type="button"
                 disabled={busy}
                 onClick={() => {
-                  const backendUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080").replace(/\/$/, "");
+                  const backendUrl = (
+                    process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"
+                  ).replace(/\/$/, "");
                   window.location.href = `${backendUrl}/auth/google/redirect`;
                 }}
               >

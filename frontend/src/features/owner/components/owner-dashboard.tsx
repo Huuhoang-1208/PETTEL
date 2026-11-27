@@ -33,7 +33,9 @@ export function OwnerDashboard() {
   const [bookingPage, setBookingPage] = useState(1);
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   const petsResource = useApi<Page<Pet>>(`/api/v1/pets?page=${petPage}`);
-  const bookingsResource = useApi<Page<Booking>>(`/api/v1/owner-profile/bookings?page=${bookingPage}`);
+  const bookingsResource = useApi<Page<Booking>>(
+    `/api/v1/owner-profile/bookings?page=${bookingPage}`,
+  );
   const profile = profileResource.data?.data;
   const pets = (petsResource.data?.data ?? []).filter((pet) => pet.status === "ACTIVE");
   const bookings = bookingsResource.data?.data ?? [];

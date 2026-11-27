@@ -77,7 +77,10 @@ export function useConfirmation() {
           <button autoFocus onClick={() => finish(false)}>
             {request.cancelLabel ?? "Quay lại"}
           </button>
-          <button className={`app-button ${request.confirmClassName ?? ""}`.trim()} onClick={() => finish(true)}>
+          <button
+            className={`app-button ${request.confirmClassName ?? ""}`.trim()}
+            onClick={() => finish(true)}
+          >
             {request.confirmLabel ?? "Xác nhận"}
           </button>
         </div>

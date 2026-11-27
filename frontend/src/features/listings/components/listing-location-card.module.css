@@ -119,9 +119,17 @@
   background: #15a877;
 }
 
-.park { bottom: 12px; left: 12px; }
-.vet { right: 12px; bottom: 12px; }
-.vet i { background: #8562ed; }
+.park {
+  bottom: 12px;
+  left: 12px;
+}
+.vet {
+  right: 12px;
+  bottom: 12px;
+}
+.vet i {
+  background: #8562ed;
+}
 
 .disclaimer {
   position: absolute;
@@ -138,12 +146,39 @@
 }
 
 @media (max-width: 560px) {
-  .card { padding: 19px; border-radius: 22px; }
-  .header { align-items: flex-start; }
-  .header h2 { font-size: 17px; }
-  .radius { max-width: 110px; text-align: center; }
-  .map { min-height: 210px; aspect-ratio: 1.35 / 1; }
-  .nearby { max-width: calc(100% - 24px); font-size: 9px; }
-  .vet { bottom: 46px; left: 12px; right: auto; }
-  .disclaimer { top: auto; bottom: 10px; left: 12px; right: 12px; max-width: none; text-align: left; }
+  .card {
+    padding: 19px;
+    border-radius: 22px;
+  }
+  .header {
+    align-items: flex-start;
+  }
+  .header h2 {
+    font-size: 17px;
+  }
+  .radius {
+    max-width: 110px;
+    text-align: center;
+  }
+  .map {
+    min-height: 210px;
+    aspect-ratio: 1.35 / 1;
+  }
+  .nearby {
+    max-width: calc(100% - 24px);
+    font-size: 9px;
+  }
+  .vet {
+    bottom: 46px;
+    left: 12px;
+    right: auto;
+  }
+  .disclaimer {
+    top: auto;
+    bottom: 10px;
+    left: 12px;
+    right: 12px;
+    max-width: none;
+    text-align: left;
+  }
 }
