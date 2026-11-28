@@ -31,9 +31,13 @@ Trước khi gỡ hai mục theo yêu cầu, frontend đã chạy `npm test`, `n
 ## Bằng chứng còn cần nhóm thực hiện
 
 - Video demo thực tế chưa quay; dùng [kịch bản 9 phút 40 giây](submission-checklist.md).
-- Google OAuth thật chưa được xác minh. Slack đã nhận cảnh báo slow-query và server-resource trong đợt kiểm tra bổ sung ngày 27/11/2026; xem phần Task 5 bên dưới.
+- Slack đã nhận cảnh báo slow-query và server-resource trong đợt kiểm tra bổ sung ngày 27/11/2026; xem phần Task 5 bên dưới.
 - Bổ sung link CI của commit cuối sau khi nhóm commit/push; kiểm tra quyền xem repo, video và các liên kết Issue–PR.
 - Hoàn tất Self-Report của từng thành viên cho cả 5 sprint theo brief.
+
+## Bổ sung kiểm chứng Task 3(f) — 28/11/2026
+
+Đăng nhập bằng tài khoản Google thật đã hoàn tất: người dùng cấp quyền trên Google, được chuyển về PETTEL và thấy trạng thái tài khoản đã đăng nhập trong menu hồ sơ. Ảnh: [signin-google-account-1.png](screenshots/signin-google-account-1.png) (màn hình cấp quyền Google) và [signin-google-account-2.png](screenshots/signin-google-account-2.png) (PETTEL sau đăng nhập). Hai ảnh hiện có tên/email tài khoản và ảnh đầu có thanh địa chỉ OAuth; cần dùng bản đã che thông tin này trước khi chia sẻ hồ sơ ra ngoài nhóm.
 
 ## Bổ sung kiểm chứng Task 5 — 27–28/11/2026
 
