@@ -35,11 +35,11 @@ Trước khi gỡ hai mục theo yêu cầu, frontend đã chạy `npm test`, `n
 - Bổ sung link CI của commit cuối sau khi nhóm commit/push; kiểm tra quyền xem repo, video và các liên kết Issue–PR.
 - Hoàn tất Self-Report của từng thành viên cho cả 5 sprint theo brief.
 
-## Bổ sung kiểm chứng Task 5 — 27/11/2026
+## Bổ sung kiểm chứng Task 5 — 27–28/11/2026
 
 | Hạng mục | Kết quả và bằng chứng |
 | --- | --- |
-| 5(b) API errors/logging | `ApiErrorHandlingTest`: 6 tests, 38 assertions — PASS (kết quả terminal đã lưu trong lịch sử làm việc). `error.tsx` đã được kích hoạt thủ công bằng route demo tạm; route demo đã xóa. `not-found.tsx` được triển khai. |
+| 5(b) API errors/logging | `ApiErrorHandlingTest`: 6 tests, 38 assertions — PASS (kết quả terminal đã lưu trong lịch sử làm việc). `error.tsx` và `not-found.tsx` được triển khai; API errors dùng envelope thống nhất và `request_id`. Ngày 28/11/2026, exception `RuntimeException` được kích hoạt qua route chẩn đoán local và Slack nhận cảnh báo `ERROR` trong `#pettel-alerts`; `request_id` và `origin_request_id` khớp nhau. Route chẩn đoán đã được xóa khỏi source. Ảnh: [exception-slack-1.png](screenshots/exception-slack-1.png), [exception-slack-2.png](screenshots/exception-slack-2.png), [exception-slack-3.png](screenshots/exception-slack-3.png). |
 | 5(c) Slow-query alert | `SlowQueryAlertTest`: 4 tests, 9 assertions — PASS. Slack nhận `monitoring.slow_query_detected`, duration 1206.84 ms với threshold 1000 ms. Ảnh: [task-5c-slow-query-alert.png](screenshots/task-5c-slow-query-alert.png). |
 | 5(d) Server-resource alert | `ServerResourceMonitoringTest` và `AdminDashboardAuthorizationTest`: 6 tests, 14 assertions — PASS. Monitoring bật, scheduler chạy mỗi phút. Slack nhận `monitoring.server_resource_threshold_exceeded` cho `disk_percent` (10.77%, ngưỡng thử 0%). Ngưỡng đã khôi phục về 90%. Ảnh: [task-5d-server-resource-alert.png](screenshots/task-5d-server-resource-alert.png). |
 | Telescope/Pulse access | `TelescopeAccessTest` và `TelescopeRedactionTest`: 3 tests, 17 assertions — PASS. `AdminDashboardAuthorizationTest` cũng kiểm tra quyền `/pulse`. |
